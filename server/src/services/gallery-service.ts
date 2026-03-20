@@ -10,6 +10,7 @@ import {
 import { appConfig } from '../config/env.js';
 import { appSettingsRepository, folderRepository, folderScanStateRepository, imageRepository, likeRepository, scanRunRepository } from '../db/repositories.js';
 import type { FeedImage, ImageDetail, FolderSummaryRecord, MediaType, PlaybackStrategy, TrashImage } from '../types/models.js';
+import { deserializeImageExifData } from '../utils/exif-utils.js';
 import { buildMonthDayKey, countFeedBursts, diversifyFeedCandidates, groupFeedBursts, listMonthDayKeysAroundDate } from '../utils/feed-utils.js';
 import { shouldPreferMomentRail, type FeedRailKind } from '../utils/feed-rail-utils.js';
 import { countSupportedRootMediaFiles } from '../utils/gallery-root-utils.js';
@@ -54,8 +55,24 @@ const HIGHLIGHT_FEED_OVERLAP_WINDOW = 18;
 const RAIL_COVER_CANDIDATE_LIMIT = 12;
 
 type IndexedFeedImage = FeedImage & { playbackStrategy?: PlaybackStrategy | null };
-type IndexedImageDetail = ImageDetail & { playbackStrategy?: PlaybackStrategy | null };
+type IndexedImageDetail = ImageDetail & { playbackStrategy?: PlaybackStrategy | null; exifJson?: string | null };
 type IndexedTrashImage = TrashImage & { playbackStrategy?: PlaybackStrategy | null };
+type ScanSummaryRecord = ReturnType<typeof scanRunRepository.latestCompleted>;
+
+function toViewerSafeScanSummary(scan: ScanSummaryRecord | null) {
+  if (!scan) {
+    return null;
+  }
+
+  return {
+    ...scan,
+    error_text: null
+  };
+}
+
+function buildViewerSafeStorageReason(libraryAvailable: boolean): string | null {
+  return libraryAvailable ? null : 'Configured library storage is unavailable.';
+}
 
 function getThumbnailAssetVersion(): string | null {
   const lastCompletedScanId = scanRunRepository.latestCompleted()?.id ?? null;
@@ -165,10 +182,11 @@ function mapFeedImage(image: IndexedFeedImage, thumbnailVersion = getThumbnailAs
 }
 
 function mapImageDetail(image: IndexedImageDetail, thumbnailVersion = getThumbnailAssetVersion()): ImageDetail {
-  const { playbackStrategy, ...rest } = image;
+  const { playbackStrategy, exifJson, ...rest } = image;
   return {
     ...rest,
     isAnimated: Boolean(rest.isAnimated),
+    exif: deserializeImageExifData(exifJson),
     folderBreadcrumb: getPathBreadcrumb(rest.folderPath),
     thumbnailUrl: toPublicMediaUrl('/thumbnails', rest.thumbnailUrl, thumbnailVersion),
     previewUrl: buildPreviewUrl({
@@ -818,6 +836,33 @@ export const galleryService = {
     return {
       id: imageRecord.id,
       folderSlug: folder.slug
+    };
+  },
+
+  getStatus() {
+    const lastCompletedScan = scanRunRepository.latestCompleted() ?? null;
+    const storageState = storageService.getState();
+    const scanProgress = scannerService.getProgress();
+    const rebuildRequired = appSettingsRepository.get(LIBRARY_REBUILD_REQUIRED_SETTING_KEY) === '1';
+
+    return {
+      folders: storageState.libraryAvailable ? folderRepository.count() : 0,
+      indexedImages: storageState.libraryAvailable ? imageRepository.countFeed() : 0,
+      indexedVideos: storageState.libraryAvailable ? imageRepository.countByMediaType('video') : 0,
+      scan: {
+        ...scanProgress,
+        currentFolder: null,
+        lastCompletedScan: toViewerSafeScanSummary(lastCompletedScan)
+      },
+      storage: {
+        available: storageState.libraryAvailable,
+        reason: buildViewerSafeStorageReason(storageState.libraryAvailable)
+      },
+      libraryIndex: {
+        rebuildRequired,
+        reason: rebuildRequired ? 'gallery_root_changed' : null,
+        ignoredRootMediaCount: storageState.libraryAvailable ? countSupportedRootMediaFiles(appConfig.galleryRoot) : 0
+      }
     };
   },
 

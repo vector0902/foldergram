@@ -7,13 +7,13 @@
     <!-- Close button (modal only) -->
     <button
       v-if="isModal"
-      class="fixed top-[5px] right-[5px] z-55 inline-flex items-center justify-center w-[2.35rem] h-[2.35rem] p-0 border-0 text-white bg-transparent cursor-pointer"
+      class="fixed top-[0.6rem] right-[0.6rem] z-55 inline-flex items-center justify-center w-[3rem] h-[3rem] p-0 border-0 text-white/85 bg-transparent cursor-pointer transition-opacity duration-150 hover:text-white"
       type="button"
       aria-label="Close post"
       @click="$emit('close')"
     >
       <svg
-        class="w-[1.2rem] h-[1.2rem]"
+        class="w-8 h-8"
         viewBox="0 0 24 24"
         role="presentation"
       >
@@ -125,9 +125,10 @@
         <video
           v-if="image.mediaType === 'video'"
           ref="videoElement"
-          class="w-full h-full object-contain"
           :src="image.previewUrl"
           :poster="image.thumbnailUrl"
+          :width="image.width"
+          :height="image.height"
           controls
           loop
           playsinline
@@ -139,9 +140,10 @@
           v-else
           :src="image.previewUrl"
           :alt="image.filename"
+          :width="image.width"
+          :height="image.height"
           loading="eager"
           :retry-while="appStore.isScanning"
-          class="h-full w-full object-contain"
         />
       </div>
 
@@ -253,6 +255,19 @@
             </dt>
             <dd class="m-0 text-[0.96rem] font-semibold">{{ fileSize }}</dd>
           </div>
+          <div
+            v-for="detail in exifDetails"
+            :key="detail.label"
+          >
+            <dt
+              class="text-muted text-[0.75rem] mb-[0.25rem] uppercase tracking-[0.05em]"
+            >
+              {{ detail.label }}
+            </dt>
+            <dd class="m-0 text-[0.96rem] font-semibold break-words">
+              {{ detail.value }}
+            </dd>
+          </div>
         </dl>
 
         <!-- Actions -->
@@ -261,12 +276,11 @@
         >
           <!-- Like -->
           <button
+            v-if="authStore.canUseSavedItems"
             class="inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer transition-[opacity,transform,color] duration-180 hover:opacity-72 hover:-translate-y-px disabled:opacity-45 disabled:cursor-wait disabled:transform-none"
             :class="{ 'text-[#e5484d]': likesStore.isLiked(image.id) }"
             type="button"
-            :aria-label="
-              likesStore.isLiked(image.id) ? 'Unlike post' : 'Like post'
-            "
+            :aria-label="likesStore.toggleAriaLabel(likesStore.isLiked(image.id))"
             :aria-pressed="likesStore.isLiked(image.id)"
             :disabled="likesStore.isPending(image.id)"
             @click="likesStore.toggleLike(image)"
@@ -324,6 +338,7 @@
             </a>
             <!-- Delete -->
             <button
+              v-if="authStore.canDeleteMedia"
               class="inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer text-[#d93025] transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px disabled:opacity-45 disabled:cursor-wait disabled:transform-none"
               type="button"
               aria-label="Delete post"
@@ -357,6 +372,7 @@
 
   import type { ImageDetail, FolderSummary } from "../types/api"
   import { useAppStore } from "../stores/app"
+  import { useAuthStore } from "../stores/auth"
   import { useLikesStore } from "../stores/likes"
   import Avatar from "./Avatar.vue"
   import ResilientImage from "./ResilientImage.vue"
@@ -376,6 +392,7 @@
 
   const likesStore = useLikesStore()
   const appStore = useAppStore()
+  const authStore = useAuthStore()
   const route = useRoute()
   const router = useRouter()
   const videoElement = ref<HTMLVideoElement | null>(null)
@@ -390,6 +407,11 @@
   const WHEEL_NAVIGATION_THRESHOLD = 72
   const NAVIGATION_COOLDOWN_MS = 320
   const MODAL_SIDEBAR_COLLAPSE_BREAKPOINT = 960
+
+  type MetadataDetail = {
+    label: string
+    value: string
+  }
 
   let videoMuteSyncToken = 0
 
@@ -426,6 +448,84 @@
   const formattedDuration = computed(() =>
     formatMediaDuration(props.image?.durationMs),
   )
+  const exifDetails = computed<MetadataDetail[]>(() => {
+    const exif = props.image?.exif
+    if (!exif) {
+      return []
+    }
+
+    const details: MetadataDetail[] = []
+    const location = formatLocation(
+      exif.latitude,
+      exif.longitude,
+      exif.altitudeMeters,
+    )
+    const camera = formatCameraLabel(exif.cameraMake, exif.cameraModel)
+    const aperture =
+      typeof exif.fNumber === "number" && Number.isFinite(exif.fNumber)
+        ? `f/${formatExifNumber(exif.fNumber, 2)}`
+        : null
+    const shutter = formatExposureTime(exif.exposureTimeSeconds)
+    const iso =
+      typeof exif.iso === "number" && Number.isFinite(exif.iso)
+        ? formatExifNumber(exif.iso, 0)
+        : null
+    const focalLength = formatFocalLength(
+      exif.focalLengthMm,
+      exif.focalLength35mmMm,
+    )
+
+    if (location) {
+      details.push({
+        label: "Location",
+        value: location,
+      })
+    }
+
+    if (camera) {
+      details.push({
+        label: "Camera",
+        value: camera,
+      })
+    }
+
+    if (exif.lensModel) {
+      details.push({
+        label: "Lens",
+        value: exif.lensModel,
+      })
+    }
+
+    if (aperture) {
+      details.push({
+        label: "Aperture",
+        value: aperture,
+      })
+    }
+
+    if (shutter) {
+      details.push({
+        label: "Shutter",
+        value: shutter,
+      })
+    }
+
+    if (iso) {
+      details.push({
+        label: "ISO",
+        value: iso,
+      })
+    }
+
+    if (focalLength) {
+      details.push({
+        label: "Focal length",
+        value: focalLength,
+      })
+    }
+
+    return details
+  })
   const isModalSidebarCollapsible = computed(
     () => props.isModal === true && isSidebarCollapsible.value,
   )
@@ -442,6 +542,97 @@
         videoMuteSyncToken = 0
       }
     })
+  }
+
+  function formatExifNumber(
+    value: number | null | undefined,
+    maximumFractionDigits = 1,
+  ) {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      return null
+    }
+
+    return new Intl.NumberFormat(undefined, {
+      maximumFractionDigits,
+    }).format(value)
+  }
+
+  function formatCameraLabel(
+    make: string | null | undefined,
+    model: string | null | undefined,
+  ) {
+    if (make && model) {
+      return model.toLowerCase().startsWith(make.toLowerCase())
+        ? model
+        : `${make} ${model}`
+    }
+
+    return make ?? model ?? null
+  }
+
+  function formatExposureTime(seconds: number | null | undefined) {
+    if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0) {
+      return null
+    }
+
+    if (seconds >= 1) {
+      return `${formatExifNumber(seconds, seconds >= 10 ? 0 : 1)} s`
+    }
+
+    const reciprocal = Math.round(1 / seconds)
+    if (
+      reciprocal > 1 &&
+      Math.abs(1 / reciprocal - seconds) <= Math.max(seconds * 0.08, 0.0005)
+    ) {
+      return `1/${reciprocal} s`
+    }
+
+    return `${formatExifNumber(seconds, 3)} s`
+  }
+
+  function formatFocalLength(
+    focalLengthMm: number | null | undefined,
+    focalLength35mmMm: number | null | undefined,
+  ) {
+    const focalLength = formatExifNumber(focalLengthMm, 2)
+    const focalLength35mm = formatExifNumber(focalLength35mmMm, 0)
+
+    if (focalLength && focalLength35mm) {
+      return `${focalLength} mm (${focalLength35mm} mm equiv.)`
+    }
+
+    if (focalLength) {
+      return `${focalLength} mm`
+    }
+
+    if (focalLength35mm) {
+      return `${focalLength35mm} mm equiv.`
+    }
+
+    return null
+  }
+
+  function formatLocation(
+    latitude: number | null | undefined,
+    longitude: number | null | undefined,
+    altitudeMeters: number | null | undefined,
+  ) {
+    if (
+      typeof latitude !== "number" ||
+      !Number.isFinite(latitude) ||
+      typeof longitude !== "number" ||
+      !Number.isFinite(longitude)
+    ) {
+      return null
+    }
+
+    const coordinates = `${formatExifNumber(latitude, 5)}, ${formatExifNumber(
+      longitude,
+      5,
+    )}`
+    const altitude = formatExifNumber(altitudeMeters, 1)
+
+    return altitude ? `${coordinates} (alt ${altitude} m)` : coordinates
   }
 
   function focusSidebarToggle(force = false) {
@@ -468,9 +659,7 @@
       return
     }
 
-    const modalWidth =
-      cardWrapperElement.value?.clientWidth ?? window.innerWidth
-    const nextCollapsible = modalWidth <= MODAL_SIDEBAR_COLLAPSE_BREAKPOINT
+    const nextCollapsible = window.innerWidth <= MODAL_SIDEBAR_COLLAPSE_BREAKPOINT
     const wasCollapsible = isSidebarCollapsible.value
 
     isSidebarCollapsible.value = nextCollapsible

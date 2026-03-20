@@ -32,6 +32,20 @@ export interface FolderSummary {
   avatarUrl: string | null;
 }
 
+export interface ImageExifData {
+  cameraMake?: string;
+  cameraModel?: string;
+  lensModel?: string;
+  fNumber?: number;
+  exposureTimeSeconds?: number;
+  iso?: number;
+  focalLengthMm?: number;
+  focalLength35mmMm?: number;
+  latitude?: number;
+  longitude?: number;
+  altitudeMeters?: number;
+}
+
 export interface PaginatedFeed {
   mode?: FeedMode;
   items: FeedItem[];
@@ -78,6 +92,7 @@ export interface ImageDetail extends FeedItem {
   relativePath: string;
   mimeType: string;
   fileSize: number;
+  exif: ImageExifData | null;
   originalUrl: string;
   nextImageId: number | null;
   previousImageId: number | null;
@@ -161,33 +176,56 @@ export interface RebuildThumbnailsResult {
   lastScan: ScanRunSummary | null;
 }
 
-export interface AppStats {
+export interface AppStatus {
   folders: number;
   indexedImages: number;
   indexedVideos: number;
-  deletedImages: number;
-  thumbnailCount: number;
-  previewCount: number;
   scan: ScanProgress;
   storage: {
     available: boolean;
     reason: string | null;
-    usingInMemoryDatabase: boolean;
   };
   libraryIndex: {
     rebuildRequired: boolean;
     reason: 'gallery_root_changed' | null;
+    ignoredRootMediaCount: number;
+  };
+}
+
+export interface AppStats extends AppStatus {
+  deletedImages: number;
+  thumbnailCount: number;
+  previewCount: number;
+  storage: AppStatus['storage'] & {
+    usingInMemoryDatabase: boolean;
+  };
+  libraryIndex: AppStatus['libraryIndex'] & {
     currentGalleryRoot: string;
     previousGalleryRoot: string | null;
     lastSuccessfulGalleryRoot: string | null;
-    ignoredRootMediaCount: number;
   };
   lastScan: ScanRunSummary | null;
+}
+
+export type AuthRole = 'admin' | 'viewer' | 'anonymous';
+export type ViewerAccessMode = 'off' | 'password' | 'public';
+export type LikesMode = 'shared' | 'local';
+
+export interface AuthCapabilities {
+  canManageLibrary: boolean;
+  canDeleteMedia: boolean;
+  canAccessSettings: boolean;
+  canUseSharedLikes: boolean;
+  canUseLocalFavorites: boolean;
 }
 
 export interface AuthStatus {
   enabled: boolean;
   authenticated: boolean;
+  role: AuthRole;
+  accessMode: ViewerAccessMode;
+  likesMode: LikesMode;
+  capabilities: AuthCapabilities;
 }
 
 export interface AuthMutationResult {
