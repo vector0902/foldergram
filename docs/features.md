@@ -69,7 +69,8 @@ A folder page is available at:
 
 Folder pages include:
 
-- a folder header with avatar and counts
+- a folder header with avatar, posts counts, and descriptions
+- editable folder name and description via an admin "Edit App Folder" flow
 - a posts grid
 - a reels tab when the folder contains videos
 - infinite loading
@@ -96,6 +97,7 @@ The detail view includes:
 - size, dimensions, MIME type, and duration metadata
 - like toggle
 - original-file link
+- an admin-only "Set as Cover" action to customize the folder avatar, which highlights dynamically if the image is already the cover
 - delete action with confirmation for admin sessions only
 
 ## Likes and Favorites

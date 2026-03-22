@@ -47,6 +47,14 @@ class DatabaseManager {
   }
 
   private applyCompatColumnMigrations(): void {
+    if (this.tableExists('folders') && !this.tableHasColumn('folders', 'description')) {
+      this.database.exec('ALTER TABLE folders ADD COLUMN description TEXT NULL');
+    }
+
+    if (this.tableExists('folders') && !this.tableHasColumn('folders', 'avatar_source')) {
+      this.database.exec("ALTER TABLE folders ADD COLUMN avatar_source TEXT NOT NULL DEFAULT 'auto'");
+    }
+
     if (this.tableExists('images') && !this.tableHasColumn('images', 'media_type')) {
       this.database.exec("ALTER TABLE images ADD COLUMN media_type TEXT NOT NULL DEFAULT 'image'");
     }

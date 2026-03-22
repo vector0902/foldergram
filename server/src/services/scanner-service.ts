@@ -549,7 +549,7 @@ class ScannerService {
     const removedFiles = existingFolder ? imageRepository.markAllDeletedByFolder(existingFolder.id) : 0;
 
     if (existingFolder) {
-      folderRepository.setAvatar(existingFolder.id, null);
+      folderRepository.setAvatar(existingFolder.id, null, 'auto');
     }
 
     folderScanStateRepository.delete(sourceFolderPath);
@@ -743,7 +743,7 @@ class ScannerService {
     );
 
     const removedFiles = imageRepository.markFolderImagesDeleted(folder.id, activeRelativePaths);
-    folderRepository.setAvatar(folder.id, imageRepository.getLatestFolderImageId(folder.id));
+    folderRepository.syncAvatarSelection(folder.id);
 
     if (!folderHadErrors) {
       folderScanStateRepository.upsert({
@@ -1043,7 +1043,7 @@ class ScannerService {
       for (const folder of existingFolders) {
         if (!discoveredFolderIds.has(folder.id)) {
           summary.removed_files += imageRepository.markAllDeletedByFolder(folder.id);
-          folderRepository.setAvatar(folder.id, null);
+          folderRepository.setAvatar(folder.id, null, 'auto');
         }
       }
 

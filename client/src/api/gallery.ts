@@ -68,6 +68,22 @@ export function fetchFolderImages(slug: string, page = 1, limit = 24, mediaType?
   return requestJson<FolderImagesPayload>(`/api/folders/${encodeURIComponent(slug)}/images?${params.toString()}`);
 }
 
+export function updateFolderProfile(slug: string, name: string, description: string | null) {
+  return requestJson<FolderSummary>(`/api/folders/${encodeURIComponent(slug)}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, description })
+  });
+}
+
+export function setFolderCover(slug: string, imageId: number) {
+  return requestJson<{ ok: boolean }>(`/api/folders/${encodeURIComponent(slug)}/cover`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ imageId })
+  });
+}
+
 export function fetchImage(id: number, mediaType?: 'image' | 'video') {
   const params = new URLSearchParams();
   if (mediaType) {

@@ -50,6 +50,16 @@ const momentIdSchema = z.object({
 const imageIdSchema = z.object({
   id: z.coerce.number().int().positive()
 });
+
+export const patchFolderBodySchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().max(300).nullable().optional()
+});
+
+export const folderCoverBodySchema = z.object({
+  imageId: z.coerce.number().int().positive()
+});
+
 const submittedPasswordSchema = z
   .string()
   .min(1, 'Password is required.')
@@ -299,6 +309,32 @@ router.get('/folders/:slug', (request, response) => {
   }
 
   response.json(folder);
+});
+
+router.patch('/folders/:slug', requireCapability('canManageLibrary', 'Admin access is required.'), (request, response) => {
+  const params = slugSchema.parse(request.params);
+  const body = patchFolderBodySchema.parse(request.body);
+  const updated = galleryService.updateFolderMetadata(params.slug, body.name, body.description ?? null);
+
+  if (!updated) {
+    response.status(404).json({ message: 'Folder not found' });
+    return;
+  }
+
+  response.json(updated);
+});
+
+router.post('/folders/:slug/cover', requireCapability('canManageLibrary', 'Admin access is required.'), (request, response) => {
+  const params = slugSchema.parse(request.params);
+  const body = folderCoverBodySchema.parse(request.body);
+  const success = galleryService.setFolderAvatar(params.slug, body.imageId);
+
+  if (!success) {
+    response.status(404).json({ message: 'Folder or image not found' });
+    return;
+  }
+
+  response.json({ ok: true });
 });
 
 router.delete('/folders/:slug', requireCapability('canDeleteMedia', 'Admin access is required.'), async (request, response) => {

@@ -1,6 +1,7 @@
 export type MediaType = 'image' | 'video';
 export type TakenAtSource = 'exif' | 'mtime' | 'first_seen' | 'sort_timestamp';
 export type PlaybackStrategy = 'preview' | 'original';
+export type FolderAvatarSource = 'auto' | 'manual' | 'cover';
 
 export interface ImageExifData {
   cameraMake?: string;
@@ -21,7 +22,9 @@ export interface FolderRecord {
   slug: string;
   name: string;
   folder_path: string;
+  description: string | null;
   avatar_image_id: number | null;
+  avatar_source: FolderAvatarSource;
   created_at: string;
   updated_at: string;
 }
@@ -114,6 +117,7 @@ export interface FeedImage {
 }
 
 export interface ImageDetail extends FeedImage {
+  folderAvatarImageId: number | null;
   relativePath: string;
   mimeType: string;
   fileSize: number;

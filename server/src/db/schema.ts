@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS folders (
   slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   folder_path TEXT NOT NULL,
+  description TEXT NULL,
   avatar_image_id INTEGER NULL,
+  avatar_source TEXT NOT NULL DEFAULT 'auto',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (avatar_image_id) REFERENCES images(id)

@@ -15,6 +15,8 @@ export default defineConfig({
     "i-fluent-square-20-regular",
     "i-fluent-folder-16-filled",
     "i-fluent-folder-16-regular",
+    "i-fluent-folder-add-20-filled",
+    "i-fluent-folder-add-20-regular",
     "i-fluent-line-horizontal-3-20-filled",
     "i-fluent-panel-left-expand-16-filled",
   ],
