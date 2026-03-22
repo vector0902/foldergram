@@ -64,7 +64,7 @@ function handleImageNavigation(event: MouseEvent, navigate: () => void) {
   display: block;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-alt);
 }
 
 .explore-grid__item :deep(img) {

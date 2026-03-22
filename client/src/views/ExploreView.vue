@@ -1,6 +1,6 @@
 <template>
   <section
-    class="explore-view min-h-[calc(100vh-4rem)] bg-[#04070d] text-white"
+    class="explore-view min-h-[calc(100vh-4rem)]"
   >
     <div
       class="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[72rem] flex-col gap-6 px-4 py-5 md:px-6 md:py-7"
@@ -11,7 +11,7 @@
       >
         <button
           v-if="isSearchActive"
-          class="inline-flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent p-0 text-white/84 transition-colors duration-150 hover:bg-white/8 hover:text-white"
+          class="inline-flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent p-0 text-muted transition-colors duration-150 hover:bg-surface-hover hover:text-text"
           type="button"
           aria-label="Back to explore posts"
           @click="closeSearch"
@@ -33,10 +33,10 @@
         </button>
 
         <label
-          class="explore-view__search flex flex-1 items-center gap-3 rounded-full bg-white/5 px-4 py-[0.82rem]"
+          class="explore-view__search flex flex-1 items-center gap-3 rounded-full bg-surface-alt px-4 py-[0.82rem]"
         >
           <svg
-            class="h-[1.15rem] w-[1.15rem] flex-shrink-0 text-white/48"
+            class="h-[1.15rem] w-[1.15rem] flex-shrink-0 text-muted"
             viewBox="0 0 24 24"
             role="presentation"
           >
@@ -62,7 +62,7 @@
           <input
             ref="searchInput"
             v-model="searchQuery"
-            class="w-full border-0 bg-transparent p-0 text-[1rem] text-white outline-none placeholder:text-white/54"
+            class="w-full border-0 bg-transparent p-0 text-[1rem] text-text outline-none placeholder:text-muted"
             type="search"
             placeholder="Search"
             spellcheck="false"
@@ -71,7 +71,7 @@
           />
           <button
             v-if="searchQuery.length > 0"
-            class="inline-flex h-6 w-6 items-center justify-center rounded-full border-0 bg-white/16 p-0 text-white/70 transition-colors duration-150 hover:bg-white/24 hover:text-white"
+            class="inline-flex h-6 w-6 items-center justify-center rounded-full border-0 bg-surface-hover p-0 text-muted transition-colors duration-150 hover:bg-border hover:text-text"
             type="button"
             aria-label="Clear search"
             @click="clearSearch"
@@ -98,17 +98,17 @@
         v-if="appStore.isLibraryUnavailable"
         class="explore-view__message-card max-w-[35rem]"
       >
-        <h1 class="m-0 text-[1.15rem] font-semibold text-white">
+        <h1 class="m-0 text-[1.15rem] font-semibold text-text">
           Library storage unavailable
         </h1>
-        <p class="m-0 text-white/60">{{ appStore.libraryUnavailableReason }}</p>
+        <p class="m-0 text-muted">{{ appStore.libraryUnavailableReason }}</p>
       </section>
 
       <section v-else-if="isSearchActive" class="max-w-[35rem]">
         <div v-if="trimmedSearchQuery.length === 0" class="grid gap-4 pt-2">
           <div class="flex items-center justify-between gap-3">
             <h1
-              class="m-0 text-[1.45rem] font-semibold tracking-[-0.03em] text-white"
+              class="m-0 text-[1.45rem] font-semibold tracking-[-0.03em] text-text"
             >
               Recent
             </h1>
@@ -116,13 +116,13 @@
 
           <p
             v-if="foldersStore.loadingList && foldersStore.items.length === 0"
-            class="m-0 text-[0.96rem] text-white/56"
+            class="m-0 text-[0.96rem] text-muted"
           >
             Loading folders...
           </p>
           <p
             v-else-if="recentSearchFolders.length === 0"
-            class="m-0 text-[1rem] text-white/46"
+            class="m-0 text-[1rem] text-muted"
           >
             No recent searches.
           </p>
@@ -142,10 +142,10 @@
               />
               <span class="min-w-0 flex-1 text-left">
                 <strong
-                  class="block truncate text-[0.96rem] font-semibold text-white"
+                  class="block truncate text-[0.96rem] font-semibold text-text"
                   >{{ folder.name }}</strong
                 >
-                <span class="block truncate text-[0.84rem] text-white/54">
+                <span class="block truncate text-[0.84rem] text-muted">
                   {{ describeFolder(folder) }}
                 </span>
               </span>
@@ -168,10 +168,10 @@
             />
             <span class="min-w-0 flex-1 text-left">
               <strong
-                class="block truncate text-[0.96rem] font-semibold text-white"
+                class="block truncate text-[0.96rem] font-semibold text-text"
                 >{{ folder.name }}</strong
               >
-              <span class="block truncate text-[0.84rem] text-white/54">
+              <span class="block truncate text-[0.84rem] text-muted">
                 {{ describeFolder(folder) }}
               </span>
             </span>
@@ -179,7 +179,7 @@
 
           <p
             v-if="searchResults.length === 0"
-            class="m-0 pt-2 text-[1rem] text-white/46"
+            class="m-0 pt-2 text-[1rem] text-muted"
           >
             No matching folders.
           </p>
@@ -204,20 +204,20 @@
           v-else-if="exploreStore.error"
           class="explore-view__message-card mx-auto"
         >
-          <h1 class="m-0 text-[1.15rem] font-semibold text-white">
+          <h1 class="m-0 text-[1.15rem] font-semibold text-text">
             Could not load explore
           </h1>
-          <p class="m-0 text-white/60">{{ exploreStore.error }}</p>
+          <p class="m-0 text-muted">{{ exploreStore.error }}</p>
         </section>
 
         <section
           v-else-if="rankedItems.length === 0"
           class="explore-view__message-card mx-auto"
         >
-          <h1 class="m-0 text-[1.15rem] font-semibold text-white">
+          <h1 class="m-0 text-[1.15rem] font-semibold text-text">
             Nothing to explore yet
           </h1>
-          <p class="m-0 text-white/60">
+          <p class="m-0 text-muted">
             Index a few folders and this page will start surfacing posts here.
           </p>
         </section>
@@ -368,7 +368,7 @@
 
 <style scoped>
   .explore-view__search {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 1px 0 var(--border);
   }
 
   .explore-view__result {
@@ -385,16 +385,16 @@
   }
 
   .explore-view__result:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-hover);
   }
 
   .explore-view__message-card {
     display: grid;
     gap: 0.6rem;
     padding: 1.35rem 1.45rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
     border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface);
   }
 
   .explore-view__skeleton-grid {
@@ -406,11 +406,7 @@
 
   .explore-view__skeleton {
     aspect-ratio: 1 / 1;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.06),
-      rgba(255, 255, 255, 0.12)
-    );
+    background: var(--surface-alt);
     animation: pulse 1.3s ease-in-out infinite;
   }
 
