@@ -247,18 +247,25 @@ function mapTrashImage(image: IndexedTrashImage, thumbnailVersion = getThumbnail
 
 function buildFolderSummary(folder: FolderSummaryRecord) {
   const thumbnailVersion = getThumbnailAssetVersion();
-  const avatarImageId = folder.avatar_image_id ?? imageRepository.getLatestFolderImageId(folder.id);
-  const avatar = avatarImageId ? imageRepository.getImageDetail(avatarImageId) : undefined;
+  const preferredAvatarImageId = folder.avatar_image_id ?? imageRepository.getLatestFolderImageId(folder.id);
+  let avatar = preferredAvatarImageId ? imageRepository.getImageDetail(preferredAvatarImageId, undefined, true) : undefined;
+
+  if (!avatar) {
+    const fallbackAvatarImageId = imageRepository.getLatestFolderImageId(folder.id);
+    avatar = fallbackAvatarImageId ? imageRepository.getImageDetail(fallbackAvatarImageId, undefined, true) : undefined;
+  }
 
   return {
     id: folder.id,
     slug: folder.slug,
     name: folder.name,
+    description: folder.description,
     folderPath: folder.folder_path,
     breadcrumb: getPathBreadcrumb(folder.folder_path),
     imageCount: folder.image_count,
     videoCount: folder.video_count,
     latestImageMtimeMs: folder.latest_image_mtime_ms,
+    avatarImageId: avatar?.id ?? null,
     avatarUrl: avatar ? mapImageDetail(avatar, thumbnailVersion).thumbnailUrl : null
   };
 }
@@ -717,6 +724,39 @@ export const galleryService = {
     return buildFolderSummary(folder);
   },
 
+  updateFolderMetadata(slug: string, name: string, description: string | null) {
+    if (!storageService.getState().libraryAvailable) {
+      return null;
+    }
+
+    folderRepository.updateMetadata(slug, name, description);
+    const folder = folderRepository.getSummaryBySlug(slug);
+    if (!folder) {
+      return null;
+    }
+
+    return buildFolderSummary(folder);
+  },
+
+  setFolderAvatar(slug: string, imageId: number) {
+    if (!storageService.getState().libraryAvailable) {
+      return null;
+    }
+
+    const folder = folderRepository.getBySlug(slug);
+    if (!folder) {
+      return null;
+    }
+
+    const image = imageRepository.getById(imageId);
+    if (!image || image.folder_id !== folder.id || image.is_deleted !== 0 || image.is_trashed !== 0 || image.media_type !== 'image') {
+      return null;
+    }
+
+    folderRepository.setAvatar(folder.id, imageId, 'manual');
+    return true;
+  },
+
   getFolderImages(slug: string, page: number, limit: number, mediaType?: MediaType) {
     if (!storageService.getState().libraryAvailable) {
       return null;
@@ -745,7 +785,14 @@ export const galleryService = {
       return null;
     }
 
-    const detail = imageRepository.getImageDetail(id, mediaType);
+    let detail = imageRepository.getImageDetail(id, mediaType);
+    if (!detail) {
+      const avatarDetail = imageRepository.getImageDetail(id, mediaType, true);
+      if (avatarDetail && avatarDetail.folderAvatarImageId === avatarDetail.id) {
+        detail = avatarDetail;
+      }
+    }
+
     if (!detail) {
       return null;
     }
@@ -836,7 +883,7 @@ export const galleryService = {
 
     if (imageRecord.is_trashed === 0) {
       imageRepository.moveToTrash(id);
-      folderRepository.setAvatar(imageRecord.folder_id, imageRepository.getLatestFolderImageId(imageRecord.folder_id));
+      folderRepository.syncAvatarSelection(imageRecord.folder_id);
     }
 
     return {
@@ -861,7 +908,7 @@ export const galleryService = {
     }
 
     imageRepository.restoreFromTrash(id);
-    folderRepository.setAvatar(imageRecord.folder_id, imageRepository.getLatestFolderImageId(imageRecord.folder_id));
+    folderRepository.syncAvatarSelection(imageRecord.folder_id);
 
     return {
       id: imageRecord.id,
@@ -989,11 +1036,11 @@ export const galleryService = {
     ]);
 
     if (folder.avatar_image_id === imageRecord.id) {
-      folderRepository.setAvatar(imageRecord.folder_id, null);
+      folderRepository.setAvatar(imageRecord.folder_id, null, 'auto');
     }
 
     imageRepository.deleteById(imageRecord.id);
-    folderRepository.setAvatar(imageRecord.folder_id, imageRepository.getLatestFolderImageId(imageRecord.folder_id));
+    folderRepository.syncAvatarSelection(imageRecord.folder_id);
 
     return {
       id: imageRecord.id,
@@ -1030,7 +1077,7 @@ export const galleryService = {
       folderScanStateRepository.deleteTree(normalizedFolderPath);
 
       for (const affectedFolder of affectedFolders) {
-        folderRepository.setAvatar(affectedFolder.id, null);
+        folderRepository.setAvatar(affectedFolder.id, null, 'auto');
         folderRepository.delete(affectedFolder.id);
       }
 
@@ -1068,7 +1115,7 @@ export const galleryService = {
       })
     );
 
-    folderRepository.setAvatar(folder.id, null);
+    folderRepository.setAvatar(folder.id, null, 'auto');
     folderScanStateRepository.delete(normalizedFolderPath);
     folderRepository.delete(folder.id);
 

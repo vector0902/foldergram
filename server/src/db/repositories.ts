@@ -3,6 +3,7 @@ import { normalizePath } from '../utils/path-utils.js';
 import type {
   AppSettingRecord,
   FeedImage,
+  FolderAvatarSource,
   FolderScanStateRecord,
   ImageDetail,
   ImageRecord,
@@ -18,8 +19,10 @@ import type {
 
 const database = databaseManager.connection;
 const EFFECTIVE_FEED_TIME_SQL = 'COALESCE(images.taken_at, images.sort_timestamp)';
-const VISIBLE_IMAGE_WHERE_SQL = 'images.is_deleted = 0 AND images.is_trashed = 0';
-const VISIBLE_IMAGE_WHERE_UNSCOPED_SQL = 'is_deleted = 0 AND is_trashed = 0';
+const COVER_FILENAMES = ['cover.jpg', 'cover.jpeg', 'cover.png', 'cover.webp', 'cover.gif'] as const;
+const COVER_FILENAME_SQL = COVER_FILENAMES.map((name) => `'${name}'`).join(', ');
+const VISIBLE_IMAGE_WHERE_SQL = `images.is_deleted = 0 AND images.is_trashed = 0 AND LOWER(images.filename) NOT IN (${COVER_FILENAME_SQL})`;
+const VISIBLE_IMAGE_WHERE_UNSCOPED_SQL = `is_deleted = 0 AND is_trashed = 0 AND LOWER(filename) NOT IN (${COVER_FILENAME_SQL})`;
 const FEED_IMAGE_SELECT_SQL = `
   SELECT
     images.id,
@@ -132,7 +135,7 @@ export const folderRepository = {
           SUM(CASE WHEN images.media_type = 'video' THEN 1 ELSE 0 END) AS video_count,
           MAX(images.mtime_ms) AS latest_image_mtime_ms
         FROM folders
-        INNER JOIN images ON images.folder_id = folders.id AND images.is_deleted = 0 AND images.is_trashed = 0
+        INNER JOIN images ON images.folder_id = folders.id AND ${VISIBLE_IMAGE_WHERE_SQL}
         GROUP BY folders.id
         ORDER BY latest_image_mtime_ms DESC, folders.name COLLATE NOCASE ASC, folders.folder_path COLLATE NOCASE ASC
         `
@@ -164,7 +167,7 @@ export const folderRepository = {
           SUM(CASE WHEN images.media_type = 'video' THEN 1 ELSE 0 END) AS video_count,
           MAX(images.mtime_ms) AS latest_image_mtime_ms
         FROM folders
-        INNER JOIN images ON images.folder_id = folders.id AND images.is_deleted = 0 AND images.is_trashed = 0
+        INNER JOIN images ON images.folder_id = folders.id AND ${VISIBLE_IMAGE_WHERE_SQL}
         WHERE folders.slug = ?
         GROUP BY folders.id
         `
@@ -191,10 +194,19 @@ export const folderRepository = {
   save(input: UpsertFolderInput): SaveFolderResult {
     const normalizedFolderPath = normalizePath(input.folderPath);
     const existing = this.getByFolderPath(normalizedFolderPath);
-    if (existing && existing.slug === input.slug && existing.name === input.name) {
+    if (existing && existing.slug === input.slug) {
       return {
         folder: existing,
         wrote: false
+      };
+    }
+
+    if (existing) {
+      database.prepare('UPDATE folders SET slug = ?, updated_at = ? WHERE id = ?').run(input.slug, nowIso(), existing.id);
+
+      return {
+        folder: this.getById(existing.id) as FolderRecord,
+        wrote: true
       };
     }
 
@@ -227,17 +239,76 @@ export const folderRepository = {
     );
   },
 
-  setAvatar(folderId: number, imageId: number | null): void {
-    database.prepare('UPDATE folders SET avatar_image_id = ?, updated_at = ? WHERE id = ? AND avatar_image_id IS NOT ?').run(
+  setAvatar(folderId: number, imageId: number | null, source: FolderAvatarSource = 'auto'): void {
+    database.prepare(
+      'UPDATE folders SET avatar_image_id = ?, avatar_source = ?, updated_at = ? WHERE id = ? AND (avatar_image_id IS NOT ? OR avatar_source != ?)'
+    ).run(
       imageId,
+      source,
       nowIso(),
       folderId,
-      imageId
+      imageId,
+      source
     );
+  },
+
+  updateMetadata(slug: string, name: string, description: string | null): FolderRecord | undefined {
+    database.prepare('UPDATE folders SET name = ?, description = ?, updated_at = ? WHERE slug = ?').run(
+      name,
+      description,
+      nowIso(),
+      slug
+    );
+    return this.getBySlug(slug);
   },
 
   delete(id: number): void {
     database.prepare('DELETE FROM folders WHERE id = ?').run(id);
+  },
+
+  resolveAvatarSelection(folderId: number): { imageId: number | null; source: FolderAvatarSource } | null {
+    const folder = this.getById(folderId);
+    if (!folder) {
+      return null;
+    }
+
+    const explicitCoverImageId = imageRepository.getExplicitCoverImageId(folderId);
+    if (explicitCoverImageId !== null) {
+      return {
+        imageId: explicitCoverImageId,
+        source: 'cover'
+      };
+    }
+
+    if (folder.avatar_source === 'manual' && folder.avatar_image_id !== null) {
+      const manualImage = imageRepository.getById(folder.avatar_image_id);
+      if (
+        manualImage &&
+        manualImage.folder_id === folderId &&
+        manualImage.is_deleted === 0 &&
+        manualImage.is_trashed === 0 &&
+        manualImage.media_type === 'image'
+      ) {
+        return {
+          imageId: manualImage.id,
+          source: 'manual'
+        };
+      }
+    }
+
+    return {
+      imageId: imageRepository.getLatestFolderImageId(folderId),
+      source: 'auto'
+    };
+  },
+
+  syncAvatarSelection(folderId: number): void {
+    const nextSelection = this.resolveAvatarSelection(folderId);
+    if (!nextSelection) {
+      return;
+    }
+
+    this.setAvatar(folderId, nextSelection.imageId, nextSelection.source);
   }
 };
 
@@ -691,7 +762,34 @@ export const imageRepository = {
     return row?.id ?? null;
   },
 
-  getImageDetail(id: number, mediaType?: MediaType): ImageDetail | undefined {
+  getExplicitCoverImageId(folderId: number): number | null {
+    const row = database.prepare(
+      `
+      SELECT id
+      FROM images
+      WHERE folder_id = ?
+        AND is_deleted = 0
+        AND is_trashed = 0
+        AND LOWER(filename) IN (${COVER_FILENAME_SQL})
+      ORDER BY
+        CASE LOWER(filename)
+          WHEN 'cover.jpg' THEN 1
+          WHEN 'cover.jpeg' THEN 2
+          WHEN 'cover.png' THEN 3
+          WHEN 'cover.webp' THEN 4
+          WHEN 'cover.gif' THEN 5
+          ELSE 6
+        END,
+        id ASC
+      LIMIT 1
+      `
+    ).get(folderId) as { id: number } | undefined;
+
+    return row?.id ?? null;
+  },
+
+  getImageDetail(id: number, mediaType?: MediaType, allowHiddenCover = false): ImageDetail | undefined {
+    const whereClause = allowHiddenCover ? 'images.is_deleted = 0 AND images.is_trashed = 0' : VISIBLE_IMAGE_WHERE_SQL;
     const detail = database.prepare(
       `
       SELECT
@@ -700,6 +798,7 @@ export const imageRepository = {
         folders.slug AS folderSlug,
         folders.name AS folderName,
         folders.folder_path AS folderPath,
+        folders.avatar_image_id AS folderAvatarImageId,
         images.filename,
         images.width,
         images.height,
@@ -718,7 +817,7 @@ export const imageRepository = {
         images.taken_at AS takenAt
       FROM images
       INNER JOIN folders ON folders.id = images.folder_id
-      WHERE images.id = ? AND ${VISIBLE_IMAGE_WHERE_SQL}
+      WHERE images.id = ? AND ${whereClause}
       `
     ).get(id) as (Omit<ImageDetail, 'nextImageId' | 'previousImageId' | 'exif'> & { originalUrl: string; exifJson: string | null }) | undefined;
 

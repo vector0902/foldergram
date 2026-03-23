@@ -377,6 +377,18 @@
           </button>
 
           <div class="flex items-center gap-4">
+            <!-- Set as cover -->
+            <button
+              v-if="authStore.canManageLibrary && image.mediaType === 'image'"
+              class="inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer text-text transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px disabled:opacity-45 disabled:cursor-wait disabled:transform-none"
+              type="button"
+              aria-label="Set as folder cover"
+              title="Set as folder cover"
+              :disabled="settingCover || isCurrentCover"
+              @click="handleSetCover"
+            >
+              <span :class="[isCurrentCover ? 'i-fluent-folder-add-20-filled text-accent' : 'i-fluent-folder-add-20-regular', 'w-[1.5rem] h-[1.5rem]']" aria-hidden="true" />
+            </button>
             <!-- Open original -->
             <a
               class="inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer text-text transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px"
@@ -458,6 +470,7 @@
   import { useAppStore } from "../stores/app"
   import { useAuthStore } from "../stores/auth"
   import { useLikesStore } from "../stores/likes"
+  import { useFoldersStore } from "../stores/folders"
   import Avatar from "./Avatar.vue"
   import ResilientImage from "./ResilientImage.vue"
   import { formatMediaDuration, videoPreviewWouldDownscale } from "../utils/media"
@@ -477,6 +490,7 @@
   const likesStore = useLikesStore()
   const appStore = useAppStore()
   const authStore = useAuthStore()
+  const foldersStore = useFoldersStore()
   const route = useRoute()
   const router = useRouter()
   const playerElement = ref<MediaPlayerElement | null>(null)
@@ -488,6 +502,7 @@
   const isSidebarCollapsible = ref(false)
   const isSidebarExpanded = ref(true)
   const isPlayingHd = ref(false)
+  const settingCover = ref(false)
 
   const WHEEL_NAVIGATION_THRESHOLD = 72
   const NAVIGATION_COOLDOWN_MS = 320
@@ -548,6 +563,23 @@
       "--viewer-media-aspect-ratio": `${props.image.width} / ${props.image.height}`,
       "--viewer-media-intrinsic-width": `${props.image.width}px`,
     }
+  })
+
+  const locallySetCover = ref(false)
+
+  const isCurrentCover = computed(() => {
+    if (locallySetCover.value) return true;
+    if (!props.image) return false;
+
+    if ('folderAvatarImageId' in props.image && typeof props.image.folderAvatarImageId === 'number') {
+      return props.image.id === props.image.folderAvatarImageId;
+    }
+
+    if (foldersStore.currentFolder?.avatarUrl) {
+      return foldersStore.currentFolder.avatarUrl.includes(`/api/images/${props.image.id}/`);
+    }
+
+    return false;
   })
 
   const folderAvatar = computed(() => props.folder?.avatarUrl ?? null)
@@ -1042,6 +1074,19 @@
     event.preventDefault()
     wheelDeltaAccumulator.value = 0
     void navigateByDirection(direction)
+  }
+
+  async function handleSetCover() {
+    if (!props.image || settingCover.value) return;
+    try {
+      settingCover.value = true;
+      await foldersStore.setFolderCover(props.image.folderSlug, props.image.id);
+      locallySetCover.value = true;
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to set cover');
+    } finally {
+      settingCover.value = false;
+    }
   }
 
   onMounted(() => {

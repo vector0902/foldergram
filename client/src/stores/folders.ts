@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchFolderImages, fetchFolders } from '../api/gallery';
+import { fetchFolderImages, fetchFolders, updateFolderProfile, setFolderCover } from '../api/gallery';
 import type { FeedItem, FolderSummary } from '../types/api';
 
 type FolderMediaFilter = 'all' | 'video';
@@ -163,6 +163,25 @@ export const useFoldersStore = defineStore('folders', {
         this.folderError = error instanceof Error ? error.message : 'Unable to load folder';
       } finally {
         this.loadingFolder = false;
+      }
+    },
+
+    async updateFolderProfile(slug: string, name: string, description: string | null) {
+      const updated = await updateFolderProfile(slug, name, description);
+      this.items = this.items.map((folder) => (folder.slug === slug ? updated : folder));
+      
+      if (this.currentFolder?.slug === slug) {
+        this.currentFolder = updated;
+      }
+    },
+
+    async setFolderCover(slug: string, imageId: number) {
+      await setFolderCover(slug, imageId);
+      await this.fetchFolders(true);
+      
+      if (this.currentFolder?.slug === slug) {
+        const payload = await fetchFolderImages(slug, 1, this.currentLimit, this.currentFilter === 'video' ? 'video' : undefined);
+        this.currentFolder = payload.folder;
       }
     }
   }

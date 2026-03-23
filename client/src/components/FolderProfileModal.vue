@@ -1,0 +1,85 @@
+<template>
+  <div class="fixed inset-0 z-60 flex items-center justify-center p-6 bg-black/55" @click.self="$emit('cancel')">
+    <section class="w-[min(100%,32rem)] p-[1.4rem] bg-surface border border-border rounded-[1.2rem] shadow-[var(--shadow)]" role="dialog" aria-modal="true" :aria-labelledby="titleId">
+      <div class="grid gap-[1.2rem]">
+        <h2 :id="titleId" class="m-0 text-[1.25rem] font-semibold">Edit App Folder</h2>
+
+        <form @submit.prevent="submit" class="grid gap-[1.1rem]">
+          <div class="grid gap-[0.4rem]">
+            <label for="profile-name" class="text-[0.85rem] font-semibold text-text">Name</label>
+            <input
+              id="profile-name"
+              v-model="formData.name"
+              type="text"
+              class="w-full px-3 py-2 text-[0.95rem] bg-bg border border-border rounded-lg text-text focus:outline-none focus:border-[#4B5563] transition-colors"
+              required
+              maxlength="255"
+              placeholder="Folder display name"
+            />
+          </div>
+
+          <div class="grid gap-[0.35rem]">
+            <div class="flex items-center justify-between">
+              <label for="profile-description" class="text-[0.85rem] font-semibold text-text">Description</label>
+              <span class="text-[0.75rem] text-muted">{{ formData.description?.length || 0 }} / 300</span>
+            </div>
+            <textarea
+              id="profile-description"
+              v-model="formData.description"
+              class="w-full min-h-[6rem] rounded-lg border border-border bg-surface px-[0.75rem] py-[0.6rem] text-[0.95rem] text-text placeholder-muted resize-y focus:border-text focus:outline-none focus:ring-1 focus:ring-text"
+              placeholder="Add a description to this folder..."
+              maxlength="300"
+            ></textarea>
+          </div>
+
+          <p v-if="error" class="m-0 text-[0.85rem] text-[#d93025]">{{ error }}</p>
+
+          <div class="flex justify-end gap-3 mt-2">
+            <button class="min-h-[2.5rem] px-4 py-[0.6rem] border border-transparent rounded-[0.75rem] font-semibold cursor-pointer bg-surface-hover text-text disabled:opacity-70 disabled:cursor-wait" type="button" @click="$emit('cancel')">
+              Cancel
+            </button>
+            <button class="min-h-[2.5rem] px-4 py-[0.6rem] border border-transparent rounded-[0.75rem] font-semibold cursor-pointer bg-text text-bg disabled:opacity-70 disabled:cursor-wait" type="submit" :disabled="loading">
+              {{ loading ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue';
+
+const props = defineProps<{
+  initialName: string;
+  initialDescription: string | null;
+  loading?: boolean;
+}>();
+
+const emit = defineEmits<{
+  cancel: [];
+  save: [data: { name: string; description: string | null }];
+}>();
+
+const titleId = `profile-dialog-title-${Math.random().toString(36).slice(2, 10)}`;
+const error = ref<string | null>(null);
+
+const formData = reactive({
+  name: props.initialName,
+  description: props.initialDescription ?? ''
+});
+
+function submit() {
+  if (!formData.name.trim()) {
+    error.value = 'Name is required.';
+    return;
+  }
+
+  error.value = null;
+  emit('save', {
+    name: formData.name.trim(),
+    description: formData.description.trim() || null
+  });
+}
+</script>

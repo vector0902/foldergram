@@ -1,0 +1,188 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createFingerprint, getMediaTypeFromExtension, getMimeTypeFromExtension } from '../src/utils/image-utils.js';
+
+vi.mock('../src/services/storage-service.js', () => ({
+  storageService: {
+    getDatabasePath: () => {
+      const dbDir = process.env.DB_DIR || path.join(os.tmpdir(), 'db');
+      return path.join(dbDir, 'gallery.db');
+    },
+    getState: () => ({
+      libraryAvailable: true,
+      lastScanCompletedAt: null,
+      lastScanDurationMs: null,
+      stats: null,
+      libraryStatus: 'ready'
+    }),
+    startSession: vi.fn(),
+    refreshState: vi.fn()
+  }
+}));
+
+type ApiModule = typeof import('../src/routes/api.js');
+type EnvModule = typeof import('../src/config/env.js');
+type GalleryServiceModule = typeof import('../src/services/gallery-service.js');
+type RepositoriesModule = typeof import('../src/db/repositories.js');
+
+describe.sequential('folder customization', () => {
+  let tempRoot = '';
+  let appConfig: EnvModule['appConfig'];
+  let apiModule: ApiModule;
+  let galleryService: GalleryServiceModule['galleryService'];
+  let folderRepository: RepositoriesModule['folderRepository'];
+  let imageRepository: RepositoriesModule['imageRepository'];
+  let maintenanceRepository: RepositoriesModule['maintenanceRepository'];
+
+  beforeAll(async () => {
+    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'insta-folder-customization-'));
+
+    await Promise.all([
+      fs.mkdir(path.join(tempRoot, 'db'), { recursive: true }),
+      fs.mkdir(path.join(tempRoot, 'gallery'), { recursive: true }),
+      fs.mkdir(path.join(tempRoot, 'thumbnails'), { recursive: true }),
+      fs.mkdir(path.join(tempRoot, 'previews'), { recursive: true })
+    ]);
+
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('DATA_ROOT', path.join(tempRoot, 'data'));
+    vi.stubEnv('GALLERY_ROOT', path.join(tempRoot, 'gallery'));
+    vi.stubEnv('DB_DIR', path.join(tempRoot, 'db'));
+    vi.stubEnv('THUMBNAILS_DIR', path.join(tempRoot, 'thumbnails'));
+    vi.stubEnv('PREVIEWS_DIR', path.join(tempRoot, 'previews'));
+
+    vi.resetModules();
+
+    ({ appConfig } = await import('../src/config/env.js'));
+    apiModule = await import('../src/routes/api.js');
+    ({ galleryService } = await import('../src/services/gallery-service.js'));
+    ({ folderRepository, imageRepository, maintenanceRepository } = await import('../src/db/repositories.js'));
+  });
+
+  afterAll(async () => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  });
+
+  beforeEach(async () => {
+    maintenanceRepository.resetLibraryIndex();
+
+    await fs.rm(appConfig.galleryRoot, { recursive: true, force: true });
+    await fs.mkdir(appConfig.galleryRoot, { recursive: true });
+  });
+
+  describe('schema validation', () => {
+    it('validates PATCH folder body correctly', () => {
+      const { patchFolderBodySchema } = apiModule;
+
+      expect(patchFolderBodySchema.parse({ name: 'Valid Name', description: 'Some description' })).toEqual({
+        name: 'Valid Name',
+        description: 'Some description'
+      });
+
+      expect(patchFolderBodySchema.parse({ name: 'Just Name' })).toEqual({
+        name: 'Just Name'
+      });
+
+      expect(() => patchFolderBodySchema.parse({ name: '' })).toThrowError();
+      expect(() => patchFolderBodySchema.parse({ name: 'x'.repeat(256) })).toThrowError();
+      expect(() => patchFolderBodySchema.parse({ name: 'Name', description: 'x'.repeat(301) })).toThrowError();
+    });
+
+    it('validates POST folder body correctly', () => {
+      const { folderCoverBodySchema } = apiModule;
+
+      expect(folderCoverBodySchema.parse({ imageId: 10 })).toEqual({ imageId: 10 });
+      expect(() => folderCoverBodySchema.parse({ imageId: -1 })).toThrowError();
+      expect(() => folderCoverBodySchema.parse({ imageId: 'abc' })).toThrowError();
+    });
+  });
+
+  describe('gallery service operations', () => {
+    it('updates folder metadata', () => {
+      const folder = folderRepository.upsert({ slug: 'test-folder', name: 'Test Folder', folderPath: 'test-folder' });
+      imageRepository.upsert({
+        folderId: folder.id,
+        filename: 'img1.jpg',
+        relativePath: 'test/img1.jpg',
+        absolutePath: '/dummy/test/img1.jpg',
+        fileSize: 100,
+        mtimeMs: 1000,
+        width: 100,
+        height: 100,
+        mediaType: 'image',
+        mimeType: 'image/jpeg',
+        fingerprint: 'test-fingerprint-1',
+        sortTimestamp: 1000,
+        takenAt: 1000,
+        takenAtSource: 'mtime',
+        extension: '.jpg',
+        firstSeenAt: new Date().toISOString(),
+        thumbnailPath: 't/img1.jpg',
+        previewPath: 'p/img1.webp',
+        playbackStrategy: 'preview',
+        durationMs: null,
+        exifJson: null
+      });
+      
+      
+      const updated = galleryService.updateFolderMetadata('test-folder', 'New Name', 'A new bio for testing');
+      
+      expect(updated!.name).toBe('New Name');
+      expect(updated!.description).toBe('A new bio for testing');
+
+      const DBFolder = folderRepository.getBySlug('test-folder');
+      expect(DBFolder?.name).toBe('New Name');
+      expect(DBFolder?.description).toBe('A new bio for testing');
+    });
+
+    it('returns null updating non-existent metadata', () => {
+      expect(galleryService.updateFolderMetadata('non-existent', 'Name', null)).toBeFalsy();
+    });
+
+    it('sets folder cover avatar', () => {
+      const folder = folderRepository.upsert({ slug: 'test-folder-2', name: 'Test 2', folderPath: 'test2' });
+      const image = imageRepository.upsert({
+        folderId: folder.id,
+        filename: 'img1.jpg',
+        relativePath: 'test2/img1.jpg',
+        absolutePath: '/dummy/test2/img1.jpg',
+        fileSize: 100,
+        mtimeMs: 1000,
+        width: 100,
+        height: 100,
+        mediaType: 'image',
+        mimeType: 'image/jpeg',
+        fingerprint: 'test-fingerprint',
+        sortTimestamp: 1000,
+        takenAt: 1000,
+        takenAtSource: 'mtime',
+        extension: '.jpg',
+        firstSeenAt: new Date().toISOString(),
+        thumbnailPath: 't/img1.jpg',
+        previewPath: 'p/img1.webp',
+        playbackStrategy: 'preview',
+        durationMs: null,
+        exifJson: null
+      });
+
+      galleryService.setFolderAvatar('test-folder-2', image.id);
+      
+      const DBFolder = folderRepository.getBySlug('test-folder-2');
+      expect(DBFolder?.avatar_image_id).toBe(image.id);
+      expect(DBFolder?.avatar_source).toBe('manual');
+    });
+
+    it('returns null when setting cover for non-existent items', () => {
+      expect(galleryService.setFolderAvatar('non-existent', 123)).toBeNull();
+      
+      const folder = folderRepository.upsert({ slug: 'test-folder-3', name: 'Test 3', folderPath: 'test3' });
+      expect(galleryService.setFolderAvatar('test-folder-3', 999)).toBeNull();
+    });
+  });
+});

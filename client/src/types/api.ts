@@ -24,11 +24,13 @@ export interface FolderSummary {
   id: number;
   slug: string;
   name: string;
+  description: string | null;
   folderPath: string;
   breadcrumb: string | null;
   imageCount: number;
   videoCount: number;
   latestImageMtimeMs: number | null;
+  avatarImageId: number | null;
   avatarUrl: string | null;
 }
 
@@ -89,6 +91,7 @@ export interface LikesPayload {
 }
 
 export interface ImageDetail extends FeedItem {
+  folderAvatarImageId: number | null;
   relativePath: string;
   mimeType: string;
   fileSize: number;
