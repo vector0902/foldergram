@@ -20,13 +20,17 @@ hero:
       text: Live Demo
       link: https://foldergram.intentdeep.com/
 features:
-  - title: Local-first
+  - icon: 🗂️
+    title: Local-first
     details: Originals stay in your configured gallery root. Indexed metadata lives in SQLite and derivatives stay on disk next to the app's local storage paths.
-  - title: Fast feed-style browsing
+  - icon: ⚡
+    title: Fast feed-style browsing
     details: Runtime reads come from SQLite and generated derivatives instead of filesystem walks during every request.
-  - title: Photos and videos
+  - icon: 🖼️
+    title: Photos and videos
     details: Foldergram indexes supported image and video formats, generates thumbnails, creates previews eagerly or lazily, and can expose compatible original MP4 playback in the detail player.
-  - title: Honest scope
+  - icon: 🎯
+    title: Honest scope
     details: The current app includes feed browsing, explore, library, likes and favorites, moments, optional admin/viewer/public access control, and admin-only maintenance controls without cloud sync or social features.
 ---
 
@@ -35,22 +39,22 @@ features:
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 1rem; margin: 2rem 0;">
 
 <div class="cs-feature">
-<h3>What ships today</h3>
+<h3>🚀 What ships today</h3>
 <p>The current repository includes Home, Explore, Library, Likes and Favorites, Moments, Settings, folder pages, a post detail view and modal flow, shared SQLite likes, browser-local favorites in public mode, delete actions, optional admin/viewer/public access control, and local scan/rebuild tooling.</p>
 </div>
 
 <div class="cs-feature">
-<h3>How indexing behaves</h3>
+<h3>🔍 How indexing behaves</h3>
 <p>Foldergram recursively discovers non-hidden folders under <code>GALLERY_ROOT</code>. Any folder that directly contains supported media becomes an indexed album. Files placed directly in the gallery root are ignored.</p>
 </div>
 
 <div class="cs-feature">
-<h3>Formats and storage</h3>
+<h3>💾 Formats and storage</h3>
 <p>Foldergram indexes images like <code>.jpg</code>, <code>.png</code>, <code>.webp</code>, and <code>.gif</code>, plus videos like <code>.mp4</code>, <code>.mov</code>, <code>.m4v</code>, <code>.webm</code>, and <code>.mkv</code>. Originals stay in the gallery root, SQLite stores indexed metadata, thumbnails are written under <code>thumbnails/</code>, and previews under <code>previews/</code>.</p>
 </div>
 
 <div class="cs-feature">
-<h3>Access modes</h3>
+<h3>🔐 Access modes</h3>
 <p>Foldergram starts without a password gate by default. Settings can enable admin-only access, a separate viewer password, or anonymous public browsing. Once protection is enabled, only admins can open Settings or use Trash, scans, rebuilds, and delete actions.</p>
 </div>
 

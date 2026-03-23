@@ -24,17 +24,7 @@ html {
   overflow: visible !important;
 }
 
-.heading .name.clip {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 48%, #f472b6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  padding: 2px 0;
-  border-radius: 4px;
-  animation: gradient-shift 6s ease infinite;
-  background-size: 200% 200%;
-}
+/* .heading .name.clip gradient is handled by rainbow.css when on the homepage */
 
 @keyframes gradient-shift {
   0% {
@@ -57,64 +47,29 @@ html {
   position: relative;
 }
 
-.VPHome .VPHero.has-image .image-container::before {
-  content: '';
+/* VitePress-native .image-bg element — driven by --vp-home-hero-image-background-image */
+.VPHome .VPHero.has-image .image-bg {
   position: absolute;
   top: 50%;
-  left: 46%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  width: 430px;
-  height: 430px;
-  background:
-    radial-gradient(circle at center, rgba(244, 114, 182, 0.34) 0%, rgba(244, 114, 182, 0.18) 42%, rgba(244, 114, 182, 0) 72%);
-  border-radius: 50%;
-  opacity: 1;
-  transition: opacity 0.45s ease;
+  width: 340px;
+  height: 340px;
+  background: var(--vp-home-hero-image-background-image);
+  filter: var(--vp-home-hero-image-filter);
+  opacity: 0.85;
+  transition:
+    transform 1.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 1.4s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.4s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
-  z-index: -1;
-  filter: blur(34px);
 }
 
-.VPHome .VPHero.has-image .image-container::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 56%;
-  transform: translate(-50%, -50%);
-  width: 470px;
-  height: 470px;
-  background:
-    radial-gradient(circle at center, rgba(129, 140, 248, 0.3) 0%, rgba(129, 140, 248, 0.16) 44%, rgba(129, 140, 248, 0) 74%);
-  border-radius: 50%;
-  opacity: 0.96;
-  transition: opacity 0.45s ease;
-  pointer-events: none;
-  z-index: -1;
-  filter: blur(40px);
-}
-
-.VPHome .VPHero.has-image:hover .image-container::before {
-  opacity: 0.84;
-}
-
-.VPHome .VPHero.has-image:hover .image-container::after {
-  opacity: 0.8;
-}
-
-.dark .VPHome .VPHero.has-image .image-container::before {
-  opacity: 0.96;
-}
-
-.dark .VPHome .VPHero.has-image .image-container::after {
-  opacity: 0.92;
-}
-
-.dark .VPHome .VPHero.has-image:hover .image-container::before {
-  opacity: 0.82;
-}
-
-.dark .VPHome .VPHero.has-image:hover .image-container::after {
-  opacity: 0.76;
+/* Zoom-out effect on hover — same as vite-library */
+.VPHome .VPHero.has-image:hover .image-bg {
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0.22;
+  filter: blur(62px);
 }
 
 .VPNavBarTitle .title {

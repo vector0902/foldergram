@@ -68,8 +68,8 @@ export default defineConfig({
       label: 'On this page'
     },
     footer: {
-      message: 'Local-first docs for a local-first gallery.',
-      copyright: 'AGPL-3.0-only'
+      message: 'Released under the AGPL-3.0 License.',
+      copyright: 'Copyright © 2026 Sajjad Ali'
     }
   }
 });
