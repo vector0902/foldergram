@@ -13,6 +13,8 @@ vi.mock('vue-router', () => ({
   })
 }));
 
+const scrollIntoViewSpy = vi.fn();
+
 function createAppStatus(
   defaultHomeFeedMode: AppStatus['preferences']['defaultHomeFeedMode'] = 'rediscover',
   defaultReelsFeedMode: AppStatus['preferences']['defaultReelsFeedMode'] = 'random'
@@ -118,6 +120,11 @@ describe('SettingsView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.restoreAllMocks();
+    scrollIntoViewSpy.mockReset();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoViewSpy
+    });
     vi.spyOn(galleryApi, 'fetchAdminStats').mockResolvedValue(createAppStats());
   });
 
@@ -140,6 +147,10 @@ describe('SettingsView', () => {
     expect(wrapper.text()).toContain('Home feed sort order');
     expect(wrapper.text()).toContain('Reels feed sort order');
     expect(wrapper.text()).toContain('Excluded source folders');
+    expect(wrapper.text().indexOf('Home feed sort order')).toBeLessThan(wrapper.text().indexOf('Reels feed sort order'));
+    expect(wrapper.text().indexOf('Reels feed sort order')).toBeLessThan(
+      wrapper.text().indexOf('Treat stories folders as normal app folders')
+    );
 
     const [homeButton, reelsButton] = wrapper.findAll('button[aria-expanded]');
     expect(homeButton?.text()).toContain('Rediscover');
@@ -281,5 +292,92 @@ describe('SettingsView', () => {
 
     expect(updateExcludedFoldersSpy).toHaveBeenCalledWith(['Archive/cache', 'thumbnails']);
     expect(wrapper.text()).toContain('Excluded folders were saved. Run a library scan to apply them.');
+  });
+
+  it('dismisses the stories migration notice and scrolls to save when choosing Use Stories Feature', async () => {
+    const appStore = useAppStore();
+    const status = createAppStatus();
+    status.storiesMigration = {
+      hasLegacyStoriesCandidates: true,
+      decisionPending: true
+    };
+    appStore.$patch({
+      stats: status
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    expect(wrapper.text()).toContain('This library may already use folders named stories');
+
+    const useStoriesFeatureButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Use Stories Feature');
+
+    expect(useStoriesFeatureButton).toBeDefined();
+
+    await useStoriesFeatureButton!.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('This library may already use folders named stories');
+    expect(wrapper.get('button[role="switch"]').attributes('aria-checked')).toBe('false');
+    expect(wrapper.text()).toContain(
+      'Save this change, then run a library scan before expecting stories folders, avatar stories, or highlights to update.'
+    );
+    expect(scrollIntoViewSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('dismisses the stories migration notice and flips the stories mode when keeping legacy behavior', async () => {
+    const appStore = useAppStore();
+    const status = createAppStatus();
+    status.storiesMigration = {
+      hasLegacyStoriesCandidates: true,
+      decisionPending: true
+    };
+    appStore.$patch({
+      stats: status
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    const keepLegacyBehaviorButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Keep Legacy Behavior');
+
+    expect(keepLegacyBehaviorButton).toBeDefined();
+
+    await keepLegacyBehaviorButton!.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('This library may already use folders named stories');
+    expect(wrapper.get('button[role="switch"]').attributes('aria-checked')).toBe('true');
+    expect(wrapper.text()).toContain('Legacy mode is enabled. stories folders remain ordinary app folders everywhere.');
+    expect(scrollIntoViewSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('dismisses the stories migration notice and scrolls to save when the stories toggle is changed directly', async () => {
+    const appStore = useAppStore();
+    const status = createAppStatus();
+    status.storiesMigration = {
+      hasLegacyStoriesCandidates: true,
+      decisionPending: true
+    };
+    appStore.$patch({
+      stats: status
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    await wrapper.get('button[role="switch"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('This library may already use folders named stories');
+    expect(wrapper.get('button[role="switch"]').attributes('aria-checked')).toBe('true');
+    expect(scrollIntoViewSpy).toHaveBeenCalledTimes(1);
   });
 });

@@ -92,7 +92,7 @@
             <a
               :href="href"
               class="flex items-center gap-[0.95rem] px-[1.2rem] py-[1rem] text-[0.98rem] text-text transition-colors duration-150 hover:bg-surface-hover"
-              @click="handleSettingsNavigate(navigate)"
+              @click="handleSettingsNavigate($event, navigate)"
             >
               <span
                 class="w-[1.18rem] h-[1.18rem] shrink-0"
@@ -185,9 +185,9 @@ function handleUnlockAdmin() {
   closeMoreMenu();
 }
 
-function handleSettingsNavigate(navigate: () => void) {
+function handleSettingsNavigate(event: MouseEvent, navigate: (event?: MouseEvent) => void) {
   closeMoreMenu();
-  navigate();
+  navigate(event);
 }
 
 async function handleSignOut() {

@@ -391,7 +391,7 @@
                 class="btn-primary min-w-[13rem]"
                 type="button"
                 :disabled="savingGeneralSettings || waitingForInitialStatus"
-                @click="selectStoriesMode(false)"
+                @click="chooseStoriesMigrationMode(false)"
               >
                 Use Stories Feature
               </button>
@@ -399,7 +399,7 @@
                 class="inline-flex min-h-11 items-center justify-center rounded-[0.95rem] border border-border bg-transparent px-4 text-[0.92rem] font-semibold text-text transition-colors duration-180 hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 :disabled="savingGeneralSettings || waitingForInitialStatus"
-                @click="selectStoriesMode(true)"
+                @click="chooseStoriesMigrationMode(true)"
               >
                 Keep Legacy Behavior
               </button>
@@ -473,109 +473,6 @@
             </div>
 
             <div class="divide-y divide-border">
-              <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <p class="m-0 text-[0.96rem] font-semibold text-text">Treat stories folders as normal app folders</p>
-                    <span class="inline-flex items-center rounded-full bg-surface-alt px-2 py-[0.2rem] text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted">
-                      Scan required
-                    </span>
-                    <div class="group relative inline-flex">
-                      <button
-                        class="inline-flex h-6 w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 text-muted cursor-help transition-colors duration-150 hover:text-text focus-visible:text-text"
-                        type="button"
-                        aria-label="Explain stories folders setting"
-                      >
-                        <span class="i-fluent-info-16-regular h-4 w-4" aria-hidden="true" />
-                      </button>
-                      <div class="pointer-events-none absolute left-0 top-[calc(100%+0.55rem)] z-30 hidden w-[min(20rem,calc(100vw-2.5rem))] rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] px-3 py-3 text-[0.78rem] leading-[1.5] text-muted shadow-[0_20px_50px_rgba(0,0,0,0.16)] group-hover:block group-focus-within:block">
-                        When this stays off, <code>AppFolder/stories</code> becomes the source for avatar stories and highlight circles. Turn it on only if folders literally named <code>stories</code> should continue behaving like normal folders everywhere in the app.
-                      </div>
-                    </div>
-                  </div>
-                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ storiesModeLabelDescription }}</p>
-                </div>
-
-                <button
-                  class="inline-flex items-center justify-end border-0 bg-transparent p-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                  type="button"
-                  role="switch"
-                  :aria-checked="storiesMode"
-                  :disabled="savingGeneralSettings || waitingForInitialStatus"
-                  @click="toggleStoriesModeSetting"
-                >
-                  <span class="sr-only">Toggle stories folders behavior</span>
-                  <span
-                    class="inline-flex h-7 w-12 items-center rounded-full p-[0.15rem] transition-colors duration-180"
-                    :class="storiesMode ? 'bg-accent' : 'bg-[color-mix(in_srgb,var(--border)_88%,var(--surface-alt)_12%)]'"
-                  >
-                    <span
-                      class="h-[1.35rem] w-[1.35rem] rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-transform duration-180"
-                      :class="storiesMode ? 'translate-x-[1.2rem]' : 'translate-x-0'"
-                    />
-                  </span>
-                </button>
-              </div>
-
-              <div class="grid gap-4 px-6 py-4">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <p class="m-0 text-[0.96rem] font-semibold text-text">Excluded source folders</p>
-                    <span class="inline-flex items-center rounded-full bg-surface-alt px-2 py-[0.2rem] text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted">
-                      Scan required
-                    </span>
-                  </div>
-                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">
-                    Skip matching folders anywhere by name or by exact relative path under the gallery root. Hidden paths and app-managed storage stay excluded automatically.
-                  </p>
-                </div>
-
-                <label class="grid gap-[0.45rem]">
-                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Custom rules</span>
-                  <textarea
-                    v-model="customExcludedFoldersDraft"
-                    class="min-h-[10rem] rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 py-3 text-[0.95rem] leading-[1.55] text-text outline-none transition-[border-color,box-shadow] duration-180 placeholder:text-muted focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
-                    :disabled="savingGeneralSettings || adminStats === null"
-                    rows="5"
-                    placeholder="@eaDir&#10;thumbnails&#10;Archive/cache"
-                    spellcheck="false"
-                    @input="clearGeneralSettingsFeedback"
-                  />
-                </label>
-
-                <div class="grid gap-3 lg:grid-cols-2">
-                  <div class="rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_78%,transparent_22%)] px-4 py-4">
-                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">Read-only env rules</p>
-                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">Change <code>GALLERY_EXCLUDED_FOLDERS</code> in <code>.env</code> or Docker and restart the app to update these.</p>
-                    <div v-if="envExcludedFolders.length > 0" class="mt-3 flex flex-wrap gap-2">
-                      <span
-                        v-for="rule in envExcludedFolders"
-                        :key="`env-${rule}`"
-                        class="inline-flex items-center rounded-full bg-[rgba(24,119,242,0.08)] px-3 py-[0.35rem] text-[0.78rem] font-medium text-accent-strong"
-                      >
-                        {{ rule }}
-                      </span>
-                    </div>
-                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">No env-backed folder exclusions are configured.</p>
-                  </div>
-
-                  <div class="rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_78%,transparent_22%)] px-4 py-4">
-                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">Currently active saved rules</p>
-                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">This combines the saved textarea rules with any env-backed entries. New textarea edits appear here after you save them.</p>
-                    <div v-if="effectiveExcludedFolders.length > 0" class="mt-3 flex flex-wrap gap-2">
-                      <span
-                        v-for="rule in effectiveExcludedFolders"
-                        :key="`effective-${rule}`"
-                        class="inline-flex items-center rounded-full bg-surface px-3 py-[0.35rem] text-[0.78rem] font-medium text-text"
-                      >
-                        {{ rule }}
-                      </span>
-                    </div>
-                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">No saved custom or env-backed folder exclusions are active.</p>
-                  </div>
-                </div>
-              </div>
-
               <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div class="min-w-0">
                   <p class="m-0 text-[0.96rem] font-semibold text-text">Home feed sort order</p>
@@ -698,9 +595,112 @@
                 </div>
               </div>
 
+              <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="m-0 text-[0.96rem] font-semibold text-text">Treat stories folders as normal app folders</p>
+                    <span class="inline-flex items-center rounded-full bg-surface-alt px-2 py-[0.2rem] text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted">
+                      Scan required
+                    </span>
+                    <div class="group relative inline-flex">
+                      <button
+                        class="inline-flex h-6 w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 text-muted cursor-help transition-colors duration-150 hover:text-text focus-visible:text-text"
+                        type="button"
+                        aria-label="Explain stories folders setting"
+                      >
+                        <span class="i-fluent-info-16-regular h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <div class="pointer-events-none absolute left-0 top-[calc(100%+0.55rem)] z-30 hidden w-[min(20rem,calc(100vw-2.5rem))] rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] px-3 py-3 text-[0.78rem] leading-[1.5] text-muted shadow-[0_20px_50px_rgba(0,0,0,0.16)] group-hover:block group-focus-within:block">
+                        When this stays off, <code>AppFolder/stories</code> becomes the source for avatar stories and highlight circles. Turn it on only if folders literally named <code>stories</code> should continue behaving like normal folders everywhere in the app.
+                      </div>
+                    </div>
+                  </div>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ storiesModeLabelDescription }}</p>
+                </div>
+
+                <button
+                  class="inline-flex items-center justify-end border-0 bg-transparent p-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                  type="button"
+                  role="switch"
+                  :aria-checked="storiesMode"
+                  :disabled="savingGeneralSettings || waitingForInitialStatus"
+                  @click="toggleStoriesModeSetting"
+                >
+                  <span class="sr-only">Toggle stories folders behavior</span>
+                  <span
+                    class="inline-flex h-7 w-12 items-center rounded-full p-[0.15rem] transition-colors duration-180"
+                    :class="storiesMode ? 'bg-accent' : 'bg-[color-mix(in_srgb,var(--border)_88%,var(--surface-alt)_12%)]'"
+                  >
+                    <span
+                      class="h-[1.35rem] w-[1.35rem] rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-transform duration-180"
+                      :class="storiesMode ? 'translate-x-[1.2rem]' : 'translate-x-0'"
+                    />
+                  </span>
+                </button>
+              </div>
+
+              <div class="grid gap-4 px-6 py-4">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="m-0 text-[0.96rem] font-semibold text-text">Excluded source folders</p>
+                    <span class="inline-flex items-center rounded-full bg-surface-alt px-2 py-[0.2rem] text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted">
+                      Scan required
+                    </span>
+                  </div>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">
+                    Skip matching folders anywhere by name or by exact relative path under the gallery root. Hidden paths and app-managed storage stay excluded automatically.
+                  </p>
+                </div>
+
+                <label class="grid gap-[0.45rem]">
+                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Custom rules</span>
+                  <textarea
+                    v-model="customExcludedFoldersDraft"
+                    class="min-h-[10rem] rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 py-3 text-[0.95rem] leading-[1.55] text-text outline-none transition-[border-color,box-shadow] duration-180 placeholder:text-muted focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
+                    :disabled="savingGeneralSettings || adminStats === null"
+                    rows="5"
+                    placeholder="@eaDir&#10;thumbnails&#10;Archive/cache"
+                    spellcheck="false"
+                    @input="clearGeneralSettingsFeedback"
+                  />
+                </label>
+
+                <div class="grid gap-3 lg:grid-cols-2">
+                  <div class="rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_78%,transparent_22%)] px-4 py-4">
+                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">Read-only env rules</p>
+                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">Change <code>GALLERY_EXCLUDED_FOLDERS</code> in <code>.env</code> or Docker and restart the app to update these.</p>
+                    <div v-if="envExcludedFolders.length > 0" class="mt-3 flex flex-wrap gap-2">
+                      <span
+                        v-for="rule in envExcludedFolders"
+                        :key="`env-${rule}`"
+                        class="inline-flex items-center rounded-full bg-[rgba(24,119,242,0.08)] px-3 py-[0.35rem] text-[0.78rem] font-medium text-accent-strong"
+                      >
+                        {{ rule }}
+                      </span>
+                    </div>
+                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">No env-backed folder exclusions are configured.</p>
+                  </div>
+
+                  <div class="rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_78%,transparent_22%)] px-4 py-4">
+                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">Currently active saved rules</p>
+                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">This combines the saved textarea rules with any env-backed entries. New textarea edits appear here after you save them.</p>
+                    <div v-if="effectiveExcludedFolders.length > 0" class="mt-3 flex flex-wrap gap-2">
+                      <span
+                        v-for="rule in effectiveExcludedFolders"
+                        :key="`effective-${rule}`"
+                        class="inline-flex items-center rounded-full bg-surface px-3 py-[0.35rem] text-[0.78rem] font-medium text-text"
+                      >
+                        {{ rule }}
+                      </span>
+                    </div>
+                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">No saved custom or env-backed folder exclusions are active.</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            <div class="rounded-b-[1.05rem] border-t border-border bg-[color-mix(in_srgb,var(--surface)_96%,var(--accent-soft)_4%)] px-6 py-5">
+            <div ref="generalSettingsSaveArea" class="rounded-b-[1.05rem] border-t border-border bg-[color-mix(in_srgb,var(--surface)_96%,var(--accent-soft)_4%)] px-6 py-5">
               <div
                 v-if="showGeneralSettingsRescanNotice"
                 class="mb-4 rounded-[0.95rem] border border-[rgba(210,161,51,0.28)] bg-[rgba(210,161,51,0.08)] px-4 py-3 text-[0.88rem] text-[#9f6a00]"
@@ -916,7 +916,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import ConfirmDialog from '../components/ConfirmDialog.vue';
@@ -976,6 +976,8 @@ const feedDefaultsHydrated = ref(false);
 const storiesModeHydrated = ref(false);
 const activeGeneralSettingsMenu = ref<'home' | 'reels' | null>(null);
 const showStoriesAnnouncementStructure = ref(false);
+const generalSettingsSaveArea = ref<HTMLElement | null>(null);
+const acknowledgedStoriesMigrationChoice = ref(false);
 const viewerAccessMode = ref<ViewerAccessMode>(authStore.accessMode);
 const viewerPassword = ref('');
 const viewerPasswordConfirmation = ref('');
@@ -1101,6 +1103,14 @@ function clearViewerFeedback() {
 
 function clearGeneralSettingsFeedback() {
   generalSettingsFeedback.value = null;
+}
+
+async function scrollToGeneralSettingsSaveArea() {
+  await nextTick();
+  generalSettingsSaveArea.value?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
 }
 
 function setAuthError(message: string) {
@@ -1365,7 +1375,8 @@ const showStoriesMigrationNotice = computed(
   () =>
     appStore.stats?.storiesMigration.hasLegacyStoriesCandidates === true &&
     appStore.stats?.storiesMigration.decisionPending === true &&
-    !dismissedStoriesMigrationNotice.value
+    !dismissedStoriesMigrationNotice.value &&
+    !acknowledgedStoriesMigrationChoice.value
 );
 const showStoriesAnnouncementCard = computed(
   () =>
@@ -1943,14 +1954,37 @@ function toggleGeneralSettingsMenu(menu: 'home' | 'reels') {
   activeGeneralSettingsMenu.value = activeGeneralSettingsMenu.value === menu ? null : menu;
 }
 
-function selectStoriesMode(value: boolean) {
+function acknowledgeStoriesMigrationChoice() {
+  acknowledgedStoriesMigrationChoice.value = true;
+}
+
+function selectStoriesMode(value: boolean, options?: { acknowledgeMigrationChoice?: boolean; scrollToSaveArea?: boolean }) {
   clearGeneralSettingsFeedback();
   closeGeneralSettingsMenu();
   storiesMode.value = value;
+
+  if (options?.acknowledgeMigrationChoice) {
+    acknowledgeStoriesMigrationChoice();
+  }
+
+  if (options?.scrollToSaveArea) {
+    void scrollToGeneralSettingsSaveArea();
+  }
 }
 
 function toggleStoriesModeSetting() {
-  selectStoriesMode(!storiesMode.value);
+  const shouldAcknowledgeMigrationChoice = showStoriesMigrationNotice.value;
+  selectStoriesMode(!storiesMode.value, {
+    acknowledgeMigrationChoice: shouldAcknowledgeMigrationChoice,
+    scrollToSaveArea: shouldAcknowledgeMigrationChoice
+  });
+}
+
+function chooseStoriesMigrationMode(value: boolean) {
+  selectStoriesMode(value, {
+    acknowledgeMigrationChoice: true,
+    scrollToSaveArea: true
+  });
 }
 
 function selectHomeFeedDefault(mode: FeedMode) {
@@ -2227,6 +2261,17 @@ watch(
   },
   {
     immediate: true
+  }
+);
+
+watch(
+  () => storiesModeRequiresDecision.value,
+  (requiresDecision) => {
+    if (requiresDecision) {
+      return;
+    }
+
+    acknowledgedStoriesMigrationChoice.value = false;
   }
 );
 

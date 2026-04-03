@@ -233,6 +233,7 @@
             <InfiniteLoader
               :loading="exploreStore.searchLoading"
               :has-more="exploreStore.searchHasMore"
+              :button-fallback="false"
               @load-more="loadMoreSearch"
             />
           </template>
@@ -322,6 +323,7 @@
           <InfiniteLoader
             :loading="exploreStore.loading"
             :has-more="exploreStore.hasMore"
+            :button-fallback="false"
             @load-more="loadMore"
           />
         </template>

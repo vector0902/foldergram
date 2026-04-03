@@ -9,38 +9,59 @@
       Load more
     </button>
     <span v-else-if="loading" class="text-muted">Loading more...</span>
+    <span v-else-if="hasMore" class="sr-only">Loading continues automatically when you reach the end.</span>
     <span v-else class="text-muted">You are caught up</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   loading: boolean;
   hasMore: boolean;
-}>();
+  buttonFallback?: boolean;
+}>(), {
+  buttonFallback: true
+});
 
 const emit = defineEmits<{
   'load-more': [];
 }>();
 
 const sentinel = ref<HTMLElement | null>(null);
+const isIntersecting = ref(false);
 let observer: IntersectionObserver | null = null;
 
-const showButton = computed(() => !props.loading && props.hasMore);
+const showButton = computed(() => props.buttonFallback && !props.loading && props.hasMore);
+
+function maybeLoadMore() {
+  if (!isIntersecting.value || !props.hasMore || props.loading) {
+    return;
+  }
+
+  emit('load-more');
+}
 
 onMounted(() => {
   observer = new IntersectionObserver((entries) => {
-    if (entries.some((entry) => entry.isIntersecting) && props.hasMore && !props.loading) {
-      emit('load-more');
-    }
+    isIntersecting.value = entries.some((entry) => entry.isIntersecting);
+    maybeLoadMore();
+  }, {
+    rootMargin: '240px 0px'
   });
 
   if (sentinel.value) {
     observer.observe(sentinel.value);
   }
 });
+
+watch(
+  () => [props.loading, props.hasMore] as const,
+  () => {
+    maybeLoadMore();
+  }
+);
 
 onBeforeUnmount(() => {
   observer?.disconnect();
