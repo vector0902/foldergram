@@ -23,6 +23,7 @@ describe.sequential('viewer-safe status payload', () => {
   let storageService: StorageServiceModule['storageService'];
   let HOME_FEED_DEFAULT_MODE_SETTING_KEY: AppSettingKeysModule['HOME_FEED_DEFAULT_MODE_SETTING_KEY'];
   let REELS_FEED_DEFAULT_MODE_SETTING_KEY: AppSettingKeysModule['REELS_FEED_DEFAULT_MODE_SETTING_KEY'];
+  let FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY: AppSettingKeysModule['FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY'];
 
   beforeAll(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'insta-viewer-status-'));
@@ -41,13 +42,14 @@ describe.sequential('viewer-safe status payload', () => {
     ({ scannerService } = await import('../src/services/scanner-service.js'));
     ({ imageRepository, maintenanceRepository, appSettingsRepository, scanRunRepository } = await import('../src/db/repositories.js'));
     ({ storageService } = await import('../src/services/storage-service.js'));
-    ({ HOME_FEED_DEFAULT_MODE_SETTING_KEY, REELS_FEED_DEFAULT_MODE_SETTING_KEY } = await import('../src/constants/app-setting-keys.js'));
+    ({ HOME_FEED_DEFAULT_MODE_SETTING_KEY, REELS_FEED_DEFAULT_MODE_SETTING_KEY, FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY } = await import('../src/constants/app-setting-keys.js'));
   });
 
   beforeEach(async () => {
     maintenanceRepository.resetLibraryIndex();
     appSettingsRepository.remove(HOME_FEED_DEFAULT_MODE_SETTING_KEY);
     appSettingsRepository.remove(REELS_FEED_DEFAULT_MODE_SETTING_KEY);
+    appSettingsRepository.remove(FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY);
     await Promise.all([
       fs.rm(appConfig.galleryRoot, { recursive: true, force: true }),
       fs.rm(appConfig.thumbnailsDir, { recursive: true, force: true }),
@@ -181,19 +183,22 @@ describe.sequential('viewer-safe status payload', () => {
     expect(status.preferences).toEqual({
       defaultHomeFeedMode: 'random',
       defaultReelsFeedMode: 'random',
+      defaultFolderImageOrder: 'newest',
       treatStoriesAsFolders: false
     });
   });
 
-  it('includes configured home and reels defaults in the viewer-safe status payload', () => {
+  it('includes configured home, reels, and folder defaults in the viewer-safe status payload', () => {
     appSettingsRepository.set(HOME_FEED_DEFAULT_MODE_SETTING_KEY, 'rediscover');
     appSettingsRepository.set(REELS_FEED_DEFAULT_MODE_SETTING_KEY, 'recommended');
+    appSettingsRepository.set(FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY, 'oldest');
 
     const status = galleryService.getStatus();
 
     expect(status.preferences).toEqual({
       defaultHomeFeedMode: 'rediscover',
       defaultReelsFeedMode: 'recommended',
+      defaultFolderImageOrder: 'oldest',
       treatStoriesAsFolders: false
     });
   });

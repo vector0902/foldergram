@@ -1,4 +1,5 @@
 export type MediaType = 'image' | 'video';
+export type FolderImageOrder = 'newest' | 'oldest';
 export type TakenAtSource = 'exif' | 'mtime' | 'first_seen' | 'sort_timestamp';
 export type PlaybackStrategy = 'preview' | 'original';
 export type FolderAvatarSource = 'auto' | 'manual' | 'cover';

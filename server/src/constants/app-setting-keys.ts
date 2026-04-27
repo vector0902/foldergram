@@ -10,6 +10,7 @@ export const EXCLUDED_FOLDERS_SETTING_KEY = 'library.excluded_folders';
 export const STORIES_MIGRATION_DECISION_SETTING_KEY = 'library.stories_migration_decision';
 export const HOME_FEED_DEFAULT_MODE_SETTING_KEY = 'feed.default_home_mode';
 export const REELS_FEED_DEFAULT_MODE_SETTING_KEY = 'feed.default_reels_mode';
+export const FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY = 'folder.default_image_order';
 export const AUTH_PASSWORD_HASH_SETTING_KEY = 'auth.password_hash';
 export const AUTH_PASSWORD_SALT_SETTING_KEY = 'auth.password_salt';
 export const AUTH_SESSION_SECRET_SETTING_KEY = 'auth.session_secret';

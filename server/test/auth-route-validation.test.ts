@@ -117,6 +117,24 @@ describe.sequential('auth route validation', () => {
     });
   });
 
+  it('rejects invalid folder image order defaults', () => {
+    expect(() =>
+      settingsRequestBodySchemas.folderImageOrderDefault.parse({
+        defaultOrder: 'recent'
+      })
+    ).toThrowError();
+  });
+
+  it('accepts oldest as a valid folder image order default', () => {
+    expect(
+      settingsRequestBodySchemas.folderImageOrderDefault.parse({
+        defaultOrder: 'oldest'
+      })
+    ).toEqual({
+      defaultOrder: 'oldest'
+    });
+  });
+
   it('accepts long story ids up to the folder-slug route limit', () => {
     expect(
       routeParamSchemas.storyId.parse({
