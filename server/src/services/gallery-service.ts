@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import {
   EXCLUDED_FOLDERS_SETTING_KEY,
+  FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY,
   HOME_FEED_DEFAULT_MODE_SETTING_KEY,
   LAST_SUCCESSFUL_GALLERY_ROOT_SETTING_KEY,
   LIBRARY_REBUILD_REQUIRED_SETTING_KEY,
@@ -14,7 +15,7 @@ import {
 } from '../constants/app-setting-keys.js';
 import { appConfig } from '../config/env.js';
 import { appSettingsRepository, folderRepository, folderScanStateRepository, imageRepository, likeRepository, placeRepository, scanRunRepository } from '../db/repositories.js';
-import type { FeedImage, FolderRecord, FolderSummaryRecord, ImageDetail, MediaType, PlaceKind, PlaybackStrategy, TrashImage } from '../types/models.js';
+import type { FeedImage, FolderImageOrder, FolderRecord, FolderSummaryRecord, ImageDetail, MediaType, PlaceKind, PlaybackStrategy, TrashImage } from '../types/models.js';
 import {
   getEffectiveExcludedFolderRules,
   parseExcludedFolderRulesFromSetting,
@@ -135,6 +136,14 @@ function parseReelsFeedMode(value: string | null): ReelsFeedMode {
 
 function getDefaultReelsFeedMode(): ReelsFeedMode {
   return parseReelsFeedMode(appSettingsRepository.get(REELS_FEED_DEFAULT_MODE_SETTING_KEY));
+}
+
+function parseFolderImageOrder(value: string | null): FolderImageOrder {
+  return value === 'oldest' ? 'oldest' : 'newest';
+}
+
+function getDefaultFolderImageOrder(): FolderImageOrder {
+  return parseFolderImageOrder(appSettingsRepository.get(FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY));
 }
 
 function getTreatStoriesAsFolders(): boolean {
@@ -1294,10 +1303,13 @@ export const galleryService = {
 
     const total = mediaType ? imageRepository.countVisibleByFolder(folder.id, mediaType) : folder.image_count;
     const derivativeVersion = getDerivativeAssetVersion();
+    const defaultFolderImageOrder = getDefaultFolderImageOrder();
 
     return {
       folder: buildFolderSummary(folder),
-      items: imageRepository.listFolderImages(folder.id, page, limit, mediaType).map((image) => mapFeedImage(image, derivativeVersion)),
+      items: imageRepository
+        .listFolderImages(folder.id, page, limit, mediaType, defaultFolderImageOrder)
+        .map((image) => mapFeedImage(image, derivativeVersion)),
       page,
       limit,
       total,
@@ -1310,9 +1322,10 @@ export const galleryService = {
       return null;
     }
 
-    let detail = imageRepository.getImageDetail(id, mediaType);
+    const defaultFolderImageOrder = getDefaultFolderImageOrder();
+    let detail = imageRepository.getImageDetail(id, mediaType, false, defaultFolderImageOrder);
     if (!detail) {
-      const avatarDetail = imageRepository.getImageDetail(id, mediaType, true);
+      const avatarDetail = imageRepository.getImageDetail(id, mediaType, true, defaultFolderImageOrder);
       if (avatarDetail && avatarDetail.folderAvatarImageId === avatarDetail.id) {
         detail = avatarDetail;
       }
@@ -1458,6 +1471,7 @@ export const galleryService = {
     const rebuildRequired = appSettingsRepository.get(LIBRARY_REBUILD_REQUIRED_SETTING_KEY) === '1';
     const defaultHomeFeedMode = getDefaultHomeFeedMode();
     const defaultReelsFeedMode = getDefaultReelsFeedMode();
+    const defaultFolderImageOrder = getDefaultFolderImageOrder();
     const treatStoriesAsFolders = getTreatStoriesAsFolders();
     const storiesMigration = getStoriesMigrationStatus();
 
@@ -1478,6 +1492,7 @@ export const galleryService = {
       preferences: {
         defaultHomeFeedMode,
         defaultReelsFeedMode,
+        defaultFolderImageOrder,
         treatStoriesAsFolders
       },
       storiesMigration
@@ -1516,6 +1531,7 @@ export const galleryService = {
     const pendingDerivativeMigrationRows = storageState.libraryAvailable ? imageRepository.countPendingDerivativeMigrationRows() : 0;
     const defaultHomeFeedMode = getDefaultHomeFeedMode();
     const defaultReelsFeedMode = getDefaultReelsFeedMode();
+    const defaultFolderImageOrder = getDefaultFolderImageOrder();
     const treatStoriesAsFolders = getTreatStoriesAsFolders();
     const storiesMigration = getStoriesMigrationStatus();
     const excludedFolders = getExcludedFolderSettings();
@@ -1547,6 +1563,7 @@ export const galleryService = {
       preferences: {
         defaultHomeFeedMode,
         defaultReelsFeedMode,
+        defaultFolderImageOrder,
         treatStoriesAsFolders
       },
       storiesMigration,
@@ -1567,6 +1584,14 @@ export const galleryService = {
 
     return {
       defaultMode: mode
+    };
+  },
+
+  setDefaultFolderImageOrder(order: FolderImageOrder) {
+    appSettingsRepository.set(FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY, order);
+
+    return {
+      defaultOrder: order
     };
   },
 

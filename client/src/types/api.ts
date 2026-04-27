@@ -1,5 +1,6 @@
 export type FeedMode = 'recent' | 'rediscover' | 'random';
 export type ReelsFeedMode = 'recommended' | 'recent' | 'random';
+export type FolderImageOrder = 'newest' | 'oldest';
 export type FeedRailKind = 'moments' | 'highlights';
 export type StoryCapsulePresentation = 'avatar' | 'highlight';
 export type ScanOperation =
@@ -21,6 +22,10 @@ export interface HomeFeedDefaultSetting {
 
 export interface ReelsFeedDefaultSetting {
   defaultMode: ReelsFeedMode;
+}
+
+export interface FolderImageOrderDefaultSetting {
+  defaultOrder: FolderImageOrder;
 }
 
 export interface StoriesModeSetting {
@@ -323,6 +328,7 @@ export interface AppStatus {
   preferences: {
     defaultHomeFeedMode: FeedMode;
     defaultReelsFeedMode: ReelsFeedMode;
+    defaultFolderImageOrder?: FolderImageOrder;
     treatStoriesAsFolders: boolean;
   };
   storiesMigration: {

@@ -4,6 +4,7 @@ import type {
   AppSettingRecord,
   FeedImage,
   FolderAvatarSource,
+  FolderImageOrder,
   FolderRole,
   FolderScanStateRecord,
   ImageDetail,
@@ -93,6 +94,18 @@ const FOLDER_SUMMARY_AVATAR_THUMBNAIL_PATH_SQL = `
     )
   )
 `;
+
+function getQualifiedFolderImageOrderSql(order: FolderImageOrder): string {
+  return order === 'oldest'
+    ? 'images.sort_timestamp ASC, images.id ASC'
+    : 'images.sort_timestamp DESC, images.id DESC';
+}
+
+function getUnscopedFolderImageOrderSql(order: FolderImageOrder): string {
+  return order === 'oldest'
+    ? 'sort_timestamp ASC, id ASC'
+    : 'sort_timestamp DESC, id DESC';
+}
 const IMAGE_FILENAME_SEARCH_SQL = 'LOWER(images.filename)';
 const FOLDER_NAME_SEARCH_SQL = 'LOWER(folders.name)';
 const FOLDER_SLUG_SEARCH_SQL = 'LOWER(folders.slug)';
@@ -1276,14 +1289,21 @@ export const imageRepository = {
     ).all(startTimestamp, endTimestamp, limit, offset) as unknown as FeedImage[];
   },
 
-  listFolderImages(folderId: number, page: number, limit: number, mediaType?: MediaType): FeedImage[] {
+  listFolderImages(
+    folderId: number,
+    page: number,
+    limit: number,
+    mediaType?: MediaType,
+    order: FolderImageOrder = 'newest'
+  ): FeedImage[] {
     const offset = (page - 1) * limit;
     const mediaTypeClause = mediaType ? ' AND images.media_type = ?' : '';
+    const orderBySql = getQualifiedFolderImageOrderSql(order);
     return database.prepare(
       `
       ${FEED_IMAGE_SELECT_SQL}
       WHERE images.folder_id = ? AND ${VISIBLE_IMAGE_WHERE_SQL}${mediaTypeClause}
-      ORDER BY images.sort_timestamp DESC, images.id DESC
+      ORDER BY ${orderBySql}
       LIMIT ? OFFSET ?
       `
     ).all(...(mediaType ? [folderId, mediaType, limit, offset] : [folderId, limit, offset])) as unknown as FeedImage[];
@@ -1599,8 +1619,21 @@ export const imageRepository = {
     return row?.id ?? null;
   },
 
-  getImageDetail(id: number, mediaType?: MediaType, allowHiddenCover = false): ImageDetail | undefined {
+  getImageDetail(
+    id: number,
+    mediaType?: MediaType,
+    allowHiddenCover = false,
+    folderImageOrder: FolderImageOrder = 'newest'
+  ): ImageDetail | undefined {
     const whereClause = allowHiddenCover ? 'images.is_deleted = 0 AND images.is_trashed = 0' : VISIBLE_IMAGE_WHERE_SQL;
+    const nextComparisonSql = folderImageOrder === 'oldest'
+      ? '(sort_timestamp > ? OR (sort_timestamp = ? AND id > ?))'
+      : '(sort_timestamp < ? OR (sort_timestamp = ? AND id < ?))';
+    const previousComparisonSql = folderImageOrder === 'oldest'
+      ? '(sort_timestamp < ? OR (sort_timestamp = ? AND id < ?))'
+      : '(sort_timestamp > ? OR (sort_timestamp = ? AND id > ?))';
+    const nextOrderSql = getUnscopedFolderImageOrderSql(folderImageOrder);
+    const previousOrderSql = getUnscopedFolderImageOrderSql(folderImageOrder === 'oldest' ? 'newest' : 'oldest');
     const detail = database.prepare(
       `
       SELECT
@@ -1649,8 +1682,8 @@ export const imageRepository = {
       FROM images
       WHERE folder_id = ? AND ${VISIBLE_IMAGE_WHERE_UNSCOPED_SQL}
         ${mediaTypeClause}
-        AND (sort_timestamp < ? OR (sort_timestamp = ? AND id < ?))
-      ORDER BY sort_timestamp DESC, id DESC
+        AND ${nextComparisonSql}
+      ORDER BY ${nextOrderSql}
       LIMIT 1
       `
     ).get(...(mediaType
@@ -1663,8 +1696,8 @@ export const imageRepository = {
       FROM images
       WHERE folder_id = ? AND ${VISIBLE_IMAGE_WHERE_UNSCOPED_SQL}
         ${mediaTypeClause}
-        AND (sort_timestamp > ? OR (sort_timestamp = ? AND id > ?))
-      ORDER BY sort_timestamp ASC, id ASC
+        AND ${previousComparisonSql}
+      ORDER BY ${previousOrderSql}
       LIMIT 1
       `
     ).get(...(mediaType

@@ -6,7 +6,7 @@ import {
   fetchScanProgress,
   fetchStats as fetchStatus
 } from '../api/gallery';
-import type { AppStatus, FeedMode, ReelsFeedMode, ScanProgress } from '../types/api';
+import type { AppStatus, FeedMode, FolderImageOrder, ReelsFeedMode, ScanProgress } from '../types/api';
 import { useAuthStore } from './auth';
 
 interface AppState {
@@ -75,6 +75,7 @@ export const useAppStore = defineStore('app', {
     isInitialScan: (state) => state.stats?.scan.isScanning === true && state.stats?.scan.lastCompletedScan === null,
     defaultHomeFeedMode: (state): FeedMode => state.stats?.preferences.defaultHomeFeedMode ?? 'random',
     defaultReelsFeedMode: (state): ReelsFeedMode => state.stats?.preferences.defaultReelsFeedMode ?? 'random',
+    defaultFolderImageOrder: (state): FolderImageOrder => state.stats?.preferences.defaultFolderImageOrder ?? 'newest',
     treatStoriesAsFolders: (state) => state.stats?.preferences.treatStoriesAsFolders === true
   },
   actions: {

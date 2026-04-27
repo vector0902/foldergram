@@ -13,6 +13,8 @@ import type {
   DeleteImageResult,
   DeleteFolderResult,
   FeedMode,
+  FolderImageOrder,
+  FolderImageOrderDefaultSetting,
   ImageDetail,
   LikeMutationResult,
   LikesPayload,
@@ -366,6 +368,14 @@ export function updateReelsFeedDefault(defaultMode: ReelsFeedMode) {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ defaultMode })
+  });
+}
+
+export function updateFolderImageOrderDefault(defaultOrder: FolderImageOrder) {
+  return requestJson<FolderImageOrderDefaultSetting>('/api/admin/settings/folder-image-order-default', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ defaultOrder })
   });
 }
 

@@ -10,6 +10,7 @@ type AppConfigModule = typeof import('../src/config/env.js');
 type GalleryServiceModule = typeof import('../src/services/gallery-service.js');
 type ScannerServiceModule = typeof import('../src/services/scanner-service.js');
 type RepositoriesModule = typeof import('../src/db/repositories.js');
+type AppSettingKeysModule = typeof import('../src/constants/app-setting-keys.js');
 
 const generateThumbnailDerivativeMock = vi.fn();
 const generateDerivativesMock = vi.fn();
@@ -23,6 +24,8 @@ describe.sequential('folder customization scan behavior', () => {
   let imageRepository: RepositoriesModule['imageRepository'];
   let folderRepository: RepositoriesModule['folderRepository'];
   let maintenanceRepository: RepositoriesModule['maintenanceRepository'];
+  let appSettingsRepository: RepositoriesModule['appSettingsRepository'];
+  let FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY: AppSettingKeysModule['FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY'];
 
   beforeAll(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'insta-folder-customization-scan-'));
@@ -53,7 +56,8 @@ describe.sequential('folder customization scan behavior', () => {
     ({ appConfig } = await import('../src/config/env.js'));
     ({ galleryService } = await import('../src/services/gallery-service.js'));
     ({ scannerService } = await import('../src/services/scanner-service.js'));
-    ({ imageRepository, folderRepository, maintenanceRepository } = await import('../src/db/repositories.js'));
+    ({ imageRepository, folderRepository, maintenanceRepository, appSettingsRepository } = await import('../src/db/repositories.js'));
+    ({ FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY } = await import('../src/constants/app-setting-keys.js'));
 
     await Promise.all([
       fs.mkdir(appConfig.galleryRoot, { recursive: true }),
@@ -156,6 +160,34 @@ describe.sequential('folder customization scan behavior', () => {
     expect(feedPayload.items.map((item) => item.id)).not.toContain(coverImage!.id);
 
     expect(galleryService.getImageDetail(coverImage!.id)?.id).toBe(coverImage!.id);
+  });
+
+  it('uses the saved app folder photo order for folder grids and detail navigation', async () => {
+    maintenanceRepository.resetLibraryIndex();
+
+    await createSourceFile('albums/older.jpg', 20_000);
+    await createSourceFile('albums/newer.jpg');
+    await scannerService.scanAll('manual');
+
+    const olderImage = imageRepository.getByRelativePath('albums/older.jpg');
+    const newerImage = imageRepository.getByRelativePath('albums/newer.jpg');
+
+    expect(olderImage).toBeDefined();
+    expect(newerImage).toBeDefined();
+
+    expect(galleryService.getFolderImages('albums', 1, 24)?.items.map((item) => item.id)).toEqual([
+      newerImage!.id,
+      olderImage!.id
+    ]);
+
+    appSettingsRepository.set(FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY, 'oldest');
+
+    expect(galleryService.getFolderImages('albums', 1, 24)?.items.map((item) => item.id)).toEqual([
+      olderImage!.id,
+      newerImage!.id
+    ]);
+    expect(galleryService.getImageDetail(olderImage!.id)?.nextImageId).toBe(newerImage!.id);
+    expect(galleryService.getImageDetail(newerImage!.id)?.previousImageId).toBe(olderImage!.id);
   });
 
   async function createSourceFile(relativePath: string, mtimeOffsetMs = 0): Promise<void> {

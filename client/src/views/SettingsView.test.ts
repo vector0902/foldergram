@@ -17,7 +17,8 @@ const scrollIntoViewSpy = vi.fn();
 
 function createAppStatus(
   defaultHomeFeedMode: AppStatus['preferences']['defaultHomeFeedMode'] = 'rediscover',
-  defaultReelsFeedMode: AppStatus['preferences']['defaultReelsFeedMode'] = 'random'
+  defaultReelsFeedMode: AppStatus['preferences']['defaultReelsFeedMode'] = 'random',
+  defaultFolderImageOrder: NonNullable<AppStatus['preferences']['defaultFolderImageOrder']> = 'newest'
 ): AppStatus {
   return {
     folders: 3,
@@ -56,6 +57,7 @@ function createAppStatus(
     preferences: {
       defaultHomeFeedMode,
       defaultReelsFeedMode,
+      defaultFolderImageOrder,
       treatStoriesAsFolders: false
     },
     storiesMigration: {
@@ -161,15 +163,18 @@ describe('SettingsView', () => {
 
     expect(wrapper.text()).toContain('Home feed sort order');
     expect(wrapper.text()).toContain('Reels feed sort order');
+    expect(wrapper.text()).toContain('App folder photo order');
     expect(wrapper.text()).toContain('Excluded source folders');
     expect(wrapper.text().indexOf('Home feed sort order')).toBeLessThan(wrapper.text().indexOf('Reels feed sort order'));
-    expect(wrapper.text().indexOf('Reels feed sort order')).toBeLessThan(
+    expect(wrapper.text().indexOf('Reels feed sort order')).toBeLessThan(wrapper.text().indexOf('App folder photo order'));
+    expect(wrapper.text().indexOf('App folder photo order')).toBeLessThan(
       wrapper.text().indexOf('Treat stories folders as normal app folders')
     );
 
-    const [homeButton, reelsButton] = wrapper.findAll('button[aria-expanded]');
+    const [homeButton, reelsButton, folderButton] = wrapper.findAll('button[aria-expanded]');
     expect(homeButton?.text()).toContain('Rediscover');
     expect(reelsButton?.text()).toContain('Random');
+    expect(folderButton?.text()).toContain('Newest First');
 
     const saveButton = wrapper
       .findAll('button')
@@ -194,14 +199,15 @@ describe('SettingsView', () => {
 
     appStore.$patch({
       loadingStats: false,
-      stats: createAppStatus('recent', 'random')
+      stats: createAppStatus('recent', 'random', 'oldest')
     });
 
     await flushPromises();
 
-    const [homeButton, reelsButton] = wrapper.findAll('button[aria-expanded]');
+    const [homeButton, reelsButton, folderButton] = wrapper.findAll('button[aria-expanded]');
     expect(homeButton?.text()).toContain('Recent');
     expect(reelsButton?.text()).toContain('Random');
+    expect(folderButton?.text()).toContain('Oldest First');
 
     const saveButton = wrapper
       .findAll('button')
@@ -330,6 +336,52 @@ describe('SettingsView', () => {
     expect(updateExcludedFoldersSpy).not.toHaveBeenCalled();
     expect(appStore.stats?.preferences.defaultReelsFeedMode).toBe('recommended');
     expect(wrapper.text()).toContain('Reels now opens with Recommended.');
+  });
+
+  it('saves the app folder photo order from the general settings card', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus()
+    });
+
+    vi.spyOn(appStore, 'fetchStats').mockResolvedValue();
+    const updateFolderImageOrderDefaultSpy = vi.spyOn(galleryApi, 'updateFolderImageOrderDefault').mockResolvedValue({
+      defaultOrder: 'oldest'
+    });
+
+    const wrapper = mountSettingsView();
+
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    const [, , folderButton] = wrapper.findAll('button[aria-expanded]');
+    expect(folderButton).toBeDefined();
+
+    await folderButton!.trigger('click');
+    await flushPromises();
+    const oldestOption = wrapper.findAll('button').find((button) => button.text().includes('Oldest First'));
+    expect(oldestOption).toBeDefined();
+    await oldestOption!.trigger('click');
+    await flushPromises();
+
+    const updateHomeFeedDefaultSpy = vi.spyOn(galleryApi, 'updateHomeFeedDefault');
+    const updateReelsFeedDefaultSpy = vi.spyOn(galleryApi, 'updateReelsFeedDefault');
+    const updateExcludedFoldersSpy = vi.spyOn(galleryApi, 'updateExcludedFolders');
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save changes');
+
+    expect(saveButton).toBeDefined();
+
+    await saveButton!.trigger('click');
+    await flushPromises();
+
+    expect(updateFolderImageOrderDefaultSpy).toHaveBeenCalledWith('oldest');
+    expect(updateHomeFeedDefaultSpy).not.toHaveBeenCalled();
+    expect(updateReelsFeedDefaultSpy).not.toHaveBeenCalled();
+    expect(updateExcludedFoldersSpy).not.toHaveBeenCalled();
+    expect(appStore.stats?.preferences.defaultFolderImageOrder).toBe('oldest');
+    expect(wrapper.text()).toContain('App folders now open with Oldest First.');
   });
 
   it('saves custom excluded folder rules from the settings textarea', async () => {

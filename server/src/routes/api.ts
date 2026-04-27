@@ -71,6 +71,9 @@ const homeFeedDefaultBodySchema = z.object({
 const reelsFeedDefaultBodySchema = z.object({
   defaultMode: z.enum(['recommended', 'recent', 'random'])
 });
+const folderImageOrderDefaultBodySchema = z.object({
+  defaultOrder: z.enum(['newest', 'oldest'])
+});
 const storiesModeBodySchema = z.object({
   treatStoriesAsFolders: z.boolean()
 });
@@ -153,6 +156,7 @@ export const authRequestBodySchemas = {
 export const settingsRequestBodySchemas = {
   homeFeedDefault: homeFeedDefaultBodySchema,
   reelsFeedDefault: reelsFeedDefaultBodySchema,
+  folderImageOrderDefault: folderImageOrderDefaultBodySchema,
   storiesMode: storiesModeBodySchema,
   excludedFolders: excludedFoldersBodySchema
 };
@@ -376,6 +380,15 @@ router.put(
   (request, response) => {
     const body = reelsFeedDefaultBodySchema.parse(request.body);
     response.json(galleryService.setDefaultReelsFeedMode(body.defaultMode));
+  }
+);
+
+router.put(
+  '/admin/settings/folder-image-order-default',
+  requireCapability('canAccessSettings', 'Admin access is required.'),
+  (request, response) => {
+    const body = folderImageOrderDefaultBodySchema.parse(request.body);
+    response.json(galleryService.setDefaultFolderImageOrder(body.defaultOrder));
   }
 );
 

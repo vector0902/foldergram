@@ -517,7 +517,7 @@
             <div class="border-b border-border px-6 py-5">
               <div>
                 <h2 class="m-0 text-[1.18rem]">General Settings</h2>
-                <p class="m-0 mt-[0.25rem] text-muted">App-wide defaults for stories folders, excluded folders, Home, and Reels.</p>
+                <p class="m-0 mt-[0.25rem] text-muted">App-wide defaults for stories folders, excluded folders, Home, Reels, and app folders.</p>
               </div>
             </div>
 
@@ -641,6 +641,67 @@
                       >
                         <span class="mt-[0.05rem] inline-flex h-5 w-5 items-center justify-center shrink-0 text-accent-strong">
                           <span v-if="reelsFeedDefaultMode === mode.id" class="i-fluent-checkmark-20-filled h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span class="grid min-w-0 gap-[0.08rem]">
+                          <span class="text-[0.9rem] font-semibold text-text">{{ mode.label }}</span>
+                          <span class="text-[0.78rem] text-muted">{{ mode.description }}</span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div class="min-w-0">
+                  <p class="m-0 text-[0.96rem] font-semibold text-text">App folder photo order</p>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">Choose the default order for photos inside app folders.</p>
+                </div>
+
+                <div class="relative w-full md:w-[18rem] md:justify-self-end" @keydown.escape.stop.prevent="closeGeneralSettingsMenu">
+                  <button
+                    class="inline-flex w-full items-center justify-between gap-3 rounded-[0.9rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_80%,transparent_20%)] px-3 py-[0.85rem] text-left transition-[border-color,box-shadow] duration-180 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border)_78%)] hover:bg-surface-hover focus-visible:border-[color-mix(in_srgb,var(--accent)_35%,var(--border)_65%)] focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
+                    type="button"
+                    :aria-expanded="activeGeneralSettingsMenu === 'folder'"
+                    :disabled="savingGeneralSettings || waitingForInitialStatus"
+                    @click="toggleGeneralSettingsMenu('folder')"
+                  >
+                    <span class="min-w-0 truncate text-[0.9rem] font-semibold text-text">
+                      {{ selectedFolderImageOrderOption.label }}
+                    </span>
+                    <span
+                      class="i-fluent-chevron-down-20-regular h-5 w-5 shrink-0 text-muted transition-transform duration-180"
+                      :class="activeGeneralSettingsMenu === 'folder' ? 'rotate-180 text-text' : ''"
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  <button
+                    v-if="activeGeneralSettingsMenu === 'folder'"
+                    class="fixed inset-0 z-40 border-0 bg-transparent"
+                    type="button"
+                    aria-label="Close app folder photo order menu"
+                    @click="closeGeneralSettingsMenu"
+                  />
+
+                  <div
+                    v-if="activeGeneralSettingsMenu === 'folder'"
+                    class="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-full overflow-hidden rounded-[1rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] shadow-[0_28px_70px_rgba(0,0,0,0.16)]"
+                  >
+                    <div class="border-b border-border px-4 py-3">
+                      <p class="m-0 text-[0.83rem] font-semibold text-text">App folder photo order</p>
+                    </div>
+                    <div class="grid gap-1 p-2">
+                      <button
+                        v-for="mode in folderImageOrderOptions"
+                        :key="mode.id"
+                        class="flex items-start gap-3 rounded-[0.85rem] border-0 px-3 py-3 text-left cursor-pointer transition-colors duration-150 hover:bg-surface-hover"
+                        :class="folderImageOrderDefault === mode.id ? 'bg-[color-mix(in_srgb,var(--accent-soft)_72%,transparent_28%)]' : 'bg-transparent'"
+                        type="button"
+                        @click="selectFolderImageOrderDefault(mode.id)"
+                      >
+                        <span class="mt-[0.05rem] inline-flex h-5 w-5 items-center justify-center shrink-0 text-accent-strong">
+                          <span v-if="folderImageOrderDefault === mode.id" class="i-fluent-checkmark-20-filled h-4 w-4" aria-hidden="true" />
                         </span>
                         <span class="grid min-w-0 gap-[0.08rem]">
                           <span class="text-[0.9rem] font-semibold text-text">{{ mode.label }}</span>
@@ -1041,6 +1102,7 @@ import {
   triggerManualScan,
   triggerThumbnailRebuild,
   updateExcludedFolders,
+  updateFolderImageOrderDefault,
   updateHomeFeedDefault,
   updateReelsFeedDefault,
   updateStoriesMode
@@ -1053,7 +1115,7 @@ import { useLikesStore } from '../stores/likes';
 import { useMomentsStore } from '../stores/moments';
 import { usePlacesStore } from '../stores/places';
 import { useViewerStore } from '../stores/viewer';
-import type { AppStats, FeedMode, ReelsFeedMode, ViewerAccessMode } from '../types/api';
+import type { AppStats, FeedMode, FolderImageOrder, ReelsFeedMode, ViewerAccessMode } from '../types/api';
 
 const appStore = useAppStore();
 const authStore = useAuthStore();
@@ -1088,10 +1150,11 @@ const nextPasswordConfirmation = ref('');
 const disablePassword = ref('');
 const homeFeedDefaultMode = ref<FeedMode>('random');
 const reelsFeedDefaultMode = ref<ReelsFeedMode>('random');
+const folderImageOrderDefault = ref<FolderImageOrder>('newest');
 const storiesMode = ref(false);
 const feedDefaultsHydrated = ref(false);
 const storiesModeHydrated = ref(false);
-const activeGeneralSettingsMenu = ref<'home' | 'reels' | null>(null);
+const activeGeneralSettingsMenu = ref<'home' | 'reels' | 'folder' | null>(null);
 const showStoriesAnnouncementStructure = ref(false);
 const generalSettingsSaveArea = ref<HTMLElement | null>(null);
 const acknowledgedStoriesMigrationChoice = ref(false);
@@ -1310,6 +1373,7 @@ function validatePasswordConfirmation(password: string, confirmation: string): s
 function syncFeedDefaultsFromSaved() {
   homeFeedDefaultMode.value = appStore.defaultHomeFeedMode;
   reelsFeedDefaultMode.value = appStore.defaultReelsFeedMode;
+  folderImageOrderDefault.value = appStore.defaultFolderImageOrder;
   feedDefaultsHydrated.value = true;
 }
 
@@ -1360,6 +1424,18 @@ const reelsFeedDefaultOptions: Array<{ id: ReelsFeedMode; label: string; descrip
     description: 'Affinity-ranked mix.'
   }
 ];
+const folderImageOrderOptions: Array<{ id: FolderImageOrder; label: string; description: string }> = [
+  {
+    id: 'newest',
+    label: 'Newest First',
+    description: 'Recent photos appear first.'
+  },
+  {
+    id: 'oldest',
+    label: 'Oldest First',
+    description: 'Earlier photos appear first.'
+  }
+];
 const isLibraryRebuildActive = computed(
   () => rebuilding.value || (appStore.isScanning && activeScanReason.value === 'rebuild')
 );
@@ -1372,6 +1448,7 @@ const highlightRebuildAction = computed(() => route.query.action === 'rebuild');
 const waitingForInitialStatus = computed(() => !appStore.stats || appStore.loadingStats);
 const savedHomeFeedDefaultMode = computed(() => appStore.defaultHomeFeedMode);
 const savedReelsFeedDefaultMode = computed(() => appStore.defaultReelsFeedMode);
+const savedFolderImageOrderDefault = computed(() => appStore.defaultFolderImageOrder);
 const savedStoriesMode = computed(() => appStore.treatStoriesAsFolders);
 const savedCustomExcludedFolders = computed(() => adminStats.value?.excludedFolders.customExcludedFolders ?? []);
 const envExcludedFolders = computed(() => adminStats.value?.excludedFolders.envExcludedFolders ?? []);
@@ -1387,11 +1464,17 @@ const savedHomeFeedDefaultModeLabel = computed(
 const savedReelsFeedDefaultModeLabel = computed(
   () => reelsFeedDefaultOptions.find((mode) => mode.id === savedReelsFeedDefaultMode.value)?.label ?? 'Random'
 );
+const savedFolderImageOrderDefaultLabel = computed(
+  () => folderImageOrderOptions.find((mode) => mode.id === savedFolderImageOrderDefault.value)?.label ?? 'Newest First'
+);
 const selectedHomeFeedDefaultOption = computed(
   () => homeFeedDefaultOptions.find((mode) => mode.id === homeFeedDefaultMode.value) ?? homeFeedDefaultOptions[0]
 );
 const selectedReelsFeedDefaultOption = computed(
   () => reelsFeedDefaultOptions.find((mode) => mode.id === reelsFeedDefaultMode.value) ?? reelsFeedDefaultOptions[0]
+);
+const selectedFolderImageOrderOption = computed(
+  () => folderImageOrderOptions.find((mode) => mode.id === folderImageOrderDefault.value) ?? folderImageOrderOptions[0]
 );
 const homeFeedDefaultDirty = computed(
   () => feedDefaultsHydrated.value && homeFeedDefaultMode.value !== savedHomeFeedDefaultMode.value
@@ -1399,7 +1482,10 @@ const homeFeedDefaultDirty = computed(
 const reelsFeedDefaultDirty = computed(
   () => feedDefaultsHydrated.value && reelsFeedDefaultMode.value !== savedReelsFeedDefaultMode.value
 );
-const feedDefaultsDirty = computed(() => homeFeedDefaultDirty.value || reelsFeedDefaultDirty.value);
+const folderImageOrderDirty = computed(
+  () => feedDefaultsHydrated.value && folderImageOrderDefault.value !== savedFolderImageOrderDefault.value
+);
+const feedDefaultsDirty = computed(() => homeFeedDefaultDirty.value || reelsFeedDefaultDirty.value || folderImageOrderDirty.value);
 const storiesModeDirty = computed(() => storiesModeHydrated.value && storiesMode.value !== savedStoriesMode.value);
 const excludedFoldersDirty = computed(() => {
   if (!excludedFoldersHydrated.value) {
@@ -1446,15 +1532,15 @@ const generalSettingsActionNote = computed(() => {
   }
 
   if (storiesModeDirty.value && feedDefaultsDirty.value) {
-    return 'Save the new stories rule and the updated feed defaults together.';
+    return 'Save the new stories rule and the updated browsing defaults together.';
   }
 
   if (storiesModeDirty.value || storiesModeRequiresDecision.value) {
     return 'This saves the stories folders rule only. Run a library scan afterward to reindex with the new behavior.';
   }
 
-  if (homeFeedDefaultDirty.value && reelsFeedDefaultDirty.value) {
-    return 'Save both feed defaults together. Home visitors can still switch modes on the homepage; Reels stays app-default only.';
+  if ([homeFeedDefaultDirty.value, reelsFeedDefaultDirty.value, folderImageOrderDirty.value].filter(Boolean).length > 1) {
+    return 'Save these browsing defaults together. Home visitors can still switch modes on the homepage; Reels and app folders use app defaults.';
   }
 
   if (homeFeedDefaultDirty.value) {
@@ -1465,7 +1551,11 @@ const generalSettingsActionNote = computed(() => {
     return 'This updates the queue style used when Reels opens for this app. Visitors cannot switch modes from the reels page.';
   }
 
-  return 'These are the current app-wide defaults for Home, Reels, stories folders, and excluded folders.';
+  if (folderImageOrderDirty.value) {
+    return 'This updates the default photo order used by app folder grids.';
+  }
+
+  return 'These are the current app-wide defaults for Home, Reels, app folders, stories folders, and excluded folders.';
 });
 const generalSettingsRescanNotice = computed(() => {
   if (excludedFoldersDirty.value && (storiesModeDirty.value || storiesModeRequiresDecision.value)) {
@@ -2112,7 +2202,7 @@ function closeGeneralSettingsMenu() {
   activeGeneralSettingsMenu.value = null;
 }
 
-function toggleGeneralSettingsMenu(menu: 'home' | 'reels') {
+function toggleGeneralSettingsMenu(menu: 'home' | 'reels' | 'folder') {
   clearGeneralSettingsFeedback();
   activeGeneralSettingsMenu.value = activeGeneralSettingsMenu.value === menu ? null : menu;
 }
@@ -2162,6 +2252,12 @@ function selectReelsFeedDefault(mode: ReelsFeedMode) {
   closeGeneralSettingsMenu();
 }
 
+function selectFolderImageOrderDefault(order: FolderImageOrder) {
+  clearGeneralSettingsFeedback();
+  folderImageOrderDefault.value = order;
+  closeGeneralSettingsMenu();
+}
+
 async function saveGeneralSettings() {
   if (generalSettingsSaveDisabled.value) {
     return;
@@ -2171,6 +2267,7 @@ async function saveGeneralSettings() {
   const shouldSaveStories = storiesModeDirty.value || storiesModeRequiresDecision.value;
   const shouldSaveHome = homeFeedDefaultDirty.value;
   const shouldSaveReels = reelsFeedDefaultDirty.value;
+  const shouldSaveFolderOrder = folderImageOrderDirty.value;
   const savedParts: string[] = [];
   let nextExcludedFolders: string[] = [];
 
@@ -2234,24 +2331,33 @@ async function saveGeneralSettings() {
       reelsFeedDefaultMode.value = payload.defaultMode;
     }
 
+    if (shouldSaveFolderOrder) {
+      const payload = await updateFolderImageOrderDefault(folderImageOrderDefault.value);
+      savedParts.push('app folder order');
+      if (appStore.stats) {
+        appStore.stats.preferences.defaultFolderImageOrder = payload.defaultOrder;
+      }
+      folderImageOrderDefault.value = payload.defaultOrder;
+    }
+
     await appStore.fetchStats({ background: true });
 
     if (shouldSaveStories || shouldSaveExcludedFolders) {
       await loadAdminStats().catch(() => {});
     }
 
-    if ((shouldSaveStories || shouldSaveExcludedFolders) && (shouldSaveHome || shouldSaveReels)) {
+    if ((shouldSaveStories || shouldSaveExcludedFolders) && (shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder)) {
       setGeneralSettingsFeedback('success', 'Settings were saved. Run a library scan to apply the folder rule changes.');
     } else if (shouldSaveExcludedFolders && shouldSaveStories) {
       setGeneralSettingsFeedback('success', 'Folder exclusion rules and stories folder behavior were saved. Run a library scan to apply them.');
     } else if (shouldSaveExcludedFolders) {
       setGeneralSettingsFeedback('success', 'Excluded folders were saved. Run a library scan to apply them.');
-    } else if (shouldSaveStories && (shouldSaveHome || shouldSaveReels)) {
+    } else if (shouldSaveStories && (shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder)) {
       setGeneralSettingsFeedback('success', 'Settings were saved. Run a library scan to apply the stories folder change.');
     } else if (shouldSaveStories) {
       setGeneralSettingsFeedback('success', 'Stories folder behavior was saved. Run a library scan to apply it.');
-    } else if (shouldSaveHome && shouldSaveReels) {
-      setGeneralSettingsFeedback('success', 'Home and Reels defaults were updated.');
+    } else if ([shouldSaveHome, shouldSaveReels, shouldSaveFolderOrder].filter(Boolean).length > 1) {
+      setGeneralSettingsFeedback('success', 'App-wide browsing defaults were updated.');
     } else if (shouldSaveHome) {
       setGeneralSettingsFeedback(
         'success',
@@ -2261,6 +2367,11 @@ async function saveGeneralSettings() {
       setGeneralSettingsFeedback(
         'success',
         `Reels now opens with ${selectedReelsFeedDefaultOption.value.label}.`
+      );
+    } else if (shouldSaveFolderOrder) {
+      setGeneralSettingsFeedback(
+        'success',
+        `App folders now open with ${selectedFolderImageOrderOption.value.label}.`
       );
     }
   } catch (error) {
@@ -2409,7 +2520,15 @@ onMounted(async () => {
 });
 
 watch(
-  () => [appStore.stats, appStore.loadingStats, savedHomeFeedDefaultMode.value, savedReelsFeedDefaultMode.value, savedStoriesMode.value] as const,
+  () =>
+    [
+      appStore.stats,
+      appStore.loadingStats,
+      savedHomeFeedDefaultMode.value,
+      savedReelsFeedDefaultMode.value,
+      savedFolderImageOrderDefault.value,
+      savedStoriesMode.value
+    ] as const,
   ([stats, loadingStats]) => {
     if (!stats || loadingStats) {
       return;
