@@ -30,7 +30,7 @@ description: Workspace scripts, local ports, watcher behavior, tests, and docs d
 | `pnpm start` | Production server start |
 | `pnpm build:docs` | VitePress docs build |
 | `pnpm rescan` | Manual server rescan script |
-| `pnpm test` | Server-side Vitest suite |
+| `pnpm test` | Server and client Vitest suites |
 
 ## Default ports
 
@@ -63,7 +63,8 @@ At boot, the server:
 3. asks the scanner whether startup should scan, stay idle, or block for rebuild
 
 If the scanner decides startup should be blocked because the gallery root
-changed, Foldergram defers scanning until the user performs a rebuild.
+changed and relocation validation failed, Foldergram defers scanning until the
+user performs a rebuild.
 
 ## Watcher behavior
 
@@ -87,6 +88,7 @@ The current automated tests are lightweight and focused on core invariants such 
 - folder slug generation
 - derivative path generation
 - Windows-style path normalization
+- places, collections, trash, auth, and playback regressions across server and client behavior
 
 Run them with:
 

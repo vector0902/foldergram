@@ -62,6 +62,28 @@ Instead:
 - changing this setting requires a rescan because the indexed folder structure changes
 - if the existing library already contains candidate `stories/` folders, Settings can show a migration decision card until you choose a mode
 
+## Folder photo order default
+
+The default app-folder photo order is **not** configured in `.env`.
+
+Instead:
+
+- Foldergram stores the current default order in SQLite `app_settings`
+- `Settings -> General Settings` exposes `Newest First` and `Oldest First`
+- the default is `Newest First`
+- this setting changes app-folder grids and previous/next navigation inside the post viewer when browsing within a folder
+
+## Places setup
+
+Offline places support is **not** configured in `.env`.
+
+Instead:
+
+- `Settings -> Places` can prepare the offline GeoNames dataset on demand
+- `Settings -> Places` can rebuild place assignments for already indexed photos
+- only photos with GPS EXIF metadata participate in place assignment
+- the Places directory and place detail pages read from SQLite after that preparation work completes
+
 ## Excluded folders
 
 Folder exclusions can come from two places:
@@ -82,7 +104,8 @@ Behavior:
 The Settings sidebar is split into:
 
 - `Scan & Library` for manual scans, thumbnail rebuilds, and library-index rebuilds
-- `General Settings` for Home/Reels defaults, stories-folders mode, excluded folders, and any save-and-rescan notices tied to those app-wide rules
+- `General Settings` for Home/Reels defaults, default folder order, stories-folders mode, excluded folders, and any save-and-rescan notices tied to those app-wide rules
+- `Places` for offline GeoNames preparation status and place-assignment rebuilds
 - `Security & Access` for admin, viewer, and public-mode controls
 - `System Status` for storage, index, and last-scan details
 
@@ -259,7 +282,18 @@ library.
 Foldergram stores the last successful gallery root in `app_settings`.
 
 When the configured gallery root changes and there is already indexed content,
-Foldergram marks the library as requiring a rebuild. Until that rebuild happens:
+Foldergram first validates whether the new root still matches the same indexed
+library.
+
+If every indexed file still exists under the new root with the same relative
+path, size, rounded `mtime`, and extension:
+
+- startup keeps using the existing index
+- stored absolute source paths are refreshed to the current root
+- originals, lazy derivatives, and later rescans use the new gallery root
+
+If that validation fails, Foldergram marks the library as requiring a rebuild.
+Until that rebuild happens:
 
 - startup scanning is deferred
 - manual rescans return `409`

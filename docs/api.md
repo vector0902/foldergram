@@ -102,7 +102,9 @@ Example shape:
     "canDeleteMedia": false,
     "canAccessSettings": false,
     "canUseSharedLikes": false,
-    "canUseLocalFavorites": true
+    "canUseLocalFavorites": true,
+    "canUseSharedCollections": false,
+    "canUseLocalCollections": true
   }
 }
 ```
@@ -136,6 +138,18 @@ Notes:
 - `items` contain both images and videos.
 - `thumbnailUrl` points to `/thumbnails/...`.
 - `previewUrl` points to `/previews/...`.
+
+### `GET /api/feed/search`
+
+Query parameters:
+
+| Param | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `q` | string | none | Required search text. |
+| `page` | integer | `1` | Minimum `1`. |
+| `limit` | integer | `24` | Minimum `1`, maximum `60`. |
+
+Returns the same paginated mixed-media payload shape as `GET /api/feed`.
 
 ### `GET /api/reels`
 
@@ -286,6 +300,87 @@ Errors:
 
 - `404` with `{"message":"Folder not found"}`
 
+Notes:
+
+- results follow the current app-wide default folder image order
+- that same order is reused by detail-view previous/next navigation within a folder
+
+### `GET /api/places`
+
+Returns:
+
+```json
+{
+  "items": []
+}
+```
+
+Each item is a place detail summary with:
+
+- `id`
+- `slug`
+- `name`
+- `kind`
+- `isApproximate`
+- `latitude`
+- `longitude`
+- `cityName`
+- `admin1Name`
+- `countryName`
+- `countryCode`
+- `description`
+- `postCount`
+
+### `GET /api/places/:slug`
+
+Returns one place detail record using the same shape as a place item from
+`GET /api/places`.
+
+Errors:
+
+- `404` with `{"message":"Place not found"}`
+
+### `GET /api/places/:slug/images`
+
+Query parameters:
+
+| Param | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `page` | integer | `1` | Minimum `1`. |
+| `limit` | integer | `24` | Minimum `1`, maximum `60`. |
+| `mediaType` | `image | video` | unset | Optional place filter. |
+
+Response shape:
+
+```json
+{
+  "place": {
+    "id": 1,
+    "slug": "oslo-norway",
+    "name": "Oslo",
+    "kind": "city",
+    "isApproximate": false,
+    "latitude": 59.9139,
+    "longitude": 10.7522,
+    "cityName": "Oslo",
+    "admin1Name": "Oslo",
+    "countryName": "Norway",
+    "countryCode": "NO",
+    "description": null,
+    "postCount": 18
+  },
+  "items": [],
+  "page": 1,
+  "limit": 24,
+  "total": 18,
+  "hasMore": false
+}
+```
+
+Errors:
+
+- `404` with `{"message":"Place not found"}`
+
 ### `GET /api/folders/:slug/stories`
 
 Returns the stories payload for one folder.
@@ -384,6 +479,95 @@ Notes:
 - shared likes are available to `admin` and `viewer` sessions
 - anonymous public sessions use browser-local favorites instead of this endpoint
 
+### `GET /api/collections`
+
+Returns:
+
+```json
+{
+  "items": []
+}
+```
+
+Each item includes:
+
+- `id`
+- `slug`
+- `name`
+- `isDefault`
+- `itemCount`
+- `coverImage`
+- `previewImages`
+- `createdAt`
+- `updatedAt`
+
+Notes:
+
+- shared collections are available to `admin` and `viewer` sessions
+- anonymous public sessions use browser-local collections instead of this endpoint
+- the default saved collection is still represented in API data even though the UI surfaces it as `All Posts`
+
+### `GET /api/collections/:slug/images`
+
+Query parameters:
+
+| Param | Type | Default |
+| --- | --- | --- |
+| `page` | integer | `1` |
+| `limit` | integer | `24` |
+
+Response shape:
+
+```json
+{
+  "collection": {
+    "id": 1,
+    "slug": "saved",
+    "name": "Saved",
+    "isDefault": true,
+    "itemCount": 12,
+    "coverImage": null,
+    "previewImages": [],
+    "createdAt": "2026-03-16T12:34:56.000Z",
+    "updatedAt": "2026-03-16T12:34:56.000Z"
+  },
+  "items": [],
+  "page": 1,
+  "limit": 24,
+  "total": 12,
+  "hasMore": false
+}
+```
+
+Errors:
+
+- `404` with `{"message":"Collection not found"}`
+
+### `GET /api/trash/images`
+
+This route is read-only but `admin`-only.
+
+Query parameters:
+
+| Param | Type | Default |
+| --- | --- | --- |
+| `page` | integer | `1` |
+| `limit` | integer | `24` |
+
+Response shape:
+
+```json
+{
+  "items": [],
+  "page": 1,
+  "limit": 24,
+  "total": 0,
+  "hasMore": false
+}
+```
+
+Each trash item uses the normal feed-item shape plus `trashedAt`.
+
 ### `GET /api/images/:id`
 
 Query parameters:
@@ -395,6 +579,7 @@ Query parameters:
 Returns one post detail payload with:
 
 - feed-item fields
+- `place` when the post has an assigned place
 - `relativePath`
 - `mimeType`
 - `fileSize`
@@ -403,8 +588,29 @@ Returns one post detail payload with:
 - `nextImageId`
 - `previousImageId`
 
-`nextImageId` and `previousImageId` are resolved within the same folder and the
-same active `mediaType` filter when one is supplied.
+`nextImageId` and `previousImageId` are resolved within the same folder, the
+same active `mediaType` filter when one is supplied, and the current default
+folder image order from Settings.
+
+### `GET /api/images/:id/collections`
+
+Returns shared collection membership for one post.
+
+Response shape:
+
+```json
+{
+  "imageId": 42,
+  "isSaved": true,
+  "items": []
+}
+```
+
+Each `items` entry uses the collection summary shape plus `containsImage`.
+
+Errors:
+
+- `404` with `{"message":"Post not found"}`
 
 Detail media rules:
 
@@ -459,6 +665,7 @@ Notable fields:
 | `libraryIndex` | Rebuild requirement plus ignored root-media count. Gallery-root paths are omitted. |
 | `preferences.defaultHomeFeedMode` | Current app-wide default home feed mode. |
 | `preferences.defaultReelsFeedMode` | Current app-wide default reels mode used when `/reels` opens. |
+| `preferences.defaultFolderImageOrder` | Current app-wide default order used for folder grids and folder detail navigation. |
 | `preferences.treatStoriesAsFolders` | Whether folders literally named `stories` are treated as ordinary app folders instead of reserved story sources. |
 | `storiesMigration` | Migration hint with `hasLegacyStoriesCandidates` and `decisionPending`. |
 
@@ -522,10 +729,30 @@ additional fields below and uses the same admin-detailed `scan` payload as
 | `libraryIndex.currentGalleryRoot` | Current configured gallery root. |
 | `libraryIndex.previousGalleryRoot` | Prior configured gallery root when the root changed. |
 | `libraryIndex.lastSuccessfulGalleryRoot` | Gallery root from the last completed successful scan. |
+| `libraryIndex.legacyDerivativeMigrationPending` | Whether older mirrored derivatives still need a manual migration scan. |
+| `libraryIndex.pendingDerivativeMigrationRows` | Count of indexed rows still pending legacy derivative migration checks. |
+| `excludedFolders` | Env-backed, custom, and effective exclusion rules. |
 | `lastScan` | Last completed scan run. |
 
 The same `preferences.treatStoriesAsFolders` and `storiesMigration` fields from
 `GET /api/status` are also present here.
+
+### `GET /api/admin/places/status`
+
+This route is read-only but `admin`-only.
+
+Response shape:
+
+```json
+{
+  "prepared": false,
+  "databasePath": "/path/to/geonames.sqlite",
+  "metadata": null
+}
+```
+
+When prepared, `metadata` includes `source`, `sourceUrl`, `importedAt`, and
+`rowCount`.
 
 ## Mutating endpoints
 
@@ -555,7 +782,9 @@ Success:
       "canDeleteMedia": false,
       "canAccessSettings": false,
       "canUseSharedLikes": true,
-      "canUseLocalFavorites": false
+      "canUseLocalFavorites": false,
+      "canUseSharedCollections": true,
+      "canUseLocalCollections": false
     }
   }
 }
@@ -599,7 +828,9 @@ Success:
       "canDeleteMedia": true,
       "canAccessSettings": true,
       "canUseSharedLikes": true,
-      "canUseLocalFavorites": false
+      "canUseLocalFavorites": false,
+      "canUseSharedCollections": true,
+      "canUseLocalCollections": false
     }
   }
 }
@@ -699,7 +930,7 @@ Notes:
 - viewer and admin passwords must differ
 - changing viewer access invalidates older sessions
 - `mode=public` enables anonymous browsing immediately
-- anonymous public sessions use local browser favorites instead of shared `/api/likes`
+- anonymous public sessions use local browser favorites and collections instead of shared `/api/likes` and `/api/collections`
 
 ### `PUT /api/admin/settings/home-feed-default`
 
@@ -753,6 +984,32 @@ Success:
 }
 ```
 
+### `PUT /api/admin/settings/folder-image-order-default`
+
+Sets the app-wide default order used by App Folder grids and folder-scoped
+previous/next post navigation.
+
+Body:
+
+```json
+{
+  "defaultOrder": "newest"
+}
+```
+
+Allowed values:
+
+- `newest`
+- `oldest`
+
+Success:
+
+```json
+{
+  "defaultOrder": "newest"
+}
+```
+
 ### `PUT /api/admin/settings/stories-mode`
 
 Sets how folders literally named `stories` are interpreted.
@@ -778,6 +1035,76 @@ Notes:
 - `false` enables the default reserved-stories mode
 - `true` keeps `stories/` folders behaving like ordinary app folders
 - the Settings UI immediately follows this write with `POST /api/admin/rescan`, but this endpoint itself only saves the setting
+
+### `PUT /api/admin/settings/excluded-folders`
+
+Sets the runtime custom excluded-folder rules.
+
+Body:
+
+```json
+{
+  "rules": [
+    "@eaDir",
+    "Archive/cache"
+  ]
+}
+```
+
+Success:
+
+```json
+{
+  "envExcludedFolders": [],
+  "customExcludedFolders": [
+    "@eaDir",
+    "Archive/cache"
+  ],
+  "effectiveExcludedFolders": [
+    "@eaDir",
+    "Archive/cache"
+  ],
+  "requiresScan": true
+}
+```
+
+### `PATCH /api/folders/:slug`
+
+Updates the display metadata for one App Folder.
+
+Body:
+
+```json
+{
+  "name": "Trips",
+  "description": "Weekend city breaks."
+}
+```
+
+Errors:
+
+- `404` with `{"message":"Folder not found"}`
+
+### `POST /api/folders/:slug/cover`
+
+Sets the folder avatar or cover image to a specific post that already belongs
+to the same folder.
+
+Body:
+
+```json
+{
+  "imageId": 42
+}
+```
+
+Success:
+
+```json
+{
+  "ok": true
+}
+```
 
 ### `POST /api/images/:id/like`
 
@@ -809,6 +1136,128 @@ Success:
   "ok": true,
   "id": 42,
   "liked": false
+}
+```
+
+### `POST /api/images/:id/save`
+
+Adds a post to the default saved collection.
+
+Success:
+
+```json
+{
+  "ok": true,
+  "imageId": 42,
+  "isSaved": true
+}
+```
+
+### `DELETE /api/images/:id/save`
+
+Removes a post from the default saved collection and clears any custom shared
+collection memberships for that post.
+
+Success:
+
+```json
+{
+  "ok": true,
+  "imageId": 42,
+  "isSaved": false
+}
+```
+
+### `POST /api/collections`
+
+Creates a new shared custom collection.
+
+Body:
+
+```json
+{
+  "name": "Trip Picks"
+}
+```
+
+Success:
+
+```json
+{
+  "ok": true,
+  "collection": {}
+}
+```
+
+### `PATCH /api/collections/:slug`
+
+Renames one shared custom collection.
+
+Body:
+
+```json
+{
+  "name": "Best of Summer"
+}
+```
+
+Errors:
+
+- `404` with `{"message":"Collection not found"}`
+
+### `DELETE /api/collections/:slug`
+
+Deletes one shared custom collection.
+
+Deleting a custom collection does not unsave the underlying posts if they are
+still present in the default saved collection.
+
+### `POST /api/collections/:slug/images/:id`
+
+Adds a post to one shared collection.
+
+Success:
+
+```json
+{
+  "ok": true,
+  "imageId": 42,
+  "isSaved": true
+}
+```
+
+### `DELETE /api/collections/:slug/images/:id`
+
+Removes a post from one shared collection.
+
+If the target collection is the default saved collection, the server clears all
+shared collection membership for that post.
+
+### `POST /api/images/:id/trash`
+
+Moves a post into Trash without removing the original file from disk.
+
+Success:
+
+```json
+{
+  "ok": true,
+  "id": 42,
+  "folderSlug": "oslo"
+}
+```
+
+### `POST /api/images/:id/restore`
+
+Restores a post from Trash.
+
+Success:
+
+```json
+{
+  "ok": true,
+  "id": 42,
+  "folderSlug": "oslo"
 }
 ```
 
@@ -917,6 +1366,9 @@ This resets:
 - `folder_scan_state`
 - `scan_runs`
 
+Shared collection memberships tied to the old image rows are also removed as
+part of the image reset.
+
 ### `POST /api/admin/rebuild-thumbnails`
 
 Stops the watcher, clears the thumbnail cache, regenerates thumbnails and video
@@ -933,6 +1385,37 @@ Errors:
 
 - `409` with the library-rebuild-required message when a library-index rebuild is required
 - `403` for viewer sessions
+
+### `POST /api/admin/places/geodata/prepare`
+
+Downloads and prepares the offline GeoNames dataset used for Places.
+
+Success:
+
+```json
+{
+  "ok": true,
+  "status": {
+    "prepared": true
+  }
+}
+```
+
+### `POST /api/admin/places/rebuild`
+
+Rebuilds place assignments for already indexed photos using their stored GPS
+metadata.
+
+Success:
+
+```json
+{
+  "ok": true,
+  "processed": 120,
+  "assigned": 84,
+  "skipped": 36
+}
+```
 
 ## Client helpers
 

@@ -61,11 +61,28 @@ gallery/
 
 ## Rescan returns a rebuild-required message
 
-This happens when the configured gallery root changed after a prior successful
-library index already existed.
+This happens when the configured gallery root no longer validates against the
+existing indexed library.
 
-Use Settings or `POST /api/admin/rebuild-index` to rebuild the library against
-the new root.
+If you moved the same library to a new location and every indexed file still
+exists at the same relative path with the same size, mtime, and extension,
+Foldergram refreshes stored source paths automatically at startup and keeps the
+existing index.
+
+Use Settings or `POST /api/admin/rebuild-index` only when the new root is a
+different or incomplete library, or when relocation validation already failed.
+
+## Places do not appear
+
+Places are opt-in and only work for photos that already have GPS metadata.
+
+Check:
+
+- `Settings -> Places` has prepared the offline GeoNames dataset
+- `Settings -> Places` has run `Rebuild place assignments`
+- the source photos actually contain GPS EXIF coordinates
+
+Videos and photos without GPS metadata do not appear in Places.
 
 ## I moved files into different folders and expected them to stay the same post
 

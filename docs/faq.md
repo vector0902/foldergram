@@ -72,6 +72,33 @@ Admin and viewer sessions share SQLite likes for the current library.
 Anonymous public sessions do not write to SQLite likes. They use browser-local
 favorites only.
 
+## Are saved posts and collections shared with other users?
+
+Admin and viewer sessions use shared SQLite collections for the current
+library.
+
+Anonymous public sessions use browser-local saved posts and collections stored
+in `localStorage`.
+
+## Can Foldergram group photos by location?
+
+Yes, when photos already contain GPS EXIF metadata.
+
+Prepare the offline place dataset from `Settings -> Places`, then rebuild place
+assignments. Foldergram will expose a Places directory plus place detail pages
+for matched photos.
+
+## Can I move `GALLERY_ROOT` without rebuilding everything?
+
+Sometimes.
+
+If the new root still contains the same indexed library at the same relative
+paths with matching size, mtime, and extension, Foldergram validates the move
+at startup, refreshes stored source paths, and keeps the existing index.
+
+If that validation fails, Foldergram requires `Rebuild Library Index` before
+scans continue.
+
 ## Does Foldergram have authentication?
 
 It has optional role-based password protection for the app instance.
@@ -129,5 +156,5 @@ not a full multi-user media portal.
 Yes, if an admin enables `viewer_access_mode=public` from Settings.
 
 In that mode, visitors can browse immediately and keep favorites only in the
-current browser. Admin-only controls still require unlocking with the admin
-password.
+current browser, alongside browser-local saved collections. Admin-only controls
+still require unlocking with the admin password.

@@ -55,7 +55,7 @@ features:
 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
 </div>
 <h3>What ships today</h3>
-<p>Home (Recent, Rediscover, Random feed modes), Reels, Explore, Library, Folder pages, Post detail and modal, Likes, Favorites, Moments, Highlights, Folder stories, Settings, and local scan and rebuild tooling.</p>
+<p>Home (Recent, Rediscover, Random feed modes), Reels, Explore, Library, Places, Collections, Trash, Folder pages, post detail and modal, Likes, saved posts, Moments or Highlights, folder stories, Settings, and local scan and rebuild tooling.</p>
 </div>
 
 <div class="cs-feature">
@@ -97,7 +97,7 @@ features:
 <div class="cs-feature">
 <div class="cs-feature-step">2</div>
 <h3>Index posts</h3>
-<p>Store normalized paths, media metadata, EXIF timestamps, stable sort order, and playback strategy in SQLite. Missing files are soft-deleted rather than hard-removed.</p>
+<p>Store normalized paths, media metadata, EXIF timestamps, stable sort order, optional place assignments, and playback strategy in SQLite. Missing files are soft-deleted rather than hard-removed.</p>
 </div>
 
 <div class="cs-feature">
@@ -114,14 +114,14 @@ features:
 
 <div class="cs-feature">
 <div class="cs-feature-step">5</div>
-<h3>Build Moments and Stories</h3>
-<p>Home surfaces date-based Moments when EXIF timestamps are available, or Highlights otherwise. Reserved <code>AppFolder/stories</code> subfolders power avatar stories and highlight rings on folder pages.</p>
+<h3>Build Moments, Stories, and Places</h3>
+<p>Home surfaces date-based Moments when EXIF timestamps are available, or Highlights otherwise. Reserved <code>AppFolder/stories</code> subfolders power avatar stories and highlight rings, and prepared offline place data can group GPS-tagged photos into Places pages.</p>
 </div>
 
 <div class="cs-feature">
 <div class="cs-feature-step">6</div>
 <h3>Maintain locally</h3>
-<p>Admins manage stories mode, excluded folders, and Home/Reels defaults from <code>General Settings</code>, then run scans or rebuilds from <code>Scan &amp; Library</code>. All controls are local — no remote calls involved.</p>
+<p>Admins manage Home, Reels, and folder-order defaults, stories mode, excluded folders, and Places preparation from Settings, then run scans or rebuilds locally. All controls stay on disk and on-device.</p>
 </div>
 
 </div>

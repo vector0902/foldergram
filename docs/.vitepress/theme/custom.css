@@ -86,6 +86,18 @@ html {
   font-weight: 600 !important;
 }
 
+.VPNavBarTitle .title::after {
+  content: 'v1.2.0';
+  display: inline-block;
+  margin-left: 0.38rem;
+  font-size: 0.48em;
+  line-height: 1;
+  vertical-align: super;
+  color: var(--vp-c-text-2);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .VPNavBarTitle .logo {
   width: 28px !important;
   height: 28px !important;

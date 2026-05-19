@@ -118,7 +118,8 @@ mode with admin unlock.
 
 The Settings sidebar separates app-wide preferences from maintenance actions:
 
-- `General Settings` contains stories mode, excluded folders, and Home/Reels defaults
+- `General Settings` contains stories mode, excluded folders, Home/Reels defaults, and the default folder photo order
+- `Places` contains offline place-data preparation and place-assignment rebuilds for GPS-tagged photos
 - `Scan & Library` contains manual scan plus rebuild actions
 
 ## If you already cloned this repository
@@ -255,7 +256,8 @@ On startup, the server checks storage availability and then decides whether to:
 
 - queue a startup scan for first-run indexing
 - keep using the existing index for already-initialized libraries
-- block scanning until a library rebuild happens after a gallery root change
+- validate a relocated gallery root and refresh stored source paths when it still matches the indexed library
+- block scanning until a library rebuild happens only when the new gallery root does not validate against the current index
 
 When a full library task runs, the UI reports discovery separately from later
 media-processing phases so long-running maintenance work stays understandable.

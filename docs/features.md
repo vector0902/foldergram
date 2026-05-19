@@ -16,8 +16,10 @@ It includes:
 - three feed modes: Recent, Rediscover, and Random
 - a top Moments or Highlights section
 - feed-card avatar rings that can open an App Folder's avatar story in place when that folder has stories
-- an active home-feed video player that promotes one visible video card at a time and gives that card play, mute, and fullscreen controls
+- an active home-feed video player that promotes one visible video card at a time and gives that card play, mute, fullscreen, and seek controls
 - feed-card actions for downloading the original media file and opening the original in a new tab
+- bookmark actions that can save a post directly or manage its collection membership from a popover
+- place links on feed-style cards when a photo has an assigned location
 - scan progress states that distinguish discovery from later media-processing work while the library is being prepared
 - a rebuild notice when the configured gallery root changed
 - desktop recommendations for folders based on recency, likes, and recent navigation
@@ -42,6 +44,7 @@ It includes:
 - wheel, arrow-key, and page-up/page-down navigation in addition to direct scrolling
 - infinite loading with prefetch as you approach the end of the current queue
 - a desktop action bar for like/favorite toggle, details sidebar, folder shortcut, and original-video link
+- a bottom-edge seekable progress UI shared with the feed and post players
 - loading, empty, and error states
 - an app-wide default mode from Settings; the page itself does not expose an inline mode switch
 
@@ -95,13 +98,16 @@ Folder pages include:
 
 - a folder header with avatar, posts counts, descriptions, and optional avatar-story opening
 - editable folder name and description via an admin "Edit App Folder" flow
-- a posts grid
+- a posts grid that follows the app-wide default folder order
 - highlight circles above the posts and reels tabs when the folder has story capsules
 - a reels tab when the folder contains videos
 - infinite loading
 
 The reels tab is a filtered view backed by the same folder endpoint using
 `mediaType=video`.
+
+The post viewer also uses the same default folder order when resolving previous
+and next navigation within a folder.
 
 ## Folder stories and highlights
 
@@ -123,6 +129,21 @@ If the reserved root has no direct media but highlight capsules do exist,
 Foldergram can synthesize the avatar story from recent highlight media so the
 folder still has an avatar-story entry point.
 
+## Places
+
+Places add an offline location layer for photos that already contain GPS
+metadata.
+
+The current app includes:
+
+- a dedicated `/places` directory page
+- search and sort controls for place name, country, and post counts
+- `/places/:slug` detail pages with grouped posts
+- approximate-city labeling when the stored match is not exact
+- location links on feed-style cards and inside post-viewer metadata
+- a Places shortcut in navigation when indexed places exist
+- Settings controls to prepare offline GeoNames data and rebuild place assignments
+
 ## Post detail and modal flow
 
 The canonical post detail route is `/post/:id`.
@@ -141,28 +162,54 @@ The detail view includes:
 - an optional `HD` toggle for compatible higher-resolution MP4 originals
 - previous and next navigation within the same folder and active media filter
 - folder link and breadcrumb context
-- size, dimensions, MIME type, and duration metadata
+- size, dimensions, MIME type, duration, and location metadata when available
 - like toggle
+- save and collection controls
 - original-media download control
 - original-file link
 - an admin-only "Set as Cover" action to customize the folder avatar, which highlights dynamically if the image is already the cover
-- delete action with confirmation for admin sessions only
+- trash and permanent-delete actions with confirmation for admin sessions only
 
-## Likes and Favorites
+## Saved posts, likes, and collections
 
-Foldergram has two saved-items modes:
+Foldergram has two saved-items storage modes:
 
-- signed-in `admin` and `viewer` sessions use shared SQLite likes through `GET /api/likes`
-- anonymous public sessions use browser-local favorites stored in `localStorage`
+- signed-in `admin` and `viewer` sessions use shared SQLite likes and collections
+- anonymous public sessions use browser-local favorites and collections stored in `localStorage`
 
-The saved-items view:
+Collections include:
+
+- a default saved collection surfaced as `All Posts` in the UI
+- custom collections with create, rename, and delete flows
+- bookmark-popover collection membership management from feed cards and the post viewer
+- dedicated `/collections` and `/collections/:slug` routes
+- syncing between the default saved state and custom collection membership
+
+Likes remain separate from saved posts.
+
+The likes view:
 
 - shows liked or favorited posts ordered by the most recent toggle in that mode
 - updates optimistically in the UI
-- drops deleted posts automatically when they are removed
-- stays intentionally separate between shared likes and local favorites
+- drops deleted or trashed posts automatically when they are removed
+- stays intentionally separate from saved-post collections
 
-There is no shared social layer behind either mode.
+There is no shared social layer behind any of these surfaces.
+
+## Trash
+
+Trash is an admin-only recovery surface at `/trash`.
+
+It includes:
+
+- paginated deleted-post cards
+- multi-select restore actions
+- multi-select permanent-delete actions
+- folder shortcuts for reviewing where a trashed post came from
+- an empty state when nothing is currently trashed
+
+Moving a post to Trash keeps the original file on disk. Permanent delete removes
+the original file, thumbnail, and preview.
 
 ## Moments
 
@@ -186,13 +233,17 @@ Its left sidebar is split into:
 | Section | What it contains |
 | --- | --- |
 | `Scan & Library` | Phase-aware live scan state, manual scan, thumbnail-only rebuild, and library-index rebuild actions. |
-| `General Settings` | Home and Reels default feed modes, stories-folders mode, excluded-folder rules, migration notices, and save-and-rescan prompts for those app-wide changes. |
+| `General Settings` | Home and Reels default feed modes, the default App Folder photo order, stories-folders mode, excluded-folder rules, migration notices, and save-and-rescan prompts for those app-wide changes. |
+| `Places` | Offline GeoNames preparation status plus place-assignment rebuild actions for GPS-tagged photos. |
 | `Security & Access` | Admin password, viewer password, public mode, sign-out, and related auth controls. |
 | `System Status` | Storage and index state plus last completed scan details. |
 
 In `General Settings`, env-backed excluded-folder rules are shown read-only and
 custom rules are saved at runtime. Changing stories mode or excluded folders
 still requires a follow-up scan from `Scan & Library`.
+
+On mobile, Settings uses a dedicated sticky top icon bar instead of the desktop
+sidebar.
 
 The live scan state stays open-ended during discovery and becomes determinate
 when later media-processing work has a known total.
@@ -213,8 +264,8 @@ That flow supports:
 
 Current non-admin behavior:
 
-- viewers can browse the library and use shared likes
-- anonymous public visitors can browse immediately and use browser-local favorites
+- viewers can browse the library and use shared likes and collections
+- anonymous public visitors can browse immediately and use browser-local favorites and collections
 - `viewer` and `anonymous` sessions can elevate through `Unlock admin`
 - non-admin sessions cannot open Settings
 - non-admin sessions cannot use Trash, delete actions, scans, or rebuild actions

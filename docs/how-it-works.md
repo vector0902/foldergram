@@ -77,10 +77,13 @@ The database schema includes:
 
 - `folders`
 - `images`
+- `places`
 - `scan_runs`
 - `app_settings`
 - `folder_scan_state`
 - `likes`
+- `collections`
+- `collection_items`
 
 ## What is stored per indexed post
 
@@ -90,14 +93,17 @@ The `images` table stores:
 - normalized relative and absolute paths
 - file size and `mtime_ms`
 - width and height
+- display orientation and animation flags when relevant
 - media type and MIME type
 - duration for videos
 - a fingerprint built from `relative_path + file_size + mtime_ms`
 - `sort_timestamp`
 - `taken_at` and `taken_at_source`
+- an optional `place_id` for GPS-resolved photos
 - stored derivative paths
 - playback strategy for videos
 - soft-delete state including `deleted_at`
+- trash state including `trashed_at`
 
 ## Stable ordering
 
@@ -125,6 +131,17 @@ Instead it:
 Direct user-triggered delete actions are different. Those remove the source file
 and derivatives first, then mark or remove the indexed records as part of the
 delete flow.
+
+## Trash versus permanent delete
+
+Foldergram also supports a separate user trash state for admin delete flows.
+
+- moving a post to Trash keeps the original file on disk
+- trashed posts are hidden from feed, folder, detail, likes, and collections surfaces
+- restoring a trashed post makes it visible again without a rescan
+- permanently deleting a post removes the original file plus derivatives
+
+This is separate from scan-time `is_deleted`, which tracks missing files on disk.
 
 ## Folder shortcuts during scans
 
@@ -226,6 +243,17 @@ When date coverage is too sparse, Foldergram falls back to curated sets:
 - Deep Cuts
 - Lucky Dip
 
+## Places resolution
+
+Places are an offline, opt-in layer built from photo GPS metadata.
+
+- admins prepare a local GeoNames dataset from `Settings -> Places`
+- rebuilding place assignments reads stored EXIF latitude and longitude from indexed photos
+- matched results are stored in the `places` table and linked from `images.place_id`
+- runtime Places pages then read only from SQLite, just like feed and folder pages
+
+Photos without GPS metadata, and videos, simply remain unassigned.
+
 ## Folder stories
 
 Folder stories use separate SQLite-backed queries from `GET /api/feed/moments`.
@@ -235,12 +263,25 @@ Folder stories use separate SQLite-backed queries from `GET /api/feed/moments`.
 - `GET /api/folders/:slug/stories/:id` pages through the media for one story capsule
 - neither route walks the filesystem on request
 
-## Folder rebuild requirement
+## Saved posts and collections
+
+Foldergram keeps likes separate from saved-post collections.
+
+- `admin` and `viewer` sessions store shared likes and collections in SQLite
+- anonymous public sessions use browser-local favorites and collections instead
+- a default saved collection is always present, and custom collections can group the same post into multiple buckets
+- because normal rescans preserve stable image rows when possible, shared collection membership usually survives ordinary maintenance scans
+
+## Gallery root relocation
 
 Foldergram tracks the last successful gallery root. If that path changes and
-there is already indexed content, the scanner marks the library as requiring a
-rebuild. This is meant to prevent silent cross-library drift in the index and
-cached derivatives.
+there is already indexed content, startup first validates whether the new root
+still represents the same indexed library.
+
+If validation succeeds, Foldergram refreshes stored absolute source paths and
+continues using the current index, likes, thumbnails, previews, and sort
+ordering. If validation fails, the scanner marks the library as requiring a
+rebuild to prevent silent cross-library drift.
 
 ## Derivative migration and move preservation
 

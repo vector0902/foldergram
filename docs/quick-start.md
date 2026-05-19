@@ -123,7 +123,7 @@ changes.
 If you want the lowest upfront derivative work for a large library in Docker,
 edit `docker-compose.yml` before startup:
 
-```env
+```bash
 IMAGE_DETAIL_SOURCE=original
 DERIVATIVE_MODE=lazy
 ```
@@ -137,7 +137,8 @@ access, add a separate viewer password, or switch to public browse mode.
 
 Inside Settings:
 
-- `General Settings` contains stories mode, excluded folders, and Home/Reels defaults
+- `General Settings` contains stories mode, excluded folders, Home/Reels defaults, and the default folder photo order
+- `Places` contains offline place-data preparation and place-assignment rebuilds for GPS-tagged photos
 - `Scan & Library` contains manual scan plus rebuild actions
 
 Until you enable password protection, Foldergram starts without an auth gate,
