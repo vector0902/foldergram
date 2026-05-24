@@ -29,10 +29,10 @@ media.
 
 ## How does the app select a folder's avatar or cover image?
 
-By default, Foldergram automatically selects a `cover.jpg` (or `.png`, `.webp`, `.avif`, `.gif`) file within the folder if one exists.
+By default, Foldergram automatically selects a `cover.jpg` (or `.jpeg`, `.png`, `.webp`, `.avif`, `.gif`) file within the folder if one exists.
 If no explicit cover file is found, it falls back to the most recent (newest) supported media file in that folder.
 Admins can also use the "Set as Cover" action from the detail view of any image to set it as the cover without renaming files.
-Any explicit `cover.*` files, or any files manually set as the cover via the UI, are hidden from the normal folder grid so they don't appear as duplicate posts.
+Any explicit `cover.*` files are hidden from the normal folder grid so they don't appear as duplicate posts. Images manually set as the cover via the UI remain visible in the folder grid.
 
 ## How do reserved stories folders work?
 

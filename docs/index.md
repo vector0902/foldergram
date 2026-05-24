@@ -37,7 +37,7 @@ features:
       width: "36"
       height: "36"
     title: Photos and videos
-    details: Indexes JPEG, PNG, WebP, GIF, MP4, MOV, M4V, WebM, and MKV. Thumbnails and previews are generated automatically. Videos get a full reels view with scroll-snap playback.
+    details: Indexes JPEG, PNG, WebP, GIF, AVIF, MP4, MOV, M4V, WebM, and MKV. Thumbnails and previews are generated automatically during scans or on demand in lazy mode. Videos get a full reels view with scroll-snap playback.
   - icon:
       src: /icons/access-control.svg
       width: "36"
@@ -71,7 +71,7 @@ features:
 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
 </div>
 <h3>Formats and storage</h3>
-<p>Images: <code>.jpg</code>, <code>.png</code>, <code>.webp</code>, <code>.gif</code>. Videos: <code>.mp4</code>, <code>.mov</code>, <code>.m4v</code>, <code>.webm</code>, <code>.mkv</code>. Originals are never moved. SQLite stores metadata. Thumbnails and previews are written under <code>thumbnails/</code> and <code>previews/</code>.</p>
+<p>Images: <code>.jpg</code>, <code>.jpeg</code>, <code>.png</code>, <code>.webp</code>, <code>.gif</code>, <code>.avif</code>. Videos: <code>.mp4</code>, <code>.mov</code>, <code>.m4v</code>, <code>.webm</code>, <code>.mkv</code>. Originals are never moved. SQLite stores metadata. Thumbnails and previews are written under <code>thumbnails/</code> and <code>previews/</code>.</p>
 </div>
 
 <div class="cs-feature">

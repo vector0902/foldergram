@@ -124,6 +124,19 @@ describe.sequential('folder cover scanner', () => {
     expect(avatarImage!.filename).toBe('cover.png');
   });
 
+  it('respects cover.avif when higher-priority cover files are absent', async () => {
+    maintenanceRepository.resetLibraryIndex();
+
+    await createSourceFile('nature/photo-1.jpg');
+    await createSourceFile('nature/cover.avif');
+
+    await scannerService.scanAll('manual');
+
+    const folder = folderRepository.getBySlug('nature');
+    const avatarImage = imageRepository.getById(folder!.avatar_image_id!);
+    expect(avatarImage!.filename).toBe('cover.avif');
+  });
+
   async function createSourceFile(relativePath: string, mtimeOffsetMs = 0): Promise<void> {
     const absolutePath = path.join(appConfig.galleryRoot, relativePath);
     await fs.mkdir(path.dirname(absolutePath), { recursive: true });

@@ -30,7 +30,7 @@ const database = databaseManager.connection;
 const EFFECTIVE_FEED_TIME_SQL = 'COALESCE(images.taken_at, images.sort_timestamp)';
 const DEFAULT_COLLECTION_SLUG = 'saved';
 const DEFAULT_COLLECTION_NAME = 'Saved';
-const COVER_FILENAMES = ['cover.jpg', 'cover.jpeg', 'cover.png', 'cover.webp', 'cover.gif'] as const;
+const COVER_FILENAMES = ['cover.jpg', 'cover.jpeg', 'cover.png', 'cover.webp', 'cover.avif', 'cover.gif'] as const;
 const COVER_FILENAME_SQL = COVER_FILENAMES.map((name) => `'${name}'`).join(', ');
 const NORMAL_FOLDER_ROLE_SQL = "folders.role = 'normal'";
 const NORMAL_FOLDER_ID_SUBQUERY_SQL = "SELECT id FROM folders WHERE role = 'normal'";
@@ -1628,8 +1628,9 @@ export const imageRepository = {
           WHEN 'cover.jpeg' THEN 2
           WHEN 'cover.png' THEN 3
           WHEN 'cover.webp' THEN 4
-          WHEN 'cover.gif' THEN 5
-          ELSE 6
+          WHEN 'cover.avif' THEN 5
+          WHEN 'cover.gif' THEN 6
+          ELSE 7
         END,
         id ASC
       LIMIT 1

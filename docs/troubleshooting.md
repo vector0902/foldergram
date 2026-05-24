@@ -147,14 +147,16 @@ Check:
 If the folder was already indexed before the rule existed, it will stay visible
 until that scan finishes and soft-removes it from the index.
 
-## Videos fail to index or generate previews
+## Videos or animated AVIF files fail to index or generate previews
 
 Check that both tools are installed and available on `PATH`:
 
 - `ffprobe`
 - `ffmpeg`
 
-Foldergram uses them directly for supported video files.
+Foldergram uses them directly for supported video files and animated AVIF
+image-sequence processing. Static AVIF files use the normal image path and do
+not require these tools.
 
 ## A video opens from the original file instead of a generated preview
 

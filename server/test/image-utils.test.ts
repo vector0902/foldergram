@@ -7,6 +7,7 @@ import {
   getPreviewRelativePath,
   getStableSortTimestamp,
   getThumbnailRelativePath,
+  isSupportedImageFile,
   isSupportedMediaFile,
   isSupportedVideoFile
 } from '../src/utils/image-utils.js';
@@ -38,6 +39,12 @@ describe('scanner utilities', () => {
     expect(isSupportedVideoFile('clip.mp4')).toBe(true);
     expect(isSupportedMediaFile('clip.webm')).toBe(true);
     expect(getMediaTypeFromExtension('.mov')).toBe('video');
+  });
+
+  it('detects supported AVIF image files', () => {
+    expect(isSupportedImageFile('poster.avif')).toBe(true);
+    expect(isSupportedMediaFile('poster.avif')).toBe(true);
+    expect(getMediaTypeFromExtension('.avif')).toBe('image');
   });
 
   it('preserves existing sort timestamps before mtime fallback', () => {

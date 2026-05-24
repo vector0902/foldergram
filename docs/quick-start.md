@@ -8,8 +8,8 @@ description: Get Foldergram running locally with a real gallery structure and ve
 Docker Compose is the recommended way to run Foldergram.
 
 It gives you the quickest path to a working install and includes the media
-tooling needed for video support, so you do not need to set up Node.js,
-`pnpm`, or `ffmpeg` on the host first.
+tooling needed for video support and animated AVIF processing, so you do not
+need to set up Node.js, `pnpm`, or `ffmpeg` on the host first.
 
 ## Preferred: Docker Compose
 
@@ -83,7 +83,7 @@ The included compose file:
 - mounts `./data/gallery`, `./data/db`, `./data/thumbnails`, and `./data/previews`
 - runs the app in production mode
 - uses internal container paths under `/app/data`
-- relies on the image's bundled `ffmpeg`
+- relies on the image's bundled `ffmpeg` and `ffprobe`
 
 For the default Docker Compose setup, the container uses the image's built-in
 production defaults plus the mounted `./data/...` volumes. The source-install

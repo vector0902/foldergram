@@ -26,9 +26,8 @@ type PlaybackStrategy = ModelsModule['PlaybackStrategy'];
 
 const generateThumbnailDerivativeMock = vi.fn();
 const generateDerivativesMock = vi.fn();
+const generatePreviewDerivativeMock = vi.fn();
 const readMediaMetadataMock = vi.fn();
-const writeImagePreviewMock = vi.fn();
-const writeVideoPreviewMock = vi.fn();
 
 describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
   let tempRoot = '';
@@ -45,9 +44,8 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
   async function reset(derivativeMode = 'lazy', scanDerivativeConcurrency = 4) {
     generateThumbnailDerivativeMock.mockReset();
     generateDerivativesMock.mockReset();
+    generatePreviewDerivativeMock.mockReset();
     readMediaMetadataMock.mockReset();
-    writeImagePreviewMock.mockReset();
-    writeVideoPreviewMock.mockReset();
 
     await fs.rm(tempRoot, { recursive: true, force: true });
     await fs.mkdir(tempRoot, { recursive: true });
@@ -55,10 +53,9 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
     vi.resetModules();
     vi.doMock('../src/services/derivative-service.js', () => ({
       generateDerivatives: generateDerivativesMock,
+      generatePreviewDerivative: generatePreviewDerivativeMock,
       generateThumbnailDerivative: generateThumbnailDerivativeMock,
-      readMediaMetadata: readMediaMetadataMock,
-      writeImagePreview: writeImagePreviewMock,
-      writeVideoPreview: writeVideoPreviewMock
+      readMediaMetadata: readMediaMetadataMock
     }));
 
     vi.stubEnv('DERIVATIVE_MODE', derivativeMode);
@@ -123,14 +120,20 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
       };
     });
 
-    writeImagePreviewMock.mockImplementation(async (_src: string, previewAbsolutePath: string) => {
+    generatePreviewDerivativeMock.mockImplementation(async (_src: string, relativePath: string, _force = false, overrides?: { previewPath?: string }) => {
+      const previewPath = overrides?.previewPath ?? getPreviewRelativePath(relativePath, getMediaTypeFromExtension(path.extname(relativePath)));
+      const previewAbsolutePath = path.join(appConfig.previewsDir, previewPath);
       await fs.mkdir(path.dirname(previewAbsolutePath), { recursive: true });
-      await fs.writeFile(previewAbsolutePath, `image-preview:${path.basename(previewAbsolutePath)}`);
-    });
-
-    writeVideoPreviewMock.mockImplementation(async (_src: string, previewAbsolutePath: string) => {
-      await fs.mkdir(path.dirname(previewAbsolutePath), { recursive: true });
-      await fs.writeFile(previewAbsolutePath, `video-preview:${path.basename(previewAbsolutePath)}`);
+      const suffix = path.extname(relativePath).toLowerCase() === '.mp4'
+        ? 'video-preview'
+        : path.extname(relativePath).toLowerCase() === '.avif'
+          ? 'animated-avif-preview'
+          : 'image-preview';
+      await fs.writeFile(previewAbsolutePath, `${suffix}:${path.basename(previewAbsolutePath)}`);
+      return {
+        previewPath,
+        generatedPreview: true
+      };
     });
   }
 
@@ -254,7 +257,7 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
     mtimeMs: number,
     playbackStrategy: PlaybackStrategy,
     durationMs: number | null = null,
-    options: { storedGalleryRoot?: string } = {}
+    options: { storedGalleryRoot?: string; isAnimated?: boolean | null } = {}
   ) {
     const relativePath = `${folder.folder_path}/${filename}`;
     const absolutePath = options.storedGalleryRoot
@@ -278,6 +281,7 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
       mediaType,
       mimeType: getMimeTypeFromExtension(extension),
       durationMs,
+      isAnimated: options.isAnimated ?? false,
       fingerprint: createFingerprint(relativePath, fileSize, mtimeMs),
       mtimeMs,
       firstSeenAt: '2026-01-01T00:00:00.000Z',
@@ -419,8 +423,7 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
     const response = await dispatchRoute(lazyPreviewsRouter, `/${encodeRelativePath(image.preview_path)}`);
     expect(response.statusCode).toBe(200);
     expect(response.body).toBe('image-preview:photo.webp');
-    expect(writeImagePreviewMock).toHaveBeenCalledOnce();
-    expect(writeVideoPreviewMock).not.toHaveBeenCalled();
+    expect(generatePreviewDerivativeMock).toHaveBeenCalledOnce();
   });
 
   it('generates a missing image preview from the current gallery root when the cached absolute path is stale', async () => {
@@ -436,9 +439,32 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
     const response = await dispatchRoute(lazyPreviewsRouter, `/${encodeRelativePath(image.preview_path)}`);
 
     expect(response.statusCode).toBe(200);
-    expect(writeImagePreviewMock).toHaveBeenCalledWith(
+    expect(generatePreviewDerivativeMock).toHaveBeenCalledWith(
       path.join(appConfig.galleryRoot, image.relative_path),
-      path.join(appConfig.previewsDir, image.preview_path)
+      image.relative_path,
+      false,
+      { previewPath: image.preview_path }
+    );
+  });
+
+  it('generates a missing animated AVIF preview through the AVIF-aware preview generator', async () => {
+    await reset('lazy');
+
+    maintenanceRepository.resetLibraryIndex();
+    const folder = folderRepository.upsert({ slug: 'animated-avif', name: 'Animated AVIF', folderPath: 'animated-avif' });
+    const image = createIndexedMedia(folder, 'clip.avif', 3_400, 'preview', null, {
+      isAnimated: true
+    });
+
+    const response = await dispatchRoute(lazyPreviewsRouter, `/${encodeRelativePath(image.preview_path)}`);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe('animated-avif-preview:clip.webp');
+    expect(generatePreviewDerivativeMock).toHaveBeenCalledWith(
+      path.join(appConfig.galleryRoot, image.relative_path),
+      image.relative_path,
+      false,
+      { previewPath: image.preview_path }
     );
   });
 
@@ -450,7 +476,9 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
     const video = createIndexedMedia(folder, 'clip.mp4', 4000, 'original', 5000);
     let releaseGeneration: (() => void) | null = null;
     const generationStarted = new Promise<void>((resolve) => {
-      writeVideoPreviewMock.mockImplementationOnce(async (_src: string, previewAbsolutePath: string) => {
+      generatePreviewDerivativeMock.mockImplementationOnce(async (_src: string, relativePath: string, _force = false, overrides?: { previewPath?: string }) => {
+        const previewPath = overrides?.previewPath ?? getPreviewRelativePath(relativePath, 'video');
+        const previewAbsolutePath = path.join(appConfig.previewsDir, previewPath);
         resolve();
         await new Promise<void>((generationResolve) => {
           releaseGeneration = generationResolve;
@@ -471,7 +499,7 @@ describe.sequential('DERIVATIVE_MODE lazy behavior', () => {
     expect(secondResponse.statusCode).toBe(200);
     expect(firstResponse.body).toBe('video-preview:clip.mp4');
     expect(secondResponse.body).toBe('video-preview:clip.mp4');
-    expect(writeVideoPreviewMock).toHaveBeenCalledOnce();
+    expect(generatePreviewDerivativeMock).toHaveBeenCalledOnce();
   });
 
   it('limits concurrent generation for different missing derivatives', async () => {

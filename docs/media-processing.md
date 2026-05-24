@@ -19,6 +19,7 @@ cached on disk.
 - `.png`
 - `.webp`
 - `.gif`
+- `.avif`
 
 ### Videos
 
@@ -47,7 +48,9 @@ These values are defined in `server/src/utils/image-utils.ts`.
 | `lazy` | Scans index metadata only. Missing thumbnails and previews are generated when `/thumbnails/...` or `/previews/...` is first requested. |
 
 Lazy mode still writes the generated files to the configured derivative
-directories, so subsequent requests use the cached file on disk.
+directories, so subsequent requests use the cached file on disk. It also uses
+the same media-specific generation rules as eager mode, including animated AVIF
+preview generation.
 
 ## Derivative mapping
 
@@ -76,7 +79,7 @@ keeps the last known-good path until the new target is repaired or regenerated.
 
 ## Image derivatives
 
-Images are processed with Sharp.
+Most images are processed with Sharp. Static AVIF files also stay on the Sharp path so transparency and regular image behavior are preserved.
 
 ### Thumbnail
 
@@ -89,6 +92,23 @@ Images are processed with Sharp.
 - auto-rotated
 - resized to width `1500` without enlargement
 - encoded as WebP with `quality: 86`
+
+## Animated AVIF handling
+
+Animated AVIF image sequences are treated as images in the UI, not videos.
+
+Foldergram uses:
+
+- Sharp first for normal static AVIF image metadata
+- `ffprobe` to identify animated AVIF image sequences when Sharp cannot decode them reliably
+- `ffmpeg` to generate static WebP thumbnails and animated WebP previews for animated AVIF files
+
+This hybrid path keeps static AVIF on the normal Sharp image pipeline while still supporting animated AVIF sequences that Sharp cannot decode reliably in the current runtime.
+
+Existing libraries with already indexed AVIF files receive a one-time AVIF
+metadata repair on the next successful full scan after upgrade. That pass
+refreshes legacy animated flags and AVIF timestamp fallbacks for stored rows,
+then stops re-reading unchanged AVIF files on later scans.
 
 ## Image detail source
 

@@ -160,7 +160,7 @@ The shipped `.env.example` keeps the development ports aligned like this:
 | Node.js 22 | Used across the workspace and CI configuration. |
 | `pnpm` | Matches the workspace scripts and lockfile. |
 | Writable local storage | Foldergram creates and maintains the gallery, database, thumbnails, and previews directories. |
-| FFmpeg and FFprobe | Needed only when you run the app outside Docker and want supported video processing. The backend calls `ffprobe` for metadata and `ffmpeg` for video thumbnails and previews. |
+| FFmpeg and FFprobe | Needed only when you run the app outside Docker and want supported video processing or animated AVIF image-sequence processing. The backend calls `ffprobe` for metadata and `ffmpeg` for video thumbnails, video previews, and animated AVIF derivatives. |
 
 ## Supported media
 
@@ -171,6 +171,7 @@ The shipped `.env.example` keeps the development ports aligned like this:
 - `.png`
 - `.webp`
 - `.gif`
+- `.avif`
 
 ### Videos
 
