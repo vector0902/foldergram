@@ -221,7 +221,9 @@ data/
   └─ previews/      # Generated previews, sharded by asset key
 ```
 
-`GALLERY_ROOT` only needs read access. `DB_DIR`, `THUMBNAILS_DIR`, and `PREVIEWS_DIR` must be writable.
+`GALLERY_ROOT` only needs read access. `DB_DIR`, `THUMBNAILS_DIR`, and
+`PREVIEWS_DIR` must be writable. `<DATA_ROOT>/scan-errors` is created on
+demand and must be writable when skip mode produces scan reports.
 
 | Variable                      | Default             | Description                                                               |
 | ----------------------------- | ------------------- | ------------------------------------------------------------------------- |
@@ -238,6 +240,7 @@ data/
 | `IMAGE_DETAIL_SOURCE`         | `preview`           | For image detail pages, use generated previews or stream originals.       |
 | `DERIVATIVE_MODE`             | `eager`             | Generate derivatives during scans or lazily on first request.             |
 | `LOG_VERBOSE`                 | `0`                 | Truthy values are `1`, `true`, `yes`, and `on`.                           |
+| `SCAN_MEDIA_ERROR_MODE`       | `skip`              | Use `skip` to report supported-media failures and continue, or `fail`.    |
 | `SCAN_DISCOVERY_CONCURRENCY`  | `4`                 | Folder discovery concurrency.                                             |
 | `SCAN_DERIVATIVE_CONCURRENCY` | `4`                 | Derivative generation concurrency.                                        |
 | `PUBLIC_DEMO_MODE`            | `0`                 | When enabled, all API mutations become read-only and return `403`.        |
@@ -248,6 +251,8 @@ only `DATA_ROOT`, Foldergram will default the other storage paths to
 `<DATA_ROOT>/gallery`, `<DATA_ROOT>/db`, `<DATA_ROOT>/thumbnails`, and
 `<DATA_ROOT>/previews`. Set `GALLERY_ROOT`, `DB_DIR`, `THUMBNAILS_DIR`, or
 `PREVIEWS_DIR` separately only when you need a non-standard layout.
+Per-run full scan error reports are written under `<DATA_ROOT>/scan-errors/`
+when a scan records supported-media failures.
 
 Docker uses the fixed internal container port `4141`, and other production
 runtimes continue to use `SERVER_PORT`, which defaults to `4141` in the Docker
@@ -272,6 +277,9 @@ not read directly by the container.
 - `IMAGE_DETAIL_SOURCE=original` makes image detail pages stream `/api/originals/:id`.
 - `DERIVATIVE_MODE=eager` generates thumbnails and previews during scans.
 - `DERIVATIVE_MODE=lazy` indexes metadata during scans, then generates missing files the first time `/thumbnails/...` or `/previews/...` is requested and caches them on disk.
+- `SCAN_MEDIA_ERROR_MODE=skip` reports supported image and video processing failures, skips those files, and lets the scan finish as `completed_with_errors`.
+- `SCAN_MEDIA_ERROR_MODE=fail` preserves fail-fast behavior for those same scan-time media errors.
+- When a scan records skipped media failures, Foldergram stores a short sample in SQLite, writes the full per-run report under `<DATA_ROOT>/scan-errors/`, and shows that report path in the admin Settings view.
 
 These flags are independent:
 

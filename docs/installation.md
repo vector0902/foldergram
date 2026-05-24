@@ -193,10 +193,13 @@ The shipped `.env.example` points at:
 | `DB_DIR` | `./data/db` |
 | `THUMBNAILS_DIR` | `./data/thumbnails` |
 | `PREVIEWS_DIR` | `./data/previews` |
+| `SCAN_MEDIA_ERROR_MODE` | `skip` |
 
 `DATA_ROOT` is the base path for this layout. If you change only `DATA_ROOT`,
 Foldergram will look for `gallery`, `db`, `thumbnails`, and `previews`
 under that directory unless you override those paths individually.
+Full scan error reports are written under `<DATA_ROOT>/scan-errors/` when skip
+mode records supported-media failures.
 
 `GALLERY_EXCLUDED_FOLDERS` accepts comma-separated folder rules. Names match
 any folder with that name anywhere in the gallery tree; values with a slash

@@ -31,6 +31,7 @@ yourself.
 | `IMAGE_DETAIL_SOURCE` | `preview` | For image detail pages, use generated previews or stream originals. Videos ignore this flag. |
 | `DERIVATIVE_MODE` | `eager` | Generate derivatives during scans or lazily on the first protected derivative request. |
 | `LOG_VERBOSE` | `0` | Truthy values are `1`, `true`, `yes`, and `on`. |
+| `SCAN_MEDIA_ERROR_MODE` | `skip` | `skip` reports supported-media scan failures and continues. `fail` aborts on the first such error. |
 | `SCAN_DISCOVERY_CONCURRENCY` | `4` | Discovery concurrency, validated from `1` to `32`. |
 | `SCAN_DERIVATIVE_CONCURRENCY` | `4` | Derivative concurrency, validated from `1` to `32`. |
 | `PUBLIC_DEMO_MODE` | `0` | When enabled, mutating API routes return `403` for read-only demo deployments. |
@@ -117,11 +118,14 @@ The Settings sidebar is split into:
 - `DATA_DIR` is a legacy alias. It is used only when `DATA_ROOT` is unset.
 - Relative paths are resolved from the repository root.
 - Absolute paths are used as-is.
+- Foldergram reserves `<DATA_ROOT>/scan-errors` for per-run full scan error reports.
 - `THUMBNAILS_DIR` and `PREVIEWS_DIR` must be separate, non-overlapping directories.
+- The scan-error report directory must not overlap `THUMBNAILS_DIR` or `PREVIEWS_DIR`.
 - `THUMBNAILS_DIR` cannot contain `GALLERY_ROOT`.
 - `PREVIEWS_DIR` cannot contain `GALLERY_ROOT`.
 - `GALLERY_ROOT` only needs read access for scans and originals.
 - `DB_DIR`, `THUMBNAILS_DIR`, and `PREVIEWS_DIR` must be writable.
+- `<DATA_ROOT>/scan-errors` is created on demand and must be writable when skip mode produces scan reports.
 
 Foldergram normalizes path separators so the same rules work with POSIX-style and
 Windows-style paths.
@@ -164,12 +168,30 @@ Behavior:
 | Current behavior | `IMAGE_DETAIL_SOURCE=preview`, `DERIVATIVE_MODE=eager` |
 | Lowest upfront processing for large libraries | `IMAGE_DETAIL_SOURCE=original`, `DERIVATIVE_MODE=lazy` |
 
+### `SCAN_MEDIA_ERROR_MODE`
+
+Accepted values:
+
+- `skip`
+- `fail`
+
+Behavior:
+
+- `skip` is the default
+- `skip` reports supported-media failures during stat, metadata, derivative generation, and derivative-migration repair work, then continues scanning the rest of the library
+- scans with skipped media finish as `completed_with_errors` instead of `completed`
+- admin-facing scan details keep a short sample in SQLite and point to the full per-run report under `<DATA_ROOT>/scan-errors/`
+- `fail` preserves fail-fast behavior for those same scan-time media errors
+- this applies to supported media that actually reaches the scanner, including supported images and videos
+- unsupported extensions, hidden or excluded paths, and files placed directly in `GALLERY_ROOT` are still ignored earlier and do not produce scan error reports
+
 ### Settings actions and lazy mode
 
 - `Scan Library` always refreshes index metadata.
 - `Rebuild Library Index` resets and rebuilds the SQLite-backed index. Existing sharded derivatives remain reusable when the same indexed rows survive the upgrade path.
 - In `DERIVATIVE_MODE=lazy`, neither a normal scan nor `Rebuild Library Index` pre-generates missing thumbnails or previews.
 - `Regenerate Thumbnails` remains a manual thumbnail and video-poster rebuild only. It does not rebuild previews.
+- When `SCAN_MEDIA_ERROR_MODE=skip` records media failures, the admin Settings view shows the full report path for that scan.
 - Runtime-only app-wide controls such as stories mode and excluded folders live under `Settings -> General Settings`, while the scan and rebuild actions live under `Settings -> Scan & Library`.
 
 ## Derivative layout upgrade
@@ -198,12 +220,15 @@ Scan phases behave as follows:
 - `migration` is determinate and reports checked rows, moved files, repaired files, missing files, and asset-key backfills
 - `discovery` reports discovered and processed folders and posts, but remains open-ended while the scanner is still finding additional folders
 - `derivatives` is determinate and reports queued-versus-completed jobs plus generated thumbnails and previews
+- completed runs can finish as `completed_with_errors` when `SCAN_MEDIA_ERROR_MODE=skip` records supported-media failures
 
 ## Managed path ignores
 
 If your configured database, thumbnails, or previews directories live inside the
 gallery tree, Foldergram computes their relative paths and excludes them from
-discovery. That prevents generated files from being re-indexed as source media.
+discovery. The same ignore protection applies to `<DATA_ROOT>/scan-errors`.
+That prevents generated files and scan reports from being re-indexed as source
+media.
 
 ## Recommended local `.env`
 
@@ -225,6 +250,7 @@ PREVIEWS_DIR=./data/previews
 IMAGE_DETAIL_SOURCE=preview
 DERIVATIVE_MODE=eager
 LOG_VERBOSE=0
+SCAN_MEDIA_ERROR_MODE=skip
 SCAN_DISCOVERY_CONCURRENCY=4
 SCAN_DERIVATIVE_CONCURRENCY=4
 PUBLIC_DEMO_MODE=0

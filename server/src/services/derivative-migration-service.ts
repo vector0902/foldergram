@@ -51,12 +51,21 @@ export interface DerivativeMigrationProgress {
 
 interface EnsureMigratedOptions {
   onProgress?: (progress: DerivativeMigrationProgress) => void;
+  onError?: (error: DerivativeMigrationRepairError) => void | Promise<void>;
 }
 
 export interface DerivativeMigrationSummary extends DerivativeMigrationProgress {
   migratedRows: number;
   repairedRows: number;
+  repairErrors: number;
   complete: boolean;
+}
+
+interface DerivativeMigrationRepairError {
+  currentFile: string;
+  operation: DerivativeMigrationOperation;
+  message: string;
+  sourcePath: string | null;
 }
 
 interface DerivativeCleanupSummary {
@@ -73,10 +82,46 @@ interface MissingDerivativeRepairSummary {
   repairedFiles: number;
   repairedRows: number;
   missingFiles: number;
+  repairErrors: number;
+}
+
+interface RepairRowError {
+  message: string;
+  sourcePath: string | null;
+  error: unknown;
 }
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function formatStep(label: string, value: string | number): string {
+  return `${label} ${value}`;
+}
+
+function joinLogParts(parts: Array<string | null | undefined>): string {
+  return parts.filter((part): part is string => Boolean(part)).join(' | ');
+}
+
+function logDerivativeRepairFailure(
+  currentFile: string,
+  sourcePath: string | null,
+  message: string,
+  error: unknown
+): void {
+  log.error(
+    joinLogParts([
+      'Derivative repair skipped',
+      formatStep('file', currentFile),
+      sourcePath ? formatStep('source', normalizePath(sourcePath)) : null,
+      message
+    ]),
+    appConfig.logVerbose ? error : undefined
+  );
 }
 
 async function fileExists(targetPath: string): Promise<boolean> {
@@ -188,6 +233,7 @@ class DerivativeMigrationService {
         currentPhaseMessage: MIGRATION_PHASE_MESSAGE,
         migratedRows: 0,
         repairedRows: 0,
+        repairErrors: 0,
         complete: true
       };
     }
@@ -199,6 +245,7 @@ class DerivativeMigrationService {
 
     const totalRows = imageRepository.countAll();
     let repairedRows = 0;
+    let repairErrors = 0;
     let migratedRows = 0;
     const progress: DerivativeMigrationProgress = {
       totalRows,
@@ -302,9 +349,18 @@ class DerivativeMigrationService {
           emitProgress({
             missingFiles: progress.missingFiles + missingFiles
           });
+        },
+        onRepairError: async (currentFile, message, sourcePath) => {
+          await options.onError?.({
+            currentFile,
+            operation: 'regenerating_derivatives',
+            message,
+            sourcePath
+          });
         }
       });
       repairedRows = repairSummary.repairedRows;
+      repairErrors = repairSummary.repairErrors;
     }
 
     appSettingsRepository.set(DERIVATIVE_STORAGE_LAYOUT_VERSION_SETTING_KEY, DERIVATIVE_STORAGE_LAYOUT_VERSION);
@@ -316,23 +372,33 @@ class DerivativeMigrationService {
       progress.backfilledAssetKeys > 0 ||
       progress.movedFiles > 0 ||
       progress.repairedFiles > 0 ||
-      progress.missingFiles > 0
+      progress.missingFiles > 0 ||
+      repairErrors > 0
     ) {
-      log.table('Derivative storage migration complete', [
+      const rows: Array<[label: string, value: unknown]> = [
         ['Rows', migratedRows],
         ['Asset keys backfilled', progress.backfilledAssetKeys],
         ['Derivative files moved', progress.movedFiles],
         ['Derivative files repaired', progress.repairedFiles],
         ['Rows repaired', repairedRows],
         ['Missing derivative files', progress.missingFiles]
-      ], 'success');
+      ];
+
+      if (repairErrors > 0) {
+        rows.push(['Derivative repair errors', repairErrors]);
+      }
+
+      log.table('Derivative storage migration complete', rows, repairErrors > 0 ? 'warning' : 'success');
     }
+
+    const complete = repairErrors === 0 && this.isMigrationComplete();
 
     return {
       ...progress,
       migratedRows,
       repairedRows,
-      complete: true
+      repairErrors,
+      complete
     };
   }
 
@@ -443,35 +509,76 @@ class DerivativeMigrationService {
       onRepairingPreview?: (currentFile: string) => void;
       onRegeneratingDerivatives?: (currentFile: string, repairedFiles: number) => void;
       onMissingFilesCounted?: (missingFiles: number) => void;
+      onRepairError?: (currentFile: string, message: string, sourcePath: string | null) => void | Promise<void>;
     } = {}
   ): Promise<MissingDerivativeRepairSummary> {
     let repairedFiles = 0;
     let repairedRows = 0;
     let missingFiles = 0;
+    let repairErrors = 0;
 
     for (const row of imageRepository.listActive()) {
       const currentFile = normalizePath(row.relative_path);
-      const repairSummary = await this.repairRow(row, {
-        onRepairingThumbnail: () => {
-          callbacks.onRepairingThumbnail?.(currentFile);
-        },
-        onRepairingPreview: () => {
-          callbacks.onRepairingPreview?.(currentFile);
-        },
-        onRegeneratingDerivatives: (repairedFiles) => {
-          callbacks.onRegeneratingDerivatives?.(currentFile, repairedFiles);
+      let fatalRepairError: string | null = null;
+
+      try {
+        const repairSummary = await this.repairRow(row, {
+          onRepairingThumbnail: () => {
+            callbacks.onRepairingThumbnail?.(currentFile);
+          },
+          onRepairingPreview: () => {
+            callbacks.onRepairingPreview?.(currentFile);
+          },
+          onRegeneratingDerivatives: (repairedFiles) => {
+            callbacks.onRegeneratingDerivatives?.(currentFile, repairedFiles);
+          }
+        });
+
+        if (repairSummary.regenerationError) {
+          repairErrors += 1;
+          await callbacks.onRepairError?.(
+            currentFile,
+            repairSummary.regenerationError.message,
+            repairSummary.regenerationError.sourcePath
+          );
+          logDerivativeRepairFailure(
+            currentFile,
+            repairSummary.regenerationError.sourcePath,
+            repairSummary.regenerationError.message,
+            repairSummary.regenerationError.error
+          );
+
+          if (appConfig.scanMediaErrorMode === 'fail') {
+            fatalRepairError = `${currentFile}: ${repairSummary.regenerationError.message}`;
+          }
         }
-      });
-      repairedFiles += repairSummary.repairedFiles;
-      repairedRows += repairSummary.repaired ? 1 : 0;
-      missingFiles += repairSummary.missingFiles;
-      callbacks.onMissingFilesCounted?.(repairSummary.missingFiles);
+
+        repairedFiles += repairSummary.repairedFiles;
+        repairedRows += repairSummary.repaired ? 1 : 0;
+        missingFiles += repairSummary.missingFiles;
+        callbacks.onMissingFilesCounted?.(repairSummary.missingFiles);
+      } catch (error) {
+        const message = getErrorMessage(error);
+
+        repairErrors += 1;
+        await callbacks.onRepairError?.(currentFile, message, null);
+        logDerivativeRepairFailure(currentFile, null, message, error);
+
+        if (appConfig.scanMediaErrorMode === 'fail') {
+          throw new Error(`${currentFile}: ${message}`);
+        }
+      }
+
+      if (fatalRepairError) {
+        throw new Error(fatalRepairError);
+      }
     }
 
     return {
       repairedFiles,
       repairedRows,
-      missingFiles
+      missingFiles,
+      repairErrors
     };
   }
 
@@ -482,9 +589,10 @@ class DerivativeMigrationService {
       onRepairingPreview?: () => void;
       onRegeneratingDerivatives?: (repairedFiles: number) => void;
     } = {}
-  ): Promise<{ repairedFiles: number; missingFiles: number; repaired: boolean }> {
+  ): Promise<{ repairedFiles: number; missingFiles: number; repaired: boolean; regenerationError: RepairRowError | null }> {
     let assetKey = row.asset_key;
     let repairedFiles = 0;
+    let regenerationError: RepairRowError | null = null;
 
     if (!assetKey) {
       assetKey = generateAssetKey();
@@ -537,14 +645,22 @@ class DerivativeMigrationService {
     const previewExistsBeforeGenerate = await fileExists(previewAbsolutePath);
 
     if ((!thumbnailExistsBeforeGenerate || !previewExistsBeforeGenerate) && sourcePath && sourceExists) {
-      const derivatives = await generateDerivatives(sourcePath, row.relative_path, false, {
-        thumbnailPath: targetThumbnailPath,
-        previewPath: targetPreviewPath
-      });
-      const regeneratedFiles = Number(derivatives.generatedThumbnail) + Number(derivatives.generatedPreview);
-      if (regeneratedFiles > 0) {
-        repairedFiles += regeneratedFiles;
-        callbacks.onRegeneratingDerivatives?.(regeneratedFiles);
+      try {
+        const derivatives = await generateDerivatives(sourcePath, row.relative_path, false, {
+          thumbnailPath: targetThumbnailPath,
+          previewPath: targetPreviewPath
+        });
+        const regeneratedFiles = Number(derivatives.generatedThumbnail) + Number(derivatives.generatedPreview);
+        if (regeneratedFiles > 0) {
+          repairedFiles += regeneratedFiles;
+          callbacks.onRegeneratingDerivatives?.(regeneratedFiles);
+        }
+      } catch (error) {
+        regenerationError = {
+          message: getErrorMessage(error),
+          sourcePath,
+          error
+        };
       }
     }
 
@@ -569,6 +685,7 @@ class DerivativeMigrationService {
     return {
       repairedFiles,
       missingFiles,
+      regenerationError,
       repaired:
         repairedFiles > 0 ||
         row.thumbnail_path !== resolvedThumbnailPath ||

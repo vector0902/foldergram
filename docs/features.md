@@ -232,11 +232,11 @@ Its left sidebar is split into:
 
 | Section | What it contains |
 | --- | --- |
-| `Scan & Library` | Phase-aware live scan state, manual scan, thumbnail-only rebuild, and library-index rebuild actions. |
+| `Scan & Library` | Phase-aware live scan state, manual scan, thumbnail-only rebuild, and library-index rebuild actions. Admins also see the full report path when a scan finishes with skipped media errors. |
 | `General Settings` | Home and Reels default feed modes, the default App Folder photo order, stories-folders mode, excluded-folder rules, migration notices, and save-and-rescan prompts for those app-wide changes. |
 | `Places` | Offline GeoNames preparation status plus place-assignment rebuild actions for GPS-tagged photos. |
 | `Security & Access` | Admin password, viewer password, public mode, sign-out, and related auth controls. |
-| `System Status` | Storage and index state plus last completed scan details. |
+| `System Status` | Storage and index state plus last completed scan details, including whether the last run completed with errors. |
 
 In `General Settings`, env-backed excluded-folder rules are shown read-only and
 custom rules are saved at runtime. Changing stories mode or excluded folders
@@ -274,7 +274,7 @@ Current non-admin behavior:
 
 | Action | What changes |
 | --- | --- |
-| Scan Library | Runs a normal scan against the current gallery root. |
+| Scan Library | Runs a normal scan against the current gallery root. In `SCAN_MEDIA_ERROR_MODE=skip`, supported-media failures are reported, skipped, and the run finishes as `completed_with_errors`. |
 | Regenerate Thumbnails | Clears generated thumbnails and video poster images, then rebuilds them from indexed media only. |
 | Rebuild Library Index | Clears indexed folders, posts, likes, folder scan state, and scan history, then rescans the active gallery root and reuses matching cached derivatives when possible. In lazy derivative mode it does not pre-generate missing thumbnails or previews. |
 

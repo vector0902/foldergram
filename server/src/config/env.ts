@@ -23,6 +23,7 @@ const envSchema = z.object({
   THUMBNAILS_DIR: z.string().optional(),
   PREVIEWS_DIR: z.string().optional(),
   LOG_VERBOSE: z.string().optional(),
+  SCAN_MEDIA_ERROR_MODE: z.enum(['skip', 'fail']).default('skip'),
   SCAN_DISCOVERY_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
   SCAN_DERIVATIVE_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
   PUBLIC_DEMO_MODE: z.string().optional(),
@@ -97,6 +98,7 @@ const dbDir = resolveConfiguredPath(parsed.DB_DIR, path.join(dataRoot, 'db'));
 const geodataDir = path.join(dataRoot, 'geodata');
 const thumbnailsDir = resolveConfiguredPath(parsed.THUMBNAILS_DIR, path.join(dataRoot, 'thumbnails'));
 const previewsDir = resolveConfiguredPath(parsed.PREVIEWS_DIR, path.join(dataRoot, 'previews'));
+const scanErrorReportDir = path.join(dataRoot, 'scan-errors');
 const logVerbose = parseBooleanFlag(parsed.LOG_VERBOSE);
 const publicDemoMode = parseBooleanFlag(parsed.PUBLIC_DEMO_MODE);
 const csrfTrustedOrigins = parseConfiguredOrigins(parsed.CSRF_TRUSTED_ORIGINS);
@@ -109,6 +111,16 @@ if (derivativeDirectoriesOverlap) {
   throw new Error('Invalid storage configuration: THUMBNAILS_DIR and PREVIEWS_DIR must point to separate non-overlapping directories.');
 }
 
+const scanErrorReportDirectoryOverlapsServedMedia =
+  isSameOrWithinPath(scanErrorReportDir, thumbnailsDir) ||
+  isSameOrWithinPath(thumbnailsDir, scanErrorReportDir) ||
+  isSameOrWithinPath(scanErrorReportDir, previewsDir) ||
+  isSameOrWithinPath(previewsDir, scanErrorReportDir);
+
+if (scanErrorReportDirectoryOverlapsServedMedia) {
+  throw new Error('Invalid storage configuration: scan error reports must not overlap THUMBNAILS_DIR or PREVIEWS_DIR.');
+}
+
 if (isSameOrWithinPath(thumbnailsDir, galleryRoot)) {
   throw new Error('Invalid storage configuration: THUMBNAILS_DIR cannot contain GALLERY_ROOT.');
 }
@@ -118,7 +130,7 @@ if (isSameOrWithinPath(previewsDir, galleryRoot)) {
 }
 
 const managedGalleryRelativeIgnores = uniq(
-  [dbDir, thumbnailsDir, previewsDir]
+  [dbDir, thumbnailsDir, previewsDir, scanErrorReportDir]
     .map((directoryPath) => getRelativePathWithinRoot(galleryRoot, directoryPath))
     .filter((value): value is string => typeof value === 'string' && value.length > 0)
     .map((value) => normalizePath(value))
@@ -136,9 +148,11 @@ export const appConfig = {
   geodataDir,
   thumbnailsDir,
   previewsDir,
+  scanErrorReportDir,
   managedGalleryRelativeIgnores,
   galleryExcludedFolders,
   logVerbose,
+  scanMediaErrorMode: parsed.SCAN_MEDIA_ERROR_MODE,
   publicDemoMode,
   csrfTrustedOrigins,
   scanDiscoveryConcurrency: parsed.SCAN_DISCOVERY_CONCURRENCY,

@@ -1,4 +1,5 @@
 import type { Stats } from 'node:fs';
+import fsSync from 'node:fs';
 import fs from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
@@ -128,7 +129,7 @@ interface IndexedFolderScanOptions {
   usedSlugs: Set<string>;
   folderScanStates: Map<string, FolderScanStateRecord>;
   derivativeJobs: Map<string, DerivativeJob>;
-  errors: string[];
+  errors: ScanErrorCollector;
   options: FullScanOptions;
   context: ImageProcessingContext;
   logLabel: string;
@@ -247,6 +248,8 @@ const HEARTBEAT_INTERVAL_MS = 5000;
 const DERIVATIVE_CACHE_KEEP_FILE = '.gitkeep';
 const ROOT_DISCOVERY_LABEL = '(root)';
 const CURRENT_AVIF_METADATA_REPAIR_VERSION = '1';
+const MAX_SCAN_ERROR_TEXT_LENGTH = 8000;
+const MAX_SCAN_ERROR_LINE_LENGTH = 2000;
 export const LIBRARY_REBUILD_REQUIRED_MESSAGE =
   'Library rebuild required before scanning because the configured gallery root changed.';
 
@@ -366,6 +369,166 @@ function joinLogParts(parts: Array<string | null | undefined>): string {
 
 function createReusableDerivativeSignature(fileSize: number, mtimeMs: number, extension: string): string {
   return `${fileSize}:${Math.round(mtimeMs)}:${extension.toLowerCase()}`;
+}
+
+function sanitizeReportFilenamePart(value: string): string {
+  const sanitized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return sanitized.length > 0 ? sanitized.slice(0, 48) : 'scan';
+}
+
+function formatScanError(relativePath: string, message: string, options: { sourcePath?: string | null } = {}): string {
+  const sourcePath = options.sourcePath ? normalizePath(options.sourcePath) : null;
+  return sourcePath ? `${relativePath}: ${message} (source: ${sourcePath})` : `${relativePath}: ${message}`;
+}
+
+function truncateScanErrorLine(value: string): string {
+  if (value.length <= MAX_SCAN_ERROR_LINE_LENGTH) {
+    return value;
+  }
+
+  return `${value.slice(0, MAX_SCAN_ERROR_LINE_LENGTH - 15)}...[truncated]`;
+}
+
+class ScanErrorCollector {
+  private readonly reportPath: string;
+  private readonly sampleLines: string[] = [];
+  private sampleLength = 0;
+  private stream: fsSync.WriteStream | null = null;
+  private reportError: string | null = null;
+  count = 0;
+
+  constructor(
+    private readonly runId: number,
+    private readonly reason: string
+  ) {
+    this.reportPath = path.join(
+      appConfig.scanErrorReportDir,
+      `scan-${runId}-${sanitizeReportFilenamePart(reason)}.log`
+    );
+  }
+
+  get hasErrors(): boolean {
+    return this.count > 0;
+  }
+
+  get sampleText(): string {
+    return this.sampleLines.join('\n');
+  }
+
+  async add(error: string): Promise<string> {
+    const normalizedError = truncateScanErrorLine(error.replace(/\s+/g, ' ').trim());
+    this.count += 1;
+    this.rememberSample(normalizedError);
+    await this.write(`${this.count}. ${normalizedError}\n`);
+    return normalizedError;
+  }
+
+  async finalize(summary: ScanSummary): Promise<{ reportPath: string | null; errorMessage: string | null } | null> {
+    if (!this.hasErrors) {
+      return null;
+    }
+
+    await this.write([
+      '',
+      'Summary:',
+      `Status: ${summary.status}`,
+      `Error count: ${this.count}`,
+      `Scanned files: ${summary.scanned_files}`,
+      `New files: ${summary.new_files}`,
+      `Updated files: ${summary.updated_files}`,
+      `Removed files: ${summary.removed_files}`,
+      ''
+    ].join('\n'));
+
+    if (this.stream) {
+      await new Promise<void>((resolve) => {
+        this.stream?.end(resolve);
+      });
+    }
+
+    if (this.reportError) {
+      return {
+        reportPath: null,
+        errorMessage: this.reportError
+      };
+    }
+
+    return {
+      reportPath: this.reportPath,
+      errorMessage: null
+    };
+  }
+
+  private rememberSample(error: string): void {
+    if (this.sampleLength >= MAX_SCAN_ERROR_TEXT_LENGTH) {
+      return;
+    }
+
+    const nextLineLength = error.length + (this.sampleLines.length > 0 ? 1 : 0);
+    if (this.sampleLength + nextLineLength > MAX_SCAN_ERROR_TEXT_LENGTH) {
+      const remaining = MAX_SCAN_ERROR_TEXT_LENGTH - this.sampleLength - (this.sampleLines.length > 0 ? 1 : 0);
+      if (remaining > 0) {
+        this.sampleLines.push(error.slice(0, remaining));
+        this.sampleLength = MAX_SCAN_ERROR_TEXT_LENGTH;
+      }
+      return;
+    }
+
+    this.sampleLines.push(error);
+    this.sampleLength += nextLineLength;
+  }
+
+  private ensureStream(): fsSync.WriteStream | null {
+    if (this.stream || this.reportError) {
+      return this.stream;
+    }
+
+    try {
+      fsSync.mkdirSync(appConfig.scanErrorReportDir, { recursive: true });
+      this.stream = fsSync.createWriteStream(this.reportPath, {
+        flags: 'w',
+        mode: 0o600
+      });
+      this.stream.on('error', (error) => {
+        this.reportError = error.message;
+      });
+      this.stream.write([
+        'Foldergram scan error report',
+        `Generated at: ${new Date().toISOString()}`,
+        `Run ID: ${this.runId}`,
+        `Reason: ${this.reason}`,
+        `Gallery root: ${normalizePath(appConfig.galleryRoot)}`,
+        '',
+        'Errors:',
+        ''
+      ].join('\n'));
+    } catch (error) {
+      this.reportError = error instanceof Error ? error.message : String(error);
+      this.stream = null;
+    }
+
+    return this.stream;
+  }
+
+  private async write(value: string): Promise<void> {
+    const stream = this.ensureStream();
+    if (!stream || this.reportError) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      stream.write(value, (error?: Error | null) => {
+        if (error) {
+          this.reportError = error.message;
+        }
+        resolve();
+      });
+    });
+  }
 }
 
 class ScannerService {
@@ -641,6 +804,36 @@ class ScannerService {
     });
   }
 
+  private async applyScanErrors(summary: ScanSummary, errors: ScanErrorCollector): Promise<void> {
+    if (!errors.hasErrors) {
+      return;
+    }
+
+    if (summary.status !== 'failed') {
+      summary.status = 'completed_with_errors';
+    }
+
+    let reportNotice = '';
+    const reportResult = await errors.finalize(summary);
+
+    if (reportResult?.reportPath) {
+      reportNotice = `\n\nFull error report: ${normalizePath(reportResult.reportPath)}`;
+      log.info(
+        joinLogParts([
+          'Scan error report written',
+          formatStep('errors', errors.count),
+          formatStep('path', normalizePath(reportResult.reportPath))
+        ])
+      );
+    } else if (reportResult?.errorMessage) {
+      reportNotice = `\n\nUnable to write full error report: ${reportResult.errorMessage}`;
+      log.error('Failed to write scan error report', reportResult.errorMessage);
+    }
+
+    const sampleLimit = Math.max(0, MAX_SCAN_ERROR_TEXT_LENGTH - reportNotice.length);
+    summary.error_text = `${errors.sampleText.slice(0, sampleLimit)}${reportNotice}`;
+  }
+
   private finishUnavailableRun(runId: number, reason: string): ScanSummary {
     const storageState = storageService.refreshAvailability();
     const summary = {
@@ -827,7 +1020,7 @@ class ScannerService {
     usedSlugs: Set<string>,
     folderScanStates: Map<string, FolderScanStateRecord>,
     derivativeJobs: Map<string, DerivativeJob>,
-    errors: string[],
+    errors: ScanErrorCollector,
     options: FullScanOptions,
     context: ImageProcessingContext
   ): Promise<SourceFolderScanResult> {
@@ -904,35 +1097,46 @@ class ScannerService {
     return result;
   }
 
-  private async statIndexedFiles(files: IndexedFileReference[], errors: string[]): Promise<StatIndexedFilesResult> {
+  private async statIndexedFiles(files: IndexedFileReference[], errors: ScanErrorCollector): Promise<StatIndexedFilesResult> {
     const activeRelativePaths: string[] = [];
     const discoveredFiles: IndexedFileCandidate[] = [];
     let folderHadErrors = false;
 
-    await Promise.all(
-      files.map((file) =>
-        discoveryLimit(async () => {
-          activeRelativePaths.push(file.relativePath);
+    const statFile = async (file: IndexedFileReference) => {
+      activeRelativePaths.push(file.relativePath);
 
-          try {
-            const stats = await fs.stat(file.absolutePath);
-            discoveredFiles.push({
-              absolutePath: file.absolutePath,
-              relativePath: file.relativePath,
-              stats
-            });
-          } catch (error) {
-            folderHadErrors = true;
-            const message = error instanceof Error ? error.message : String(error);
-            errors.push(`${file.relativePath}: ${message}`);
-            this.setProgress({
-              processedImages: this.progress.processedImages + 1
-            });
-            log.error(joinLogParts(['Failed to stat media during discovery', formatStep('file', file.relativePath), message]));
-          }
-        })
-      )
-    );
+      try {
+        const stats = await fs.stat(file.absolutePath);
+        discoveredFiles.push({
+          absolutePath: file.absolutePath,
+          relativePath: file.relativePath,
+          stats
+        });
+      } catch (error) {
+        folderHadErrors = true;
+        const message = error instanceof Error ? error.message : String(error);
+        const detail = formatScanError(file.relativePath, message, {
+          sourcePath: file.absolutePath
+        });
+        await errors.add(detail);
+        this.setProgress({
+          processedImages: this.progress.processedImages + 1
+        });
+        log.error(joinLogParts(['Failed to stat media during discovery', formatStep('file', file.relativePath), message]));
+
+        if (appConfig.scanMediaErrorMode === 'fail') {
+          throw new Error(detail);
+        }
+      }
+    };
+
+    if (appConfig.scanMediaErrorMode === 'fail') {
+      for (const file of files) {
+        await statFile(file);
+      }
+    } else {
+      await Promise.all(files.map((file) => discoveryLimit(() => statFile(file))));
+    }
 
     return {
       activeRelativePaths,
@@ -1000,7 +1204,7 @@ class ScannerService {
     usedSlugs: Set<string>,
     folderScanStates: Map<string, FolderScanStateRecord>,
     derivativeJobs: Map<string, DerivativeJob>,
-    errors: string[],
+    errors: ScanErrorCollector,
     options: FullScanOptions,
     context: ImageProcessingContext,
     excludedFolderRules: string[]
@@ -1278,45 +1482,56 @@ class ScannerService {
       };
     }
 
-    await Promise.all(
-      discoveredFiles.map((file) =>
-        discoveryLimit(async () => {
-          try {
-            const result = await this.processImageFile(folder, file, options, context);
+    const scanFile = async (file: IndexedFileCandidate) => {
+      try {
+        const result = await this.processImageFile(folder, file, options, context);
 
-            if (result.status === 'new') {
-              newFiles += 1;
-            }
+        if (result.status === 'new') {
+          newFiles += 1;
+        }
 
-            if (result.status === 'updated') {
-              updatedFiles += 1;
-            }
+        if (result.status === 'updated') {
+          updatedFiles += 1;
+        }
 
-            if (result.status === 'unchanged') {
-              unchangedFiles += 1;
-              if (result.refreshedIndexedRow) {
-                refreshedUnchangedRows += 1;
-              } else {
-                skippedUnchangedRows += 1;
-              }
-            }
-
-            if (result.derivativeJob) {
-              this.queueDerivativeJob(derivativeJobs, result.derivativeJob);
-            }
-          } catch (error) {
-            folderHadErrors = true;
-            const message = error instanceof Error ? error.message : String(error);
-            errors.push(`${file.relativePath}: ${message}`);
-            log.error(joinLogParts(['Failed to index media', formatStep('file', file.relativePath), message]));
-          } finally {
-            this.setProgress({
-              processedImages: this.progress.processedImages + 1
-            });
+        if (result.status === 'unchanged') {
+          unchangedFiles += 1;
+          if (result.refreshedIndexedRow) {
+            refreshedUnchangedRows += 1;
+          } else {
+            skippedUnchangedRows += 1;
           }
-        })
-      )
-    );
+        }
+
+        if (result.derivativeJob) {
+          this.queueDerivativeJob(derivativeJobs, result.derivativeJob);
+        }
+      } catch (error) {
+        folderHadErrors = true;
+        const message = error instanceof Error ? error.message : String(error);
+        const detail = formatScanError(file.relativePath, message, {
+          sourcePath: file.absolutePath
+        });
+        await errors.add(detail);
+        log.error(joinLogParts(['Failed to index media', formatStep('file', file.relativePath), message]));
+
+        if (appConfig.scanMediaErrorMode === 'fail') {
+          throw new Error(detail);
+        }
+      } finally {
+        this.setProgress({
+          processedImages: this.progress.processedImages + 1
+        });
+      }
+    };
+
+    if (appConfig.scanMediaErrorMode === 'fail') {
+      for (const file of discoveredFiles) {
+        await scanFile(file);
+      }
+    } else {
+      await Promise.all(discoveredFiles.map((file) => discoveryLimit(() => scanFile(file))));
+    }
 
     const removedFiles = imageRepository.markFolderImagesDeleted(folder.id, activeRelativePaths);
     folderRepository.syncAvatarSelection(folder.id);
@@ -1390,7 +1605,7 @@ class ScannerService {
 
     const runId = scanRunRepository.start();
     const summary = createEmptySummary();
-    const errors: string[] = [];
+    const errors = new ScanErrorCollector(runId, reason);
     let derivativeSummary: DerivativeProcessingSummary = {
       durationMs: 0,
       generatedPreviews: 0,
@@ -1408,7 +1623,8 @@ class ScannerService {
       joinLogParts([
         'Rebuild thumbnails',
         formatStep('reason', reason),
-        formatStep('root', normalizePath(appConfig.galleryRoot))
+        formatStep('root', normalizePath(appConfig.galleryRoot)),
+        formatStep('media-errors', appConfig.scanMediaErrorMode)
       ])
     );
 
@@ -1452,12 +1668,7 @@ class ScannerService {
       log.error('Thumbnail rebuild failed', summary.error_text);
     }
 
-    if (errors.length > 0) {
-      summary.error_text = errors.join('\n').slice(0, 8000);
-      if (summary.status !== 'failed') {
-        summary.status = 'completed_with_errors';
-      }
-    }
+    await this.applyScanErrors(summary, errors);
 
     this.finishRun(runId, summary);
     log.table(
@@ -1483,7 +1694,7 @@ class ScannerService {
   ): Promise<ScanSummary> {
     const runId = scanRunRepository.start();
     const summary = createEmptySummary();
-    const errors: string[] = [];
+    const errors = new ScanErrorCollector(runId, reason);
     const derivativeJobs = new Map<string, DerivativeJob>();
     const metrics: FullScanMetrics = {
       folderShortcutHits: 0,
@@ -1537,6 +1748,7 @@ class ScannerService {
         formatStep('root-changed', formatToggle(galleryRootChanged)),
         formatStep('stored-root', formatToggle(hasStoredGalleryRoot)),
         formatStep('avif-repair', formatToggle(avifMetadataRepairPending)),
+        formatStep('media-errors', appConfig.scanMediaErrorMode),
         formatStep('stories-as-folders', formatToggle(treatStoriesAsFolders)),
         excludedFolderRules.length > 0 ? formatStep('excluded-folders', excludedFolderRules.join(',')) : null,
         appConfig.managedGalleryRelativeIgnores.length > 0
@@ -1594,12 +1806,18 @@ class ScannerService {
         currentPhaseMessage: getMigrationPhaseMessage(),
         migratedRows: 0,
         repairedRows: 0,
+        repairErrors: 0,
         complete: derivativeMigrationService.isMigrationComplete()
       };
       if (requiresDerivativeMigration) {
         migrationSummary = await derivativeMigrationService.ensureMigrated({
           onProgress: (progress) => {
             this.updateMigrationProgress(progress);
+          },
+          onError: async (error) => {
+            await errors.add(formatScanError(error.currentFile, error.message, {
+              sourcePath: error.sourcePath
+            }));
           }
         });
       }
@@ -1743,7 +1961,7 @@ class ScannerService {
 
       derivativeSummary = await this.processDerivativeJobs([...derivativeJobs.values()], errors);
 
-      if (summary.status !== 'failed' && errors.length === 0 && derivativeMigrationService.isMigrationComplete()) {
+      if (summary.status !== 'failed' && !errors.hasErrors && derivativeMigrationService.isMigrationComplete()) {
         await derivativeMigrationService.cleanupStaleDerivatives();
       }
     } catch (error) {
@@ -1752,12 +1970,7 @@ class ScannerService {
       log.error('Full scan failed', summary.error_text);
     }
 
-    if (errors.length > 0) {
-      summary.error_text = errors.join('\n').slice(0, 8000);
-      if (summary.status !== 'failed') {
-        summary.status = 'completed_with_errors';
-      }
-    }
+    await this.applyScanErrors(summary, errors);
 
     if (summary.status !== 'failed') {
       appSettingsRepository.set(LAST_SUCCESSFUL_GALLERY_ROOT_SETTING_KEY, currentGalleryRoot);
@@ -1786,7 +1999,7 @@ class ScannerService {
   private async performIncrementalScan(relativePaths: string[], reason: string): Promise<ScanSummary> {
     const runId = scanRunRepository.start();
     const summary = createEmptySummary();
-    const errors: string[] = [];
+    const errors = new ScanErrorCollector(runId, reason);
     const derivativeJobs = new Map<string, DerivativeJob>();
     let fallbackReason: string | null = null;
 
@@ -1841,7 +2054,8 @@ class ScannerService {
       joinLogParts([
         `Starting incremental scan (${reason})`,
         formatStep('files', normalizedPaths.length),
-        formatStep('source-folders', impactedSourceFolders.size)
+        formatStep('source-folders', impactedSourceFolders.size),
+        formatStep('media-errors', appConfig.scanMediaErrorMode)
       ])
     );
 
@@ -1898,12 +2112,7 @@ class ScannerService {
       log.error('Incremental scan failed', summary.error_text);
     }
 
-    if (errors.length > 0) {
-      summary.error_text = errors.join('\n').slice(0, 8000);
-      if (summary.status !== 'failed') {
-        summary.status = 'completed_with_errors';
-      }
-    }
+    await this.applyScanErrors(summary, errors);
 
     this.finishRun(runId, summary);
     log.table(`Finished incremental scan (${reason})`, [
@@ -1942,7 +2151,7 @@ class ScannerService {
     });
   }
 
-  private async processDerivativeJobs(jobs: DerivativeJob[], errors: string[]): Promise<DerivativeProcessingSummary> {
+  private async processDerivativeJobs(jobs: DerivativeJob[], errors: ScanErrorCollector): Promise<DerivativeProcessingSummary> {
     const startedAt = performance.now();
     let generatedThumbnails = 0;
     let generatedPreviews = 0;
@@ -1979,63 +2188,75 @@ class ScannerService {
       joinLogParts([
         'Starting derivative phase',
         formatStep('jobs', jobs.length),
-        formatStep('concurrency', appConfig.scanDerivativeConcurrency)
+        formatStep('concurrency', appConfig.scanDerivativeConcurrency),
+        formatStep('media-errors', appConfig.scanMediaErrorMode)
       ])
     );
 
-    await Promise.all(
-      jobs.map((job) =>
-        derivativeLimit(async () => {
-          try {
+    const processJob = async (job: DerivativeJob) => {
+      try {
+        this.setProgress({
+          currentOperation: getDerivativeOperationForJob(job),
+          currentFile: job.relativePath,
+          currentFolder: getSourceFolderPathFromRelativePath(job.relativePath)
+        });
+
+        if (job.kind === 'thumbnail') {
+          const thumbnail = await generateThumbnailDerivative(job.absolutePath, job.relativePath, job.force, {
+            thumbnailPath: job.thumbnailPath
+          });
+
+          if (thumbnail.generatedThumbnail) {
+            generatedThumbnails += 1;
             this.setProgress({
-              currentOperation: getDerivativeOperationForJob(job),
-              currentFile: job.relativePath,
-              currentFolder: getSourceFolderPathFromRelativePath(job.relativePath)
-            });
-
-            if (job.kind === 'thumbnail') {
-              const thumbnail = await generateThumbnailDerivative(job.absolutePath, job.relativePath, job.force, {
-                thumbnailPath: job.thumbnailPath
-              });
-
-              if (thumbnail.generatedThumbnail) {
-                generatedThumbnails += 1;
-                this.setProgress({
-                  generatedThumbnails: this.progress.generatedThumbnails + 1
-                });
-              }
-            } else {
-              const derivatives = await generateDerivatives(job.absolutePath, job.relativePath, job.force, {
-                thumbnailPath: job.thumbnailPath,
-                previewPath: job.previewPath
-              });
-
-              if (derivatives.generatedThumbnail) {
-                generatedThumbnails += 1;
-                this.setProgress({
-                  generatedThumbnails: this.progress.generatedThumbnails + 1
-                });
-              }
-
-              if (derivatives.generatedPreview) {
-                generatedPreviews += 1;
-                this.setProgress({
-                  generatedPreviews: this.progress.generatedPreviews + 1
-                });
-              }
-            }
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            errors.push(`${job.relativePath}: ${message}`);
-            log.error(joinLogParts(['Derivative generation failed', formatStep('file', job.relativePath), message]));
-          } finally {
-            this.setProgress({
-              processedDerivativeJobs: this.progress.processedDerivativeJobs + 1
+              generatedThumbnails: this.progress.generatedThumbnails + 1
             });
           }
-        })
-      )
-    );
+        } else {
+          const derivatives = await generateDerivatives(job.absolutePath, job.relativePath, job.force, {
+            thumbnailPath: job.thumbnailPath,
+            previewPath: job.previewPath
+          });
+
+          if (derivatives.generatedThumbnail) {
+            generatedThumbnails += 1;
+            this.setProgress({
+              generatedThumbnails: this.progress.generatedThumbnails + 1
+            });
+          }
+
+          if (derivatives.generatedPreview) {
+            generatedPreviews += 1;
+            this.setProgress({
+              generatedPreviews: this.progress.generatedPreviews + 1
+            });
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const detail = formatScanError(job.relativePath, message, {
+          sourcePath: job.absolutePath
+        });
+        await errors.add(detail);
+        log.error(joinLogParts(['Derivative generation failed', formatStep('file', job.relativePath), message]));
+
+        if (appConfig.scanMediaErrorMode === 'fail') {
+          throw new Error(detail);
+        }
+      } finally {
+        this.setProgress({
+          processedDerivativeJobs: this.progress.processedDerivativeJobs + 1
+        });
+      }
+    };
+
+    if (appConfig.scanMediaErrorMode === 'fail') {
+      for (const job of jobs) {
+        await processJob(job);
+      }
+    } else {
+      await Promise.all(jobs.map((job) => derivativeLimit(() => processJob(job))));
+    }
 
     const summary = {
       durationMs: elapsedMilliseconds(startedAt),

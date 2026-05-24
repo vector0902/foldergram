@@ -338,6 +338,7 @@ describe.sequential('derivative layout upgrade', () => {
       currentPhaseMessage: 'Upgrading legacy thumbnails and previews before indexing starts.',
       migratedRows: 1,
       repairedRows: 0,
+      repairErrors: 0,
       complete: true
     });
 
@@ -509,6 +510,70 @@ describe.sequential('derivative layout upgrade', () => {
     expect(summary.missingFiles).toBe(2);
     expect(migrated?.thumbnail_path).toBe(legacyThumbnailPath);
     expect(migrated?.preview_path).toBe(legacyPreviewPath);
+  });
+
+  it('skips corrupt sources during derivative repair and reports the failing file', async () => {
+    const folder = folderRepository.upsert({
+      slug: 'corrupt-repair',
+      name: 'corrupt-repair',
+      folderPath: 'corrupt-repair'
+    });
+    const relativePath = 'corrupt-repair/photo.jpg';
+    const absolutePath = path.join(appConfig.galleryRoot, relativePath);
+    const legacyThumbnailPath = getThumbnailRelativePath(relativePath);
+    const legacyPreviewPath = getPreviewRelativePath(relativePath, 'image');
+    const sourceContents = `source:${relativePath}`;
+    const mtimeMs = Date.parse('2026-03-05T12:00:00.000Z');
+
+    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+    await fs.writeFile(absolutePath, sourceContents);
+    await fs.utimes(absolutePath, mtimeMs / 1000, mtimeMs / 1000);
+
+    imageRepository.upsert({
+      folderId: folder.id,
+      filename: 'photo.jpg',
+      extension: '.jpg',
+      relativePath,
+      absolutePath,
+      fileSize: Buffer.byteLength(sourceContents),
+      width: 1200,
+      height: 800,
+      mediaType: 'image',
+      mimeType: getMimeTypeFromExtension('.jpg'),
+      durationMs: null,
+      fingerprint: createFingerprint(relativePath, Buffer.byteLength(sourceContents), mtimeMs),
+      mtimeMs,
+      firstSeenAt: '2026-03-05T12:00:00.000Z',
+      sortTimestamp: mtimeMs,
+      takenAt: mtimeMs,
+      takenAtSource: 'mtime',
+      exifJson: '{}',
+      thumbnailPath: legacyThumbnailPath,
+      previewPath: legacyPreviewPath
+    });
+
+    generateDerivativesMock.mockRejectedValueOnce(new Error('VipsJpeg: premature end of JPEG image'));
+
+    const lastScan = await scannerService.scanAll('manual', {
+      repairUnchangedDerivatives: false
+    });
+    const migrated = imageRepository.getByRelativePath(relativePath);
+
+    expect(lastScan?.status).toBe('completed_with_errors');
+    expect(lastScan?.error_text).toContain(relativePath);
+    expect(lastScan?.error_text).toContain('VipsJpeg: premature end of JPEG image');
+    expect(lastScan?.error_text).toContain('Full error report:');
+    const reportPath = lastScan?.error_text?.match(/Full error report: (.+)$/m)?.[1];
+    expect(reportPath).toBeTruthy();
+    await expect(fs.readFile(reportPath!, 'utf8')).resolves.toContain(relativePath);
+    await expect(fs.readFile(reportPath!, 'utf8')).resolves.toContain('Error count: 1');
+    expect(migrated?.asset_key).toMatch(/^[a-f0-9]{32}$/);
+    expect(migrated?.thumbnail_path).toBe(legacyThumbnailPath);
+    expect(migrated?.preview_path).toBe(legacyPreviewPath);
+    expect(generateDerivativesMock).toHaveBeenCalledWith(absolutePath, relativePath, false, {
+      thumbnailPath: getThumbnailPathForAssetKey(migrated!.asset_key!),
+      previewPath: getPreviewPathForAssetKey(migrated!.asset_key!, 'image')
+    });
   });
 
   it('repairs broken rows by moving legacy mirrored derivatives into the current asset-key layout', async () => {

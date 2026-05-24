@@ -92,6 +92,15 @@ Foldergram does not serve arbitrary filesystem paths from the client.
 - confirms that path is still within `GALLERY_ROOT`
 - confirms the file still exists
 
+### Scan error reports
+
+Per-run full scan error reports are written under `<DATA_ROOT>/scan-errors/`
+when skip mode records supported-media failures.
+
+- report paths are surfaced through admin-only scan details
+- viewer-safe scan responses force `error_text` to `null`
+- the report directory is kept separate from `/thumbnails` and `/previews`, so those files are not exposed through derivative static serving
+
 ### Delete actions
 
 Delete flows resolve target files and directories inside configured roots before

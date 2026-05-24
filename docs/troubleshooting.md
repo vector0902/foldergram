@@ -21,6 +21,7 @@ Check:
 - the configured paths in `.env`
 - whether those paths exist
 - whether `DB_DIR`, `THUMBNAILS_DIR`, and `PREVIEWS_DIR` are writable by the current process
+- whether `<DATA_ROOT>/scan-errors` is writable if you use `SCAN_MEDIA_ERROR_MODE=skip`
 
 `GALLERY_ROOT` is scanned read-only. It does not need write access unless you
 use delete actions that remove originals from the gallery.
@@ -105,6 +106,27 @@ after the retention window on a later successful full scan.
 
 That is intentional so temporary share outages or accidental moves do not
 immediately delete cached derivatives.
+
+## A scan failed or completed with errors on a corrupt or unreadable media file
+
+Foldergram can now handle this in two different ways, depending on
+`SCAN_MEDIA_ERROR_MODE`.
+
+Default behavior:
+
+- `SCAN_MEDIA_ERROR_MODE=skip` reports supported-media failures and continues scanning the rest of the library
+- the completed run is marked `completed_with_errors`
+- `Settings -> Scan & Library` shows the admin-only report path for that run
+- the full per-run report is written under `<DATA_ROOT>/scan-errors/`
+
+Strict behavior:
+
+- `SCAN_MEDIA_ERROR_MODE=fail` stops on the first supported-media failure and marks the scan as failed
+
+This applies to supported media that reaches scan processing, including
+supported images and videos. Unsupported extensions, excluded folders, hidden
+paths, and files placed directly in `GALLERY_ROOT` are still ignored before
+this stage.
 
 ## Moments are missing and highlights appear instead
 
