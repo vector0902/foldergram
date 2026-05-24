@@ -5,6 +5,7 @@ export const DERIVATIVE_STORAGE_LAYOUT_VERSION_SETTING_KEY = 'derivatives.storag
 export const DERIVATIVE_STORAGE_MIGRATION_CURSOR_SETTING_KEY = 'derivatives.storage_migration_cursor';
 export const DERIVATIVE_STORAGE_MIGRATION_COMPLETE_AT_SETTING_KEY = 'derivatives.storage_migration_complete_at';
 export const STALE_DERIVATIVE_GC_LAST_RUN_AT_SETTING_KEY = 'derivatives.stale_gc_last_run_at';
+export const AVIF_METADATA_REPAIR_VERSION_SETTING_KEY = 'library.avif_metadata_repair_version';
 export const TREAT_STORIES_AS_FOLDERS_SETTING_KEY = 'library.treat_stories_as_folders';
 export const EXCLUDED_FOLDERS_SETTING_KEY = 'library.excluded_folders';
 export const STORIES_MIGRATION_DECISION_SETTING_KEY = 'library.stories_migration_decision';

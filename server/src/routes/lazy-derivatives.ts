@@ -6,7 +6,7 @@ import pLimit from 'p-limit';
 import { appConfig } from '../config/env.js';
 import { imageRepository } from '../db/repositories.js';
 import { log } from '../services/log-service.js';
-import { generateThumbnailDerivative, writeImagePreview, writeVideoPreview } from '../services/derivative-service.js';
+import { generatePreviewDerivative, generateThumbnailDerivative } from '../services/derivative-service.js';
 import { scannerService } from '../services/scanner-service.js';
 import { resolveOriginalPath } from '../utils/media-paths.js';
 import { applyDerivativeErrorHeaders, applyProtectedMediaHeaders } from '../utils/media-response.js';
@@ -122,7 +122,6 @@ async function serveOrGenerate(
     return;
   }
 
-  const mediaType = imageRecord.media_type;
   let generationPromise = inflightGenerations.get(absoluteOutputPath);
 
   if (!generationPromise) {
@@ -142,23 +141,9 @@ async function serveOrGenerate(
           });
           return;
         }
-
-        if (mediaType === 'video') {
-          const previewAbsolutePath = resolveDerivativePath(appConfig.previewsDir, requestedPath);
-          if (!previewAbsolutePath) {
-            throw new Error('Invalid derivative path.');
-          }
-
-          await writeVideoPreview(sourcePath, previewAbsolutePath);
-          return;
-        }
-
-        const previewAbsolutePath = resolveDerivativePath(appConfig.previewsDir, requestedPath);
-        if (!previewAbsolutePath) {
-          throw new Error('Invalid derivative path.');
-        }
-
-        await writeImagePreview(sourcePath, previewAbsolutePath);
+        await generatePreviewDerivative(sourcePath, imageRecord.relative_path, false, {
+          previewPath: imageRecord.preview_path
+        });
       } finally {
         inflightGenerations.delete(absoluteOutputPath);
       }

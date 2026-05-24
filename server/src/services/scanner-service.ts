@@ -6,6 +6,7 @@ import path from 'node:path';
 import pLimit from 'p-limit';
 
 import {
+  AVIF_METADATA_REPAIR_VERSION_SETTING_KEY,
   EXCLUDED_FOLDERS_SETTING_KEY,
   LAST_SUCCESSFUL_GALLERY_ROOT_SETTING_KEY,
   LIBRARY_REBUILD_REQUIRED_SETTING_KEY,
@@ -165,6 +166,7 @@ interface SourceFolderScanResult {
 interface ImageProcessingContext {
   galleryRootChanged: boolean;
   hasStoredGalleryRoot: boolean;
+  avifMetadataRepairPending: boolean;
   moveReconciliationEnabled: boolean;
   claimedMoveImageIds: Set<number>;
   rebuildDerivativeReuseIndex?: RebuildDerivativeReuseIndex;
@@ -244,6 +246,7 @@ const derivativeLimit = pLimit(appConfig.scanDerivativeConcurrency);
 const HEARTBEAT_INTERVAL_MS = 5000;
 const DERIVATIVE_CACHE_KEEP_FILE = '.gitkeep';
 const ROOT_DISCOVERY_LABEL = '(root)';
+const CURRENT_AVIF_METADATA_REPAIR_VERSION = '1';
 export const LIBRARY_REBUILD_REQUIRED_MESSAGE =
   'Library rebuild required before scanning because the configured gallery root changed.';
 
@@ -668,6 +671,14 @@ class ScannerService {
   private clearLibraryRebuildRequirement(): void {
     appSettingsRepository.remove(LIBRARY_REBUILD_REQUIRED_SETTING_KEY);
     appSettingsRepository.remove(PREVIOUS_GALLERY_ROOT_SETTING_KEY);
+  }
+
+  private isAvifMetadataRepairPending(): boolean {
+    return appSettingsRepository.get(AVIF_METADATA_REPAIR_VERSION_SETTING_KEY) !== CURRENT_AVIF_METADATA_REPAIR_VERSION;
+  }
+
+  private markAvifMetadataRepairComplete(): void {
+    appSettingsRepository.set(AVIF_METADATA_REPAIR_VERSION_SETTING_KEY, CURRENT_AVIF_METADATA_REPAIR_VERSION);
   }
 
   private async resetDerivativeDirectory(targetDirectory: string): Promise<void> {
@@ -1501,9 +1512,11 @@ class ScannerService {
     const normalizedStoredGalleryRoot = storedGalleryRoot ? normalizePath(storedGalleryRoot) : null;
     const hasStoredGalleryRoot = normalizedStoredGalleryRoot !== null;
     const galleryRootChanged = normalizedStoredGalleryRoot !== currentGalleryRoot;
+    const avifMetadataRepairPending = this.isAvifMetadataRepairPending();
     const imageProcessingContext: ImageProcessingContext = {
       galleryRootChanged,
       hasStoredGalleryRoot,
+      avifMetadataRepairPending,
       moveReconciliationEnabled: false,
       claimedMoveImageIds: new Set<number>(),
       rebuildDerivativeReuseIndex: contextOptions.rebuildDerivativeReuseIndex
@@ -1523,6 +1536,7 @@ class ScannerService {
         formatStep('storage-migration', formatToggle(options.allowDerivativeMigration)),
         formatStep('root-changed', formatToggle(galleryRootChanged)),
         formatStep('stored-root', formatToggle(hasStoredGalleryRoot)),
+        formatStep('avif-repair', formatToggle(avifMetadataRepairPending)),
         formatStep('stories-as-folders', formatToggle(treatStoriesAsFolders)),
         excludedFolderRules.length > 0 ? formatStep('excluded-folders', excludedFolderRules.join(',')) : null,
         appConfig.managedGalleryRelativeIgnores.length > 0
@@ -1749,6 +1763,10 @@ class ScannerService {
       appSettingsRepository.set(LAST_SUCCESSFUL_GALLERY_ROOT_SETTING_KEY, currentGalleryRoot);
     }
 
+    if (summary.status === 'completed' && avifMetadataRepairPending) {
+      this.markAvifMetadataRepairComplete();
+    }
+
     this.finishRun(runId, summary);
     log.table(`Finished full scan (${reason})`, [
       ['Status', summary.status],
@@ -1836,6 +1854,7 @@ class ScannerService {
       const imageProcessingContext: ImageProcessingContext = {
         galleryRootChanged: false,
         hasStoredGalleryRoot: appSettingsRepository.get(LAST_SUCCESSFUL_GALLERY_ROOT_SETTING_KEY) !== null,
+        avifMetadataRepairPending: false,
         moveReconciliationEnabled: false,
         claimedMoveImageIds: new Set<number>()
       };
@@ -2212,6 +2231,7 @@ class ScannerService {
     context: ImageProcessingContext = {
       galleryRootChanged: false,
       hasStoredGalleryRoot: false,
+      avifMetadataRepairPending: false,
       moveReconciliationEnabled: false,
       claimedMoveImageIds: new Set<number>()
     }
@@ -2239,6 +2259,10 @@ class ScannerService {
     const needsPlaybackStrategyBackfill = mediaType === 'video' && existing?.playback_strategy === null;
     const needsAnimatedBackfill = mediaType === 'image' && existing?.is_animated === null;
     const needsExifBackfill = mediaType === 'image' && existing?.exif_json === null;
+    const needsAvifMetadataRepair = context.avifMetadataRepairPending
+      && mediaType === 'image'
+      && extension === '.avif'
+      && existingByPath !== undefined;
 
     if (existingByPath && existingByPath.checksum_or_fingerprint === fingerprint) {
       const refreshedIndexedRow = shouldRefreshUnchangedImage({
@@ -2257,7 +2281,15 @@ class ScannerService {
       let metadataIsAnimated = existingByPath.is_animated === 1;
       let metadataExifJson = existingByPath.exif_json;
 
-      if (needsTakenAtBackfill || needsMediaBackfill || needsOrientationBackfill || needsPlaybackStrategyBackfill || needsAnimatedBackfill || needsExifBackfill) {
+      if (
+        needsTakenAtBackfill
+        || needsMediaBackfill
+        || needsOrientationBackfill
+        || needsPlaybackStrategyBackfill
+        || needsAnimatedBackfill
+        || needsExifBackfill
+        || needsAvifMetadataRepair
+      ) {
         const metadata = await readMediaMetadata(file.absolutePath, mediaType, {
           fileSize: file.stats.size
         });
@@ -2275,11 +2307,25 @@ class ScannerService {
           : null;
       }
 
-      if (refreshedIndexedRow || needsTakenAtBackfill || needsMediaBackfill || needsOrientationBackfill || needsPlaybackStrategyBackfill || needsAnimatedBackfill || needsExifBackfill) {
+      const shouldResetLegacyAnimatedAvifTakenAt = needsAvifMetadataRepair
+        && existingByPath.taken_at_source === 'exif'
+        && metadataIsAnimated
+        && metadataTakenAt !== existingByPath.taken_at;
+
+      if (
+        refreshedIndexedRow
+        || needsTakenAtBackfill
+        || needsMediaBackfill
+        || needsOrientationBackfill
+        || needsPlaybackStrategyBackfill
+        || needsAnimatedBackfill
+        || needsExifBackfill
+        || needsAvifMetadataRepair
+      ) {
         const resolvedTakenAt = resolveTakenAt({
           exifTakenAt: metadataTakenAt,
-          existingTakenAt: existingByPath.taken_at,
-          existingTakenAtSource: existingByPath.taken_at_source,
+          existingTakenAt: shouldResetLegacyAnimatedAvifTakenAt ? null : existingByPath.taken_at,
+          existingTakenAtSource: shouldResetLegacyAnimatedAvifTakenAt ? null : existingByPath.taken_at_source,
           existingSortTimestamp: existingByPath.sort_timestamp,
           existingFirstSeenAt: existingByPath.first_seen_at,
           existingMtimeMs: existingByPath.mtime_ms,
@@ -2349,10 +2395,16 @@ class ScannerService {
       file.stats.mtimeMs
     );
     const firstSeenAt = existing?.first_seen_at ?? new Date().toISOString();
+    const shouldResetLegacyAnimatedAvifTakenAt = context.avifMetadataRepairPending
+      && mediaType === 'image'
+      && extension === '.avif'
+      && existing?.taken_at_source === 'exif'
+      && metadata.isAnimated
+      && metadata.takenAt !== existing.taken_at;
     const resolvedTakenAt = resolveTakenAt({
       exifTakenAt: metadata.takenAt,
-      existingTakenAt: existing?.taken_at,
-      existingTakenAtSource: existing?.taken_at_source,
+      existingTakenAt: shouldResetLegacyAnimatedAvifTakenAt ? null : existing?.taken_at,
+      existingTakenAtSource: shouldResetLegacyAnimatedAvifTakenAt ? null : existing?.taken_at_source,
       existingSortTimestamp: existing?.sort_timestamp,
       existingFirstSeenAt: existing?.first_seen_at,
       existingMtimeMs: existing?.mtime_ms,

@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { MediaType } from '../types/models.js';
 import { normalizePath } from './path-utils.js';
 
-export const SUPPORTED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+export const SUPPORTED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']);
 export const SUPPORTED_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov', '.m4v', '.webm', '.mkv']);
 
 export const THUMBNAIL_SIZE = 640;
@@ -58,6 +58,8 @@ export function getMimeTypeFromExtension(extension: string): string {
       return 'image/webp';
     case '.gif':
       return 'image/gif';
+    case '.avif':
+      return 'image/avif';
     case '.mp4':
       return 'video/mp4';
     case '.mov':
