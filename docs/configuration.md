@@ -25,7 +25,7 @@ yourself.
 | `DATA_DIR` | unset | Optional alias that falls back into `DATA_ROOT` resolution when `DATA_ROOT` is absent. |
 | `GALLERY_ROOT` | `./data/gallery` | Source media root. Foldergram scans below this path. |
 | `GALLERY_EXCLUDED_FOLDERS` | unset | Comma-separated folder exclusion rules. Names match anywhere in the gallery tree; values with a slash match one exact relative path below `GALLERY_ROOT`. |
-| `DB_DIR` | `./data/db` | SQLite directory. Database file is `gallery.sqlite`. |
+| `DB_DIR` | `./data/db` | SQLite directory. Database file is `gallery.sqlite`, and startup Dbmate migrations run against it automatically when the directory is available. |
 | `THUMBNAILS_DIR` | `./data/thumbnails` | Generated thumbnail output root. |
 | `PREVIEWS_DIR` | `./data/previews` | Generated preview output root. |
 | `IMAGE_DETAIL_SOURCE` | `preview` | For image detail pages, use generated previews or stream originals. Videos ignore this flag. |
@@ -126,6 +126,9 @@ The Settings sidebar is split into:
 - `GALLERY_ROOT` only needs read access for scans and originals.
 - `DB_DIR`, `THUMBNAILS_DIR`, and `PREVIEWS_DIR` must be writable.
 - `<DATA_ROOT>/scan-errors` is created on demand and must be writable when skip mode produces scan reports.
+
+When `DB_DIR` cannot be created or written, Foldergram logs the reason, skips
+Dbmate for that process, and falls back to an in-memory SQLite database.
 
 Foldergram normalizes path separators so the same rules work with POSIX-style and
 Windows-style paths.

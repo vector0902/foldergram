@@ -182,6 +182,10 @@ pnpm dev
 npm run dev
 ```
 
+`pnpm dev`, `pnpm dev:server`, and `pnpm start` now run versioned SQLite
+migrations automatically before the server boots. Use `pnpm migrate` if you
+want to apply pending migrations without starting the app.
+
 Development ports:
 
 - Client: prefers `http://localhost:4141` and automatically uses the next free port up to `4144`
@@ -234,7 +238,7 @@ demand and must be writable when skip mode produces scan reports.
 | `DATA_ROOT`                   | `./data`            | Root directory for app-managed storage.                                   |
 | `GALLERY_ROOT`                | `./data/gallery`    | Root directory scanned for App Folders.                                   |
 | `GALLERY_EXCLUDED_FOLDERS`    | empty               | Comma-separated folder exclusion rules such as `@eaDir,Archive/cache`.    |
-| `DB_DIR`                      | `./data/db`         | SQLite database directory.                                                |
+| `DB_DIR`                      | `./data/db`         | SQLite database directory. Startup migrations target `<DB_DIR>/gallery.sqlite`. |
 | `THUMBNAILS_DIR`              | `./data/thumbnails` | Generated thumbnail output directory.                                     |
 | `PREVIEWS_DIR`                | `./data/previews`   | Generated preview output directory.                                       |
 | `IMAGE_DETAIL_SOURCE`         | `preview`           | For image detail pages, use generated previews or stream originals.       |
@@ -347,6 +351,7 @@ only needed when the browser-visible origin differs from the upstream Node host 
 - `pnpm dev:client`
 - `pnpm dev:docs`
 - `pnpm build`
+- `pnpm migrate`
 - `pnpm start`
 - `pnpm test`
 - `pnpm rescan`

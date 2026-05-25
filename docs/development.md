@@ -27,6 +27,7 @@ description: Workspace scripts, local ports, watcher behavior, tests, and docs d
 | `pnpm dev:client` | Client only |
 | `pnpm dev:docs` | VitePress docs only |
 | `pnpm build` | Server build plus client build |
+| `pnpm migrate` | Run pending server database migrations without starting the app |
 | `pnpm start` | Production server start |
 | `pnpm build:docs` | VitePress docs build |
 | `pnpm rescan` | Manual server rescan script |
@@ -56,11 +57,15 @@ lets it move off `4141` without stepping onto the backend or docs ports.
 
 ## Startup sequence
 
-At boot, the server:
+At boot, the server process:
 
-1. creates the Express app
-2. listens on `DEV_SERVER_PORT`
-3. asks the scanner whether startup should scan, stay idle, or block for rebuild
+1. runs Dbmate migrations for `gallery.sqlite`
+2. creates the Express app
+3. listens on `DEV_SERVER_PORT`
+4. asks the scanner whether startup should scan, stay idle, or block for rebuild
+
+If `DB_DIR` is unavailable, Foldergram keeps the existing fallback behavior:
+it skips Dbmate for that run and uses an in-memory SQLite database instead.
 
 If the scanner decides startup should be blocked because the gallery root
 changed and relocation validation failed, Foldergram defers scanning until the
@@ -95,6 +100,21 @@ Run them with:
 ```bash
 pnpm test
 ```
+
+## Schema migrations
+
+Foldergram keeps two schema references in sync:
+
+- `server/src/db/schema.ts` for the current readable schema snapshot
+- `server/db/migrations/*.sql` for ordered Dbmate migrations
+
+When you change the schema:
+
+- update `server/src/db/schema.ts`
+- add a new SQL migration under `server/db/migrations`
+- do not edit an already released migration; add a new one instead
+
+Use `pnpm migrate` to apply pending migrations without starting the app.
 
 ## Client behavior worth knowing
 
