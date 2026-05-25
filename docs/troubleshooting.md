@@ -33,6 +33,23 @@ database. That means indexed state disappears when the process stops.
 
 Fix the configured database directory first.
 
+## Startup stops after an upgrade
+
+Foldergram now runs pending SQLite migrations before it serves requests. If the
+app stops during startup, check the server or container logs first.
+
+Check:
+
+- whether `DB_DIR` still exists and is writable
+- whether the database volume or bind mount still points to the intended location
+- whether the filesystem has enough free space for the SQLite update
+
+For source installs, you can rerun the migration step directly with:
+
+```bash
+pnpm migrate
+```
+
 ## Nothing is being indexed
 
 Start with the gallery structure rules:

@@ -37,6 +37,25 @@ yourself.
 | `PUBLIC_DEMO_MODE` | `0` | When enabled, mutating API routes return `403` for read-only demo deployments. |
 | `CSRF_TRUSTED_ORIGINS` | unset | Comma-separated extra browser origins allowed for mutating API requests. Useful behind reverse proxies or HTTPS terminators. |
 
+## Database migrations
+
+Foldergram stores the app database at `<DB_DIR>/gallery.sqlite`.
+
+When `DB_DIR` is available, startup automatically runs pending Dbmate
+migrations before the server opens that database. This happens for:
+
+- Docker container startup
+- `pnpm dev`
+- `pnpm start`
+- `pnpm rescan`
+
+Fresh installs create the database from the baseline migration. Existing
+supported installs are baselined once on upgrade, so later releases can apply
+ordered schema changes automatically.
+
+For source installs, use `pnpm migrate` if you want to apply pending
+migrations without starting the rest of the app.
+
 ## Access protection configuration
 
 Shared-password protection is **not** configured in `.env`.

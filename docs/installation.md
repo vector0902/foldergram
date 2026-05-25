@@ -75,6 +75,9 @@ Run:
 docker compose up -d
 ```
 
+Container startup runs pending SQLite migrations automatically before the app
+opens the library database.
+
 ### 6. Open the app
 
 Open:
@@ -147,6 +150,10 @@ pnpm install
 cp .env.example .env
 pnpm dev
 ```
+
+`pnpm dev` and `pnpm start` both run pending SQLite migrations automatically
+before the server opens the persistent database. Use `pnpm migrate` when you
+want to apply pending migrations without starting the rest of the app.
 
 The shipped `.env.example` keeps the development ports aligned like this:
 
@@ -254,14 +261,20 @@ pnpm dev:client
 pnpm dev:docs
 ```
 
-## First-run behavior
+## Startup and upgrade behavior
 
 On startup, the server checks storage availability and then decides whether to:
 
+- apply pending SQLite migrations before opening the persistent app database
 - queue a startup scan for first-run indexing
 - keep using the existing index for already-initialized libraries
 - validate a relocated gallery root and refresh stored source paths when it still matches the indexed library
 - block scanning until a library rebuild happens only when the new gallery root does not validate against the current index
+
+Fresh installs create `gallery.sqlite` from the baseline migration. Existing
+supported installs are baselined automatically on the first upgraded start, so
+later releases can apply ordered schema changes without a manual export or
+rebuild step.
 
 When a full library task runs, the UI reports discovery separately from later
 media-processing phases so long-running maintenance work stays understandable.

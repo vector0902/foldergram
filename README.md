@@ -102,6 +102,9 @@ mkdir -p data/gallery/example-album
 docker compose up -d
 ```
 
+Container startup runs pending SQLite migrations automatically before the app
+opens the library database.
+
 6. Open `http://localhost:4141`.
 
 In Docker, Foldergram runs in production mode and the app inside the container listens on `4141`. If you need a different host port, change the left side of `4141:4141` in [`docker-compose.yml`](docker-compose.yml).
@@ -185,6 +188,10 @@ npm run dev
 `pnpm dev`, `pnpm dev:server`, and `pnpm start` now run versioned SQLite
 migrations automatically before the server boots. Use `pnpm migrate` if you
 want to apply pending migrations without starting the app.
+
+On the first start after upgrading from an older supported Foldergram release,
+the app automatically baselines the existing SQLite database and then applies
+later ordered migrations on future upgrades.
 
 Development ports:
 

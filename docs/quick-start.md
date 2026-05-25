@@ -85,6 +85,9 @@ The included compose file:
 - uses internal container paths under `/app/data`
 - relies on the image's bundled `ffmpeg` and `ffprobe`
 
+Container startup also runs pending SQLite migrations automatically before the
+app opens the persistent database.
+
 For the default Docker Compose setup, the container uses the image's built-in
 production defaults plus the mounted `./data/...` volumes. The source-install
 `.env` file is not read directly inside the container.
@@ -119,6 +122,9 @@ On first run, the server performs a startup scan because there is no existing
 index. Existing libraries keep using the current index on startup; run
 `Scan Library` from Settings whenever you want to refresh the library after
 changes.
+
+On later upgrades, startup automatically applies pending SQLite migrations
+before the app reuses the existing database.
 
 If you want the lowest upfront derivative work for a large library in Docker,
 edit `docker-compose.yml` before startup:
@@ -176,6 +182,9 @@ cp .env.example .env
 pnpm dev
 ```
 
+`pnpm dev` includes the same automatic migration step before the server opens
+the database.
+
 This runs:
 
 - the Vite client on `http://localhost:4141`, with automatic fallback through `4144`
@@ -187,6 +196,7 @@ This runs:
 ```bash
 docker compose up -d
 docker compose down
+pnpm migrate
 pnpm rescan
 pnpm test
 pnpm build
