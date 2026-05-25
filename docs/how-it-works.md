@@ -71,6 +71,7 @@ data/
     gallery.sqlite
   thumbnails/    # asset-key-sharded thumbnail derivatives
   previews/      # asset-key-sharded preview derivatives
+  scan-errors/   # created on demand for full scan error reports
 ```
 
 The database schema includes:
@@ -164,8 +165,9 @@ During a full scan, Foldergram:
 6. Reconciles eligible file moves so the same row, likes, and derivative paths can survive path changes.
 7. Marks missing indexed rows as deleted.
 8. Queues derivative work for changed or missing outputs.
-9. Performs deferred stale-derivative cleanup after successful scans.
-10. Writes scan status to `scan_runs`.
+9. Depending on `SCAN_MEDIA_ERROR_MODE`, either records and skips supported-media failures or fails fast on the first one.
+10. Performs deferred stale-derivative cleanup after successful scans.
+11. Writes scan status to `scan_runs` and, when needed, a per-run full scan error report.
 
 ## Scan progress phases
 
@@ -174,6 +176,7 @@ Foldergram reports long-running scans in three phases:
 - `migration` checks previously indexed rows, backfills missing `asset_key` values, and moves, repairs, or regenerates legacy derivatives before fresh indexing begins
 - `discovery` walks the gallery tree, resolves folders, refreshes metadata, and reconciles safe file moves
 - `derivatives` processes queued thumbnail and preview jobs after discovery has identified the required work
+- completed runs can finish as `completed_with_errors` when skip mode records supported-media failures
 
 Only migration and derivative work have a fixed total upfront. Discovery still
 reports discovered and processed folder and post counts, but the client keeps

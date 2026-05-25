@@ -21,6 +21,9 @@
           <p v-if="scanErrorNoticeDetail" class="m-0 font-mono text-[0.8rem] leading-[1.5] text-[#7c5800] break-all">
             {{ scanErrorNoticeDetail }}
           </p>
+          <p v-if="scanErrorReportPath" class="m-0 font-mono text-[0.78rem] leading-[1.5] text-[#7c5800] break-all">
+            Full report: {{ scanErrorReportPath }}
+          </p>
         </div>
         <button
           class="inline-flex h-9 w-9 items-center justify-center rounded-full border-0 bg-[rgba(159,106,0,0.08)] text-[#9f6a00] cursor-pointer transition-colors duration-180 hover:bg-[rgba(159,106,0,0.14)]"
@@ -1980,7 +1983,16 @@ const scanErrorNoticeMessage = computed(() => {
     return 'Video processing tools are missing from the server environment. Install FFmpeg so scans can read video metadata and generate video derivatives.';
   }
 
+  if (scanErrorReportPath.value) {
+    return 'Some media failed during the last run. Review the sample error and full report path below, then scan the library again to retry failed media and derivative generation.';
+  }
+
   return 'Some media failed during the last run. Review the sample error below, then scan the library again to retry any missed files and derivative generation.';
+});
+const scanErrorReportPath = computed(() => {
+  const errorText = lastCompletedScan.value?.error_text?.trim() ?? '';
+  const match = errorText.match(/^Full error report: (.+)$/m);
+  return match?.[1]?.trim() || null;
 });
 const scanErrorNoticeDetail = computed(() => {
   const errorText = lastCompletedScan.value?.error_text?.trim() ?? '';

@@ -660,7 +660,7 @@ Notable fields:
 | `folders` | Active indexed folders. |
 | `indexedImages` | Active indexed posts. The name is historical and still includes videos in the total feed count. |
 | `indexedVideos` | Active indexed videos only. |
-| `scan` | Viewer-safe live scan progress snapshot. It uses the same shape as `GET /api/scan-progress`, with `currentFolder` and `currentFile` redacted and `lastCompletedScan.error_text` forced to `null`. |
+| `scan` | Viewer-safe live scan progress snapshot. It uses the same shape as `GET /api/scan-progress`, with `currentFolder` and `currentFile` redacted and `lastCompletedScan.error_text` forced to `null`. Scan-report paths never appear here. |
 | `storage` | Availability with a generic unavailable message only. |
 | `libraryIndex` | Rebuild requirement plus ignored root-media count. Gallery-root paths are omitted. |
 | `preferences.defaultHomeFeedMode` | Current app-wide default home feed mode. |
@@ -694,7 +694,7 @@ Notable fields:
 | `queuedDerivativeJobs` / `processedDerivativeJobs` | Derivative job counters once the queue is known. |
 | `generatedThumbnails` / `generatedPreviews` | Completed derivative outputs in the current run. |
 | `currentFolder` / `currentFile` | Always `null` in this viewer-safe route. |
-| `lastCompletedScan` | Latest completed scan summary with `error_text` forced to `null`. |
+| `lastCompletedScan` | Latest completed scan summary with `error_text` forced to `null`. Runs can be `completed`, `completed_with_errors`, or `failed`. |
 
 Notes:
 
@@ -711,6 +711,7 @@ It uses the same overall shape as `GET /api/scan-progress`, with the following d
 
 - `currentFile` and `currentFolder` are populated when the active operation can identify a source path
 - `lastCompletedScan` is the full scan record, including `error_text`
+- when a run finishes as `completed_with_errors`, `error_text` contains a short sample plus the full report path under `<DATA_ROOT>/scan-errors/`
 
 ### `GET /api/admin/stats`
 
@@ -1342,6 +1343,10 @@ Success:
   }
 }
 ```
+
+Notes:
+
+- in `SCAN_MEDIA_ERROR_MODE=skip`, a successful rescan can also return `"status": "completed_with_errors"` when supported media was skipped and reported
 
 Errors:
 

@@ -397,7 +397,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .reel-player-card {
-  --reel-stage-gap: 1.25rem;
+  --reel-stage-gap: 0.75rem;
+  --reel-stage-inline-gap: 1.25rem;
   --reel-stage-max-width: 24.4rem;
   --reel-stage-max-height: calc(var(--reel-stage-max-width) * 16 / 9);
   display: grid;
@@ -412,12 +413,16 @@ onBeforeUnmount(() => {
   position: relative;
   justify-self: center;
   align-self: center;
-  width: auto;
-  max-width: min(100%, var(--reel-stage-max-width));
-  height: min(calc(100% - var(--reel-stage-gap)), var(--reel-stage-max-height));
+  width: min(100%, var(--reels-desktop-stage-width, var(--reel-stage-max-width)));
+  height: min(
+    calc(100% - var(--reel-stage-gap)),
+    var(--reels-desktop-stage-height, var(--reel-stage-max-height))
+  );
+  max-height: 100%;
+  max-width: calc(100% - var(--reel-stage-inline-gap));
   aspect-ratio: 9 / 16;
   overflow: hidden;
-  border-radius: 1.15rem;
+  border-radius: 0.6rem;
   background: #000;
   box-shadow: none;
 }

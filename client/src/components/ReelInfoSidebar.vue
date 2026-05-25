@@ -1,5 +1,9 @@
 <template>
-  <aside class="reels-info-sidebar sidebar" aria-label="Reel details">
+  <aside
+    class="reels-info-sidebar sidebar"
+    :class="{ 'reels-info-sidebar--anchor-right': anchor === 'right' }"
+    aria-label="Reel details"
+  >
     <div class="reels-info-sidebar__header">
       <p class="reels-info-sidebar__eyebrow">Reel Details</p>
 
@@ -103,11 +107,14 @@ import type { FeedItem, FolderSummary, ImageDetail } from '../types/api';
 import { formatMediaDuration } from '../utils/media';
 import Avatar from './Avatar.vue';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   item: FeedItem;
   folder: FolderSummary | null;
   open: boolean;
-}>();
+  anchor?: 'left' | 'right';
+}>(), {
+  anchor: 'left'
+});
 
 defineEmits<{
   close: [];
@@ -234,6 +241,13 @@ watch(
   border-left: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
   background: color-mix(in srgb, var(--surface) 96%, white 4%);
   transform: rotate(45deg);
+}
+
+.reels-info-sidebar--anchor-right::before {
+  right: -0.5rem;
+  left: auto;
+  border-right: 1px solid color-mix(in srgb, var(--border) 86%, transparent 14%);
+  border-left: 0;
 }
 
 .reels-info-sidebar__header {

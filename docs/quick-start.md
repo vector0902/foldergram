@@ -141,6 +141,11 @@ Inside Settings:
 - `Places` contains offline place-data preparation and place-assignment rebuilds for GPS-tagged photos
 - `Scan & Library` contains manual scan plus rebuild actions
 
+If a scan finishes with skipped corrupt or unreadable supported media, the
+admin scan panel shows the full report path for that run. Foldergram writes
+those per-run reports under `<DATA_ROOT>/scan-errors/` and marks the run
+`completed_with_errors`.
+
 Until you enable password protection, Foldergram starts without an auth gate,
 so Settings and the library-maintenance controls are available immediately to
 whoever can reach the app.

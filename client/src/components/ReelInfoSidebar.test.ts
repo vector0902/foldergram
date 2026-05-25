@@ -132,4 +132,29 @@ describe('ReelInfoSidebar', () => {
 
     expect(fetchImageMock).toHaveBeenCalledTimes(1);
   });
+
+  it('applies the right-side anchor styling when requested', async () => {
+    const wrapper = mount(ReelInfoSidebar, {
+      props: {
+        item: createFeedItem(18),
+        folder: createFolder(),
+        open: false,
+        anchor: 'right'
+      },
+      global: {
+        stubs: {
+          Avatar: {
+            template: '<div data-test="avatar" />'
+          },
+          RouterLink: {
+            template: '<a><slot /></a>'
+          }
+        }
+      }
+    });
+
+    await flushPromises();
+
+    expect(wrapper.get('.reels-info-sidebar').classes()).toContain('reels-info-sidebar--anchor-right');
+  });
 });

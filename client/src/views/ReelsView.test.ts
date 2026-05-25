@@ -119,11 +119,15 @@ vi.mock('../components/ReelInfoSidebar.vue', async () => {
         open: {
           type: Boolean,
           default: false
+        },
+        anchor: {
+          type: String,
+          default: 'left'
         }
       },
       emits: ['close'],
       template:
-        '<aside data-test="info-sidebar">{{ item.id }}<button data-test="close-info" @click="$emit(\'close\')">close</button></aside>'
+        '<aside data-test="info-sidebar" :data-anchor="anchor">{{ item.id }}<button data-test="close-info" @click="$emit(\'close\')">close</button></aside>'
     })
   };
 });
@@ -214,6 +218,11 @@ describe('ReelsView', () => {
       writable: true,
       value: 1280
     });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 720
+    });
     deckControls.goToPrevious.mockReset();
     deckControls.goToNext.mockReset();
     deckControls.navigateByWheel.mockReset();
@@ -282,6 +291,7 @@ describe('ReelsView', () => {
     expect(wrapper.get('.reels-view__action-rail--desktop').attributes('data-open')).toBe('true');
     expect(wrapper.find('[data-test="info-shell"]').exists()).toBe(true);
     expect(wrapper.get('[data-test="info-sidebar"]').text()).toContain('101');
+    expect(wrapper.get('[data-test="info-sidebar"]').attributes('data-anchor')).toBe('left');
     expect(wrapper.find('button[aria-label="Next reel"]').exists()).toBe(true);
 
     await wrapper.get('[data-test="close-info"]').trigger('click');
@@ -289,6 +299,30 @@ describe('ReelsView', () => {
 
     expect(wrapper.get('.reels-view__action-rail--desktop').attributes('data-open')).toBe('false');
     expect(wrapper.find('[data-test="info-shell"]').exists()).toBe(false);
+  });
+
+  it('opens desktop reel details back over the reel in portrait-style desktop viewports', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 920
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      writable: true,
+      value: 1280
+    });
+
+    const reelsStore = useReelsStore();
+    vi.spyOn(reelsStore, 'loadInitial').mockResolvedValue(undefined);
+
+    const wrapper = mount(ReelsView);
+    await flushPromises();
+
+    await wrapper.get('.reels-view__action-rail--desktop [data-test="toggle-info"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('[data-test="info-sidebar"]').attributes('data-anchor')).toBe('right');
   });
 
   it('renders the action rail inside the active reel on mobile viewports', async () => {

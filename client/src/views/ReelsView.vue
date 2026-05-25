@@ -49,6 +49,7 @@
                     <ReelInfoSidebar
                       :item="item"
                       :folder="activeFolder"
+                      anchor="right"
                       :open="isInfoSidebarOpen"
                       @close="closeInfoSidebar"
                     />
@@ -60,64 +61,68 @@
         </ReelDeck>
       </div>
 
-      <ReelActionRail
-        v-if="activeItem && !isMobileViewport"
-        class="reels-view__action-rail reels-view__action-rail--desktop"
-        :item="activeItem"
-        :info-open="isInfoSidebarOpen"
-        @toggle-info="handleInfoToggle"
-      >
-        <template #info-panel>
-          <Transition name="reels-info-popup">
-            <div v-if="isInfoSidebarOpen" data-test="info-shell" class="reels-view__info-shell">
-              <ReelInfoSidebar
-                :item="activeItem"
-                :folder="activeFolder"
-                :open="isInfoSidebarOpen"
-                @close="closeInfoSidebar"
+      <div v-if="!isMobileViewport" class="reels-view__right-column">
+        <div class="reels-view__nav-controls" aria-label="Reel navigation">
+          <button
+            class="reels-view__nav-button"
+            type="button"
+            aria-label="Previous reel"
+            :disabled="!canGoPrevious"
+            @click="goToPrevious"
+          >
+            <svg class="reels-view__nav-icon" viewBox="0 0 24 24" role="presentation">
+              <path
+                d="m6.75 14.75 5.25-5.25 5.25 5.25"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.9"
               />
-            </div>
-          </Transition>
-        </template>
-      </ReelActionRail>
+            </svg>
+          </button>
+          <button
+            class="reels-view__nav-button"
+            type="button"
+            aria-label="Next reel"
+            :disabled="!canGoNext"
+            @click="goToNext"
+          >
+            <svg class="reels-view__nav-icon" viewBox="0 0 24 24" role="presentation">
+              <path
+                d="m6.75 9.25 5.25 5.25 5.25-5.25"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.9"
+              />
+            </svg>
+          </button>
+        </div>
 
-      <div class="reels-view__nav-controls hidden md:grid" aria-label="Reel navigation">
-        <button
-          class="reels-view__nav-button"
-          type="button"
-          aria-label="Previous reel"
-          :disabled="!canGoPrevious"
-          @click="goToPrevious"
+        <ReelActionRail
+          v-if="activeItem"
+          class="reels-view__action-rail reels-view__action-rail--desktop"
+          :class="desktopInfoPanelSideClass"
+          :item="activeItem"
+          :info-open="isInfoSidebarOpen"
+          @toggle-info="handleInfoToggle"
         >
-          <svg class="reels-view__nav-icon" viewBox="0 0 24 24" role="presentation">
-            <path
-              d="m6.75 14.75 5.25-5.25 5.25 5.25"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.9"
-            />
-          </svg>
-        </button>
-        <button
-          class="reels-view__nav-button"
-          type="button"
-          aria-label="Next reel"
-          :disabled="!canGoNext"
-          @click="goToNext"
-        >
-          <svg class="reels-view__nav-icon" viewBox="0 0 24 24" role="presentation">
-            <path
-              d="m6.75 9.25 5.25 5.25 5.25-5.25"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.9"
-            />
-          </svg>
-        </button>
+          <template #info-panel>
+            <Transition name="reels-info-popup">
+              <div v-if="isInfoSidebarOpen" data-test="info-shell" class="reels-view__info-shell">
+                <ReelInfoSidebar
+                  :item="activeItem"
+                  :folder="activeFolder"
+                  :anchor="desktopInfoSidebarAnchor"
+                  :open="isInfoSidebarOpen"
+                  @close="closeInfoSidebar"
+                />
+              </div>
+            </Transition>
+          </template>
+        </ReelActionRail>
       </div>
     </div>
   </section>
@@ -138,7 +143,20 @@ const foldersStore = useFoldersStore();
 const reelsStore = useReelsStore();
 const deckElement = ref<InstanceType<typeof ReelDeck> | null>(null);
 const isInfoSidebarOpen = ref(false);
-const isMobileViewport = ref(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 0);
+const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 0);
+const isMobileViewport = computed(() => viewportWidth.value <= 768);
+const desktopInfoPanelSide = computed<'left' | 'right'>(() =>
+  !isMobileViewport.value && viewportWidth.value > viewportHeight.value ? 'right' : 'left'
+);
+const desktopInfoPanelSideClass = computed(() =>
+  desktopInfoPanelSide.value === 'right'
+    ? 'reels-view__action-rail--desktop-info-right'
+    : 'reels-view__action-rail--desktop-info-left'
+);
+const desktopInfoSidebarAnchor = computed<'left' | 'right'>(() =>
+  desktopInfoPanelSide.value === 'right' ? 'left' : 'right'
+);
 
 const activeItem = computed(() => reelsStore.activeItem);
 const activeFolder = computed(() =>
@@ -174,7 +192,8 @@ function closeInfoSidebar() {
 }
 
 function updateViewportMode() {
-  isMobileViewport.value = window.innerWidth <= 768;
+  viewportWidth.value = window.innerWidth;
+  viewportHeight.value = window.innerHeight;
 }
 
 function shouldCaptureGlobalWheel(event: WheelEvent) {
@@ -235,26 +254,86 @@ watch(activeItem, (item) => {
 }
 
 .reels-view__layout {
+  --reels-desktop-rail-width: 3.8rem;
+  --reels-desktop-column-gap: 0.85rem;
+  --reel-stage-block-gap: 0.75rem;
+  --reel-stage-inline-gap: 1.25rem;
+  --reels-desktop-stage-width: 24.4rem;
+  --reels-desktop-stage-height: calc(var(--reels-desktop-stage-width) * 16 / 9);
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 24.4rem) 3.4rem;
+  grid-template-columns: minmax(0, var(--reels-desktop-stage-width)) var(--reels-desktop-rail-width);
+  column-gap: var(--reels-desktop-column-gap);
   justify-content: center;
-  align-items: stretch;
-  column-gap: 1rem;
+  align-items: center;
   height: 100%;
   min-height: 100%;
   width: 100%;
-  padding: 0 1.25rem;
+  padding: 0 0.75rem;
+  container-type: size;
+}
+
+@supports (width: 1cqw) {
+  .reels-view__layout {
+    --reels-desktop-stage-width: min(
+      calc((100cqh - var(--reel-stage-block-gap)) * 9 / 16),
+      calc(100cqw - var(--reels-desktop-rail-width) - var(--reels-desktop-column-gap) - var(--reel-stage-inline-gap))
+    );
+    --reels-desktop-stage-height: calc(var(--reels-desktop-stage-width) * 16 / 9);
+  }
 }
 
 .reels-view__deck-shell {
   height: 100%;
   min-height: 0;
+  min-width: 0;
 }
 
-.reels-view__action-rail {
-  align-self: end;
-  margin-bottom: 4.8rem;
+/* ── Right column: nav arrows centered + action rail bottom-aligned ── */
+
+.reels-view__right-column {
+  width: var(--reels-desktop-rail-width);
+  height: var(--reels-desktop-stage-height);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  align-self: center;
+}
+
+.reels-view__action-rail--desktop {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.reels-view__action-rail--desktop :deep(.reel-action-rail__button) {
+  color: color-mix(in srgb, var(--text) 82%, transparent);
+}
+
+.reels-view__action-rail--desktop :deep(.reel-action-rail__button:hover:not(:disabled)) {
+  color: var(--text);
+}
+
+.reels-view__action-rail--desktop :deep(.reel-action-rail__icon) {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.reels-view__action-rail--desktop :deep(.reel-action-rail__info-panel) {
+  bottom: 0;
+}
+
+.reels-view__action-rail--desktop-info-left :deep(.reel-action-rail__info-panel) {
+  right: calc(100% + 0.9rem);
+  left: auto;
+}
+
+.reels-view__action-rail--desktop-info-right :deep(.reel-action-rail__info-panel) {
+  left: calc(100% + 0.9rem);
+  right: auto;
 }
 
 .reels-view__action-rail--mobile {
@@ -280,28 +359,26 @@ watch(activeItem, (item) => {
   left: auto;
 }
 
+/* ── Nav controls: centered in the right column ── */
+
 .reels-view__nav-controls {
-  position: fixed;
-  top: 50%;
-  right: max(1rem, env(safe-area-inset-right));
-  z-index: 12;
-  gap: 0.9rem;
-  transform: translateY(-50%);
+  display: grid;
+  gap: 0.75rem;
 }
 
 .reels-view__nav-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3.35rem;
-  height: 3.35rem;
+  width: 2.8rem;
+  height: 2.8rem;
   padding: 0;
   border: 0;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 78%, var(--text) 22%);
   color: var(--text);
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(15, 20, 25, 0.16);
+  box-shadow: 0 8px 20px rgba(15, 20, 25, 0.14);
   transition:
     transform 0.16s ease,
     opacity 0.16s ease,
@@ -319,8 +396,8 @@ watch(activeItem, (item) => {
 }
 
 .reels-view__nav-icon {
-  width: 1.3rem;
-  height: 1.3rem;
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .reels-view__message-card {
@@ -361,7 +438,7 @@ watch(activeItem, (item) => {
 
 @media (max-width: 768px) {
   .reels-view__layout {
-    grid-template-columns: minmax(0, 1fr);
+    display: block;
     padding: 0;
   }
 

@@ -52,6 +52,23 @@ directories, so subsequent requests use the cached file on disk. It also uses
 the same media-specific generation rules as eager mode, including animated AVIF
 preview generation.
 
+## Scan-time media failures
+
+`SCAN_MEDIA_ERROR_MODE` controls what happens when supported media reaches scan
+processing but fails during stat, metadata, derivative generation, or
+derivative-repair work.
+
+| Mode | Behavior |
+| --- | --- |
+| `skip` | Report the failure, skip that file, continue scanning, and finish the run as `completed_with_errors`. |
+| `fail` | Stop on the first such failure and mark the run as failed. |
+
+In skip mode, Foldergram keeps a short admin-visible sample in SQLite and
+writes the full per-run report under `<DATA_ROOT>/scan-errors/`.
+
+This applies to supported image and video files that actually reach scan
+processing. Unsupported extensions are still ignored earlier during discovery.
+
 ## Derivative mapping
 
 Foldergram stores derivatives by stable asset key, not by source-relative path.

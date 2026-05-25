@@ -16,6 +16,7 @@
     "dev:docs": "node scripts/run-workspace-script.mjs docs dev",
     "build": "node scripts/run-workspace-script.mjs server build && node scripts/run-workspace-script.mjs client build",
     "start": "cross-env NODE_ENV=production node scripts/run-workspace-script.mjs server start",
+    "migrate": "node scripts/run-workspace-script.mjs server migrate",
     "build:server": "node scripts/run-workspace-script.mjs server build",
     "build:client": "node scripts/run-workspace-script.mjs client build",
     "build:docs": "node scripts/run-workspace-script.mjs docs build",

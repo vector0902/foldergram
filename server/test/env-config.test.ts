@@ -45,7 +45,23 @@ describe.sequential('derivative mode env config', () => {
 
     expect(appConfig.imageDetailSource).toBe('preview');
     expect(appConfig.derivativeMode).toBe('eager');
+    expect(appConfig.scanMediaErrorMode).toBe('skip');
+    expect(appConfig.scanErrorReportDir).toBe(path.join(tempRoot, 'data', 'scan-errors'));
     expect(appConfig.galleryExcludedFolders).toEqual([]);
+  });
+
+  it('allows strict scan failure on media errors when requested', async () => {
+    await stubBaseEnv();
+    vi.stubEnv('SCAN_MEDIA_ERROR_MODE', 'fail');
+    vi.doMock('dotenv', () => ({
+      default: {
+        config: vi.fn()
+      }
+    }));
+
+    const { appConfig } = await import('../src/config/env.js') as EnvModule;
+
+    expect(appConfig.scanMediaErrorMode).toBe('fail');
   });
 
   it('parses excluded folder env rules with trimming and dedupe', async () => {
@@ -85,5 +101,17 @@ describe.sequential('derivative mode env config', () => {
     }));
 
     await expect(import('../src/config/env.js')).rejects.toThrow();
+  });
+
+  it('rejects derivative directories that overlap scan error reports', async () => {
+    await stubBaseEnv();
+    vi.stubEnv('THUMBNAILS_DIR', path.join(tempRoot, 'data'));
+    vi.doMock('dotenv', () => ({
+      default: {
+        config: vi.fn()
+      }
+    }));
+
+    await expect(import('../src/config/env.js')).rejects.toThrow(/scan error reports/i);
   });
 });
