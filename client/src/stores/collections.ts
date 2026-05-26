@@ -19,6 +19,7 @@ import type {
   FeedItem,
   ImageCollectionsPayload
 } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 import { useAuthStore } from './auth';
 
 type CollectionsMode = 'shared' | 'local';
@@ -634,6 +635,10 @@ export const useCollectionsStore = defineStore('collections', {
       this.setBookmarkedState(id, false);
       this.currentImages = this.currentImages.filter((item) => item.id !== id);
       delete this.membershipByImageId[id];
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.currentImages = updateCaptionInItems(this.currentImages, id, caption);
     },
 
     removeFolderItems(folderSlug: string) {

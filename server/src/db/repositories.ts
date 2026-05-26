@@ -148,6 +148,7 @@ const FEED_IMAGE_SELECT_SQL = `
     folders.name AS folderName,
     folders.folder_path AS folderPath,
     images.filename,
+    images.caption AS caption,
     images.width,
     images.height,
     images.media_type AS mediaType,
@@ -949,6 +950,10 @@ export const imageRepository = {
       .run(thumbnailPath, previewPath, nowIso(), id);
   },
 
+  updateCaption(id: number, caption: string | null): void {
+    database.prepare('UPDATE images SET caption = ?, updated_at = ? WHERE id = ?').run(caption, nowIso(), id);
+  },
+
   assignPlace(id: number, placeId: number | null): void {
     database.prepare('UPDATE images SET place_id = ?, updated_at = ? WHERE id = ?').run(placeId, nowIso(), id);
   },
@@ -1139,6 +1144,7 @@ export const imageRepository = {
         folders.name AS folderName,
         folders.folder_path AS folderPath,
         images.filename,
+        images.caption AS caption,
         images.width,
         images.height,
         images.media_type AS mediaType,
@@ -1182,6 +1188,7 @@ export const imageRepository = {
         search_results.folderName,
         search_results.folderPath,
         search_results.filename,
+        search_results.caption,
         search_results.width,
         search_results.height,
         search_results.mediaType,
@@ -1206,6 +1213,7 @@ export const imageRepository = {
           folders.name AS folderName,
           folders.folder_path AS folderPath,
           images.filename,
+          images.caption AS caption,
           images.width,
           images.height,
           images.media_type AS mediaType,
@@ -1380,6 +1388,7 @@ export const imageRepository = {
         folders.name AS folderName,
         folders.folder_path AS folderPath,
         images.filename,
+        images.caption AS caption,
         images.width,
         images.height,
         images.media_type AS mediaType,
@@ -1665,6 +1674,7 @@ export const imageRepository = {
         folders.folder_path AS folderPath,
         folders.avatar_image_id AS folderAvatarImageId,
         images.filename,
+        images.caption AS caption,
         images.width,
         images.height,
         images.media_type AS mediaType,
@@ -1830,6 +1840,7 @@ export const likeRepository = {
         folders.name AS folderName,
         folders.folder_path AS folderPath,
         images.filename,
+        images.caption AS caption,
         images.width,
         images.height,
         images.media_type AS mediaType,
@@ -1880,6 +1891,7 @@ export const likeRepository = {
         folders.name AS folderName,
         folders.folder_path AS folderPath,
         images.filename,
+        images.caption AS caption,
         images.width,
         images.height,
         images.media_type AS mediaType,

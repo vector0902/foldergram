@@ -101,6 +101,22 @@ describe.sequential('folder customization', () => {
       expect(() => folderCoverBodySchema.parse({ imageId: -1 })).toThrowError();
       expect(() => folderCoverBodySchema.parse({ imageId: 'abc' })).toThrowError();
     });
+
+    it('validates PATCH image caption body correctly', () => {
+      const { patchImageCaptionBodySchema } = apiModule;
+
+      expect(patchImageCaptionBodySchema.parse({ caption: '  New caption  ' })).toEqual({
+        caption: 'New caption'
+      });
+      expect(patchImageCaptionBodySchema.parse({ caption: '   ' })).toEqual({
+        caption: null
+      });
+      expect(patchImageCaptionBodySchema.parse({})).toEqual({
+        caption: null
+      });
+
+      expect(() => patchImageCaptionBodySchema.parse({ caption: 'x'.repeat(301) })).toThrowError();
+    });
   });
 
   describe('gallery service operations', () => {
@@ -143,6 +159,41 @@ describe.sequential('folder customization', () => {
 
     it('returns null updating non-existent metadata', () => {
       expect(galleryService.updateFolderMetadata('non-existent', 'Name', null)).toBeFalsy();
+    });
+
+    it('updates an image caption and clears it back to the filename fallback', () => {
+      const folder = folderRepository.upsert({ slug: 'caption-folder', name: 'Caption Folder', folderPath: 'caption-folder' });
+      const image = imageRepository.upsert({
+        folderId: folder.id,
+        filename: 'photo-1.jpg',
+        relativePath: 'caption-folder/photo-1.jpg',
+        absolutePath: '/dummy/caption-folder/photo-1.jpg',
+        fileSize: 100,
+        mtimeMs: 1000,
+        width: 100,
+        height: 100,
+        mediaType: 'image',
+        mimeType: 'image/jpeg',
+        fingerprint: 'caption-fingerprint-1',
+        sortTimestamp: 1000,
+        takenAt: 1000,
+        takenAtSource: 'mtime',
+        extension: '.jpg',
+        firstSeenAt: new Date().toISOString(),
+        thumbnailPath: 't/photo-1.webp',
+        previewPath: 'p/photo-1.webp',
+        playbackStrategy: 'preview',
+        durationMs: null,
+        exifJson: null
+      });
+
+      const updated = galleryService.updateImageCaption(image.id, 'Custom caption');
+      expect(updated?.caption).toBe('Custom caption');
+      expect(imageRepository.getById(image.id)?.caption).toBe('Custom caption');
+
+      const cleared = galleryService.updateImageCaption(image.id, null);
+      expect(cleared?.caption).toBeNull();
+      expect(imageRepository.getById(image.id)?.caption).toBeNull();
     });
 
     it('sets folder cover avatar', () => {

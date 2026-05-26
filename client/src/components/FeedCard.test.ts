@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useAuthStore } from '../stores/auth';
 import type { FeedItem } from '../types/api';
 import FeedCard from './FeedCard.vue';
 
@@ -330,5 +331,80 @@ describe('FeedCard', () => {
 
     expect(originalLink.attributes('href')).toBe('/api/originals/807');
     expect(originalLink.attributes('title')).toBe('Open original file');
+  });
+
+  it('falls back to a readable filename when the caption is not customized', () => {
+    const wrapper = mount(FeedCard, {
+      props: {
+        item: {
+          ...createImageItem(808),
+          filename: 'road_trip-shot.jpg',
+          caption: null
+        },
+        avatarUrl: null
+      },
+      global: {
+        stubs: globalStubs
+      }
+    });
+
+    expect(wrapper.text()).toContain('road trip shot');
+  });
+
+  it('renders a custom caption when present', () => {
+    const wrapper = mount(FeedCard, {
+      props: {
+        item: {
+          ...createImageItem(809),
+          caption: 'Sunrise over the bay'
+        },
+        avatarUrl: null
+      },
+      global: {
+        stubs: globalStubs
+      }
+    });
+
+    expect(wrapper.text()).toContain('Sunrise over the bay');
+    expect(wrapper.text()).not.toContain('photo 809');
+  });
+
+  it('shows the edit-caption menu action only for library managers', async () => {
+    const authStore = useAuthStore();
+    const wrapper = mount(FeedCard, {
+      props: {
+        item: createImageItem(810),
+        avatarUrl: null
+      },
+      global: {
+        stubs: globalStubs
+      }
+    });
+
+    await wrapper.get('button[aria-label="More options"]').trigger('click');
+    expect(wrapper.text()).toContain('Edit caption');
+
+    authStore.capabilities = {
+      canManageLibrary: false,
+      canDeleteMedia: false,
+      canAccessSettings: false,
+      canUseSharedLikes: true,
+      canUseLocalFavorites: false,
+      canUseSharedCollections: true,
+      canUseLocalCollections: false
+    };
+
+    const restrictedWrapper = mount(FeedCard, {
+      props: {
+        item: createImageItem(811),
+        avatarUrl: null
+      },
+      global: {
+        stubs: globalStubs
+      }
+    });
+
+    await restrictedWrapper.get('button[aria-label="More options"]').trigger('click');
+    expect(restrictedWrapper.text()).not.toContain('Edit caption');
   });
 });

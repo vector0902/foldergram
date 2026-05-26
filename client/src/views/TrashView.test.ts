@@ -95,6 +95,7 @@ function createTrashItem(id: number): TrashItem {
     previewUrl: `/previews/${id}.webp`,
     sortTimestamp: 1_777_000_000_000 + id,
     takenAt: 1_777_000_000_000 + id,
+    caption: null,
     trashedAt: '2026-04-04T12:00:00.000Z'
   };
 }
@@ -269,5 +270,68 @@ describe('TrashView', () => {
 
     expect(wrapper.find('[data-test="empty-state"]').exists()).toBe(true);
     expect(wrapper.text()).not.toContain('Loading trash...');
+  });
+
+  it('renders custom captions in trash cards instead of always falling back to filenames', async () => {
+    const appStore = useAppStore();
+    const trashStore = useTrashStore();
+
+    appStore.$patch({
+      stats: {
+        folders: 1,
+        indexedImages: 1,
+        indexedVideos: 0,
+        scan: {
+          isScanning: false,
+          lastCompletedScan: null
+        },
+        storage: {
+          available: true,
+          reason: null
+        },
+        libraryIndex: {
+          rebuildRequired: false,
+          reason: null,
+          ignoredRootMediaCount: 0
+        },
+        preferences: {
+          defaultHomeFeedMode: 'random',
+          defaultReelsFeedMode: 'recommended',
+          treatStoriesAsFolders: false
+        },
+        storiesMigration: {
+          hasLegacyStoriesCandidates: false,
+          decisionPending: false
+        }
+      } as never
+    });
+
+    trashStore.$patch({
+      items: [{
+        ...createTrashItem(52),
+        caption: 'Fog lifting over the ridge'
+      }],
+      initialized: true,
+      loading: false,
+      hasMore: false,
+      error: null
+    });
+
+    vi.spyOn(trashStore, 'loadInitial').mockResolvedValue(undefined);
+
+    const wrapper = mount(TrashView, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>'
+          }
+        }
+      }
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Fog lifting over the ridge');
+    expect(wrapper.text()).not.toContain('photo 52');
   });
 });

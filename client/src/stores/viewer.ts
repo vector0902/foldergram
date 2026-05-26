@@ -54,6 +54,17 @@ export const useViewerStore = defineStore('viewer', {
       }
     },
 
+    updateCaption(id: number, caption: string | null) {
+      if (this.image?.id !== id) {
+        return;
+      }
+
+      this.image = {
+        ...this.image,
+        caption
+      };
+    },
+
     async deleteImage(id: number, options: { permanent?: boolean } = {}): Promise<DeleteImageResult> {
       this.deleting = true;
       this.error = null;

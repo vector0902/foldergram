@@ -89,6 +89,7 @@ export interface ImageRecord {
   sort_timestamp: number;
   taken_at: number | null;
   taken_at_source: TakenAtSource | null;
+  caption: string | null;
   exif_json: string | null;
   thumbnail_path: string;
   preview_path: string;
@@ -168,6 +169,7 @@ export interface FeedImage {
   folderPath: string;
   folderBreadcrumb?: string | null;
   filename: string;
+  caption: string | null;
   width: number;
   height: number;
   mediaType: MediaType;

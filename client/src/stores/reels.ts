@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchReels } from '../api/gallery';
 import type { FeedItem, ReelsFeedMode } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 import { resolveReelsAffinitySnapshot, type ReelsAffinitySnapshot } from '../utils/reels';
 import { useAppStore } from './app';
 
@@ -170,6 +171,10 @@ export const useReelsStore = defineStore('reels', {
       if (activeIndex >= this.items.length - 3) {
         await this.loadMore();
       }
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.items = updateCaptionInItems(this.items, id, caption);
     }
   }
 });

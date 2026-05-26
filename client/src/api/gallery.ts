@@ -21,6 +21,7 @@ import type {
   FeedMode,
   FolderImageOrder,
   FolderImageOrderDefaultSetting,
+  ImageCaptionMutationResult,
   ImageDetail,
   ImageCollectionsPayload,
   LikeMutationResult,
@@ -187,6 +188,16 @@ export function fetchImage(id: number, mediaType?: 'image' | 'video') {
 
   const suffix = params.size > 0 ? `?${params.toString()}` : '';
   return requestJson<ImageDetail>(`/api/images/${id}${suffix}`);
+}
+
+export async function updateImageCaption(id: number, caption: string | null) {
+  const payload = await requestJson<ImageCaptionMutationResult>(`/api/images/${id}/caption`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ caption })
+  });
+
+  return payload.image;
 }
 
 export function fetchLikes() {

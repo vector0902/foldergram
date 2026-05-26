@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchMomentFeed, fetchMoments } from '../api/gallery';
 import type { FeedItem, FeedRailKind, MomentCapsule } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 
 interface MomentsState {
   railKind: FeedRailKind;
@@ -132,6 +133,10 @@ export const useMomentsStore = defineStore('moments', {
 
     async loadCapsule(id: string, reset = true) {
       await this.loadMoment(id, reset);
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.currentImages = updateCaptionInItems(this.currentImages, id, caption);
     }
   }
 });

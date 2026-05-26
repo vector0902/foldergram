@@ -142,7 +142,8 @@ describe.sequential('dbmate startup migrations', () => {
       expect(tableExists(database, 'folders')).toBe(true);
       expect(tableExists(database, 'images')).toBe(true);
       expect(tableExists(database, 'collections')).toBe(true);
-      expect(listAppliedVersions(database)).toEqual([BASELINE_MIGRATION_VERSION]);
+      expect(tableHasColumn(database, 'images', 'caption')).toBe(true);
+      expect(listAppliedVersions(database)).toEqual([BASELINE_MIGRATION_VERSION, '000002']);
     } finally {
       database.close();
     }
@@ -237,11 +238,12 @@ describe.sequential('dbmate startup migrations', () => {
     const database = new DatabaseSync(databasePath);
 
     try {
-      expect(listAppliedVersions(database)).toEqual([BASELINE_MIGRATION_VERSION]);
+      expect(listAppliedVersions(database)).toEqual([BASELINE_MIGRATION_VERSION, '000002']);
       expect(tableExists(database, 'collections')).toBe(true);
       expect(tableHasColumn(database, 'folders', 'avatar_image_id')).toBe(true);
       expect(tableHasColumn(database, 'folders', 'avatar_source')).toBe(true);
       expect(tableHasColumn(database, 'images', 'playback_strategy')).toBe(true);
+      expect(tableHasColumn(database, 'images', 'caption')).toBe(true);
       expect(listForeignKeySignatures(database, 'folders')).toEqual([
         'avatar_image_id->images.id:NO ACTION',
         'story_owner_folder_id->folders.id:SET NULL'
@@ -269,7 +271,7 @@ describe.sequential('dbmate startup migrations', () => {
     await fs.mkdir(path.dirname(databasePath), { recursive: true });
     const migrationsDirectory = await createTestMigrationsDirectory(tempRoot, [
       [
-        '000002_add_test_note.sql',
+        '000003_add_test_note.sql',
         `-- migrate:up
 
 ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
@@ -290,7 +292,7 @@ ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
 
     try {
       expect(tableHasColumn(database, 'images', 'migration_note')).toBe(true);
-      expect(listAppliedVersions(database)).toEqual([BASELINE_MIGRATION_VERSION, '000002']);
+      expect(listAppliedVersions(database)).toEqual([BASELINE_MIGRATION_VERSION, '000002', '000003']);
     } finally {
       database.close();
     }
@@ -381,7 +383,7 @@ ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
     const { runStartupMigrations } = await importMigrationModule();
     const migrationsDirectory = await createTestMigrationsDirectory(tempRoot, [
       [
-        '000002_add_test_note.sql',
+        '000003_add_test_note.sql',
         `-- migrate:up
 
 ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
@@ -398,8 +400,9 @@ ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
     const database = new DatabaseSync(databasePath);
 
     try {
-      expect(listAppliedVersions(database)).toEqual(['000001', '000002']);
+      expect(listAppliedVersions(database)).toEqual(['000001', '000002', '000003']);
       expect(tableHasColumn(database, 'images', 'migration_note')).toBe(true);
+      expect(tableHasColumn(database, 'images', 'caption')).toBe(true);
       expect(database.prepare('SELECT playback_strategy AS playbackStrategy FROM images WHERE id = 1').get()).toEqual({
         playbackStrategy: 'preview'
       });
@@ -414,7 +417,7 @@ ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
     await fs.mkdir(path.dirname(databasePath), { recursive: true });
     const migrationsDirectory = await createTestMigrationsDirectory(tempRoot, [
       [
-        '000002_add_test_note.sql',
+        '000003_add_test_note.sql',
         `-- migrate:up
 
 ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
@@ -432,8 +435,8 @@ ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
     const database = new DatabaseSync(databasePath);
 
     try {
-      expect(listAppliedVersions(database)).toEqual(['000001', '000002']);
-      expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get()).toEqual({ count: 2 });
+      expect(listAppliedVersions(database)).toEqual(['000001', '000002', '000003']);
+      expect(database.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get()).toEqual({ count: 3 });
     } finally {
       database.close();
     }
@@ -445,7 +448,7 @@ ALTER TABLE images ADD COLUMN migration_note TEXT NULL;
     await fs.mkdir(path.dirname(databasePath), { recursive: true });
     const migrationsDirectory = await createTestMigrationsDirectory(tempRoot, [
       [
-        '000002_broken.sql',
+        '000003_broken.sql',
         `-- migrate:up
 
 THIS IS NOT VALID SQL;

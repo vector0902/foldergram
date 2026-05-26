@@ -1,6 +1,6 @@
-import { flushPromises, mount } from '@vue/test-utils';
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FeedItem, ImageDetail } from '../types/api';
 import { useAppStore } from '../stores/app';
@@ -8,6 +8,7 @@ import { useFoldersStore } from '../stores/folders';
 import { useLikesStore } from '../stores/likes';
 import PostViewer from './PostViewer.vue';
 
+const mockRouterPush = vi.fn();
 const mockRouterResolve = vi.fn();
 
 vi.mock('vidstack/bundle', () => ({}));
@@ -20,7 +21,7 @@ vi.mock('vue-router', async () => {
       query: {}
     }),
     useRouter: () => ({
-      push: vi.fn(),
+      push: mockRouterPush,
       resolve: mockRouterResolve
     })
   };
@@ -182,12 +183,19 @@ const globalStubs = {
 };
 
 describe('PostViewer', () => {
+  enableAutoUnmount(afterEach);
+
   beforeEach(() => {
     setActivePinia(createPinia());
+    mockRouterPush.mockReset();
     mockRouterResolve.mockReset();
     mockRouterResolve.mockImplementation((path: string) => ({
       name: path === '/likes/posts' ? 'likes' : 'folder'
     }));
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
   });
 
   it('uses likes-page neighbors instead of folder neighbors when opened from likes', () => {
@@ -382,5 +390,60 @@ describe('PostViewer', () => {
     expect(player.playCallCount).toBeGreaterThanOrEqual(1);
     expect(player.paused).toBe(true);
     expect(wrapper.find('.viewer__pause-indicator').exists()).toBe(true);
+  });
+
+  it('shows an inline caption edit button in the summary instead of the footer actions', () => {
+    const wrapper = mount(PostViewer, {
+      props: {
+        image: {
+          ...createImageDetail(26, {
+            previousImageId: null,
+            nextImageId: null
+          }),
+          caption: 'Custom field note'
+        },
+        isModal: true
+      },
+      global: {
+        stubs: globalStubs
+      }
+    });
+
+    expect(wrapper.get('.viewer__sidebar-summary button[aria-label="Edit caption"]').exists()).toBe(true);
+    expect(wrapper.find('.viewer__sidebar-actions button[aria-label="Edit caption"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('Custom field note');
+  });
+
+  it('does not navigate to another image when arrow keys are pressed inside the caption editor', async () => {
+    const wrapper = mount(PostViewer, {
+      props: {
+        image: {
+          ...createImageDetail(27, {
+            previousImageId: 26,
+            nextImageId: 28
+          }),
+          caption: 'Night market notes'
+        },
+        isModal: true
+      },
+      attachTo: document.body,
+      global: {
+        stubs: globalStubs
+      }
+    });
+
+    await wrapper.get('.viewer__sidebar-summary button[aria-label="Edit caption"]').trigger('click');
+    await flushPromises();
+
+    const textarea = document.getElementById('post-caption');
+    expect(textarea).not.toBeNull();
+
+    textarea!.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'ArrowRight',
+      bubbles: true
+    }));
+    await flushPromises();
+
+    expect(mockRouterPush).not.toHaveBeenCalled();
   });
 });

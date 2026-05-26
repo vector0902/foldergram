@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchPlaceImages, fetchPlaces, fetchPlacesStatus, preparePlacesGeodata, rebuildPlaces } from '../api/gallery';
 import type { FeedItem, PlaceDetail, PlacesStatus } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 
 interface PlacesState {
   items: PlaceDetail[];
@@ -147,6 +148,10 @@ export const usePlacesStore = defineStore('places', {
       } finally {
         this.rebuilding = false;
       }
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.currentImages = updateCaptionInItems(this.currentImages, id, caption);
     }
   }
 });

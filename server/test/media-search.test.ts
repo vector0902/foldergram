@@ -88,6 +88,16 @@ describe.sequential('media search', () => {
     expect(new Set(payload.items.map((item) => item.id))).toEqual(new Set([compact.id, underscored.id]));
   });
 
+  it('returns saved custom captions in search results', async () => {
+    const compact = await createIndexedMedia('wildlife', 'redpanda.jpg', 1_777_100_010_000);
+    const updated = galleryService.updateImageCaption(compact.id, 'Red panda at dusk');
+
+    expect(updated?.caption).toBe('Red panda at dusk');
+
+    const payload = galleryService.searchMedia('red panda', 1, 20);
+    expect(payload.items.find((item) => item.id === compact.id)?.caption).toBe('Red panda at dusk');
+  });
+
   it('excludes deleted, trashed, and hidden cover media from search results', async () => {
     const visible = await createIndexedMedia('travel/sunrise', 'sunrise-visible.jpg', 1_777_200_000_000);
     const deleted = await createIndexedMedia('travel/sunrise', 'sunrise-deleted.jpg', 1_777_200_000_500);

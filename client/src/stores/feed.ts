@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchFeed } from '../api/gallery';
 import type { FeedItem, FeedMode } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 
 interface FeedState {
   mode: FeedMode;
@@ -72,6 +73,10 @@ export const useFeedStore = defineStore('feed', {
 
     removeFolderItems(folderSlug: string) {
       this.items = this.items.filter((item) => item.folderSlug !== folderSlug);
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.items = updateCaptionInItems(this.items, id, caption);
     },
 
     resetForRebuild() {

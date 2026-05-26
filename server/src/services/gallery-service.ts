@@ -1273,6 +1273,23 @@ export const galleryService = {
     return buildFolderSummary(folder);
   },
 
+  updateImageCaption(id: number, caption: string | null) {
+    if (!storageService.getState().libraryAvailable) {
+      return null;
+    }
+
+    const defaultFolderImageOrder = getDefaultFolderImageOrder();
+    const existing = imageRepository.getImageDetail(id, undefined, false, defaultFolderImageOrder);
+    if (!existing) {
+      return null;
+    }
+
+    imageRepository.updateCaption(id, caption);
+
+    const updated = imageRepository.getImageDetail(id, undefined, false, defaultFolderImageOrder);
+    return updated ? mapImageDetail(updated, getDerivativeAssetVersion()) : null;
+  },
+
   setFolderAvatar(slug: string, imageId: number) {
     if (!storageService.getState().libraryAvailable) {
       return null;

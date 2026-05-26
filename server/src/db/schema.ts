@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS images (
   sort_timestamp INTEGER NOT NULL,
   taken_at INTEGER NULL,
   taken_at_source TEXT NULL,
+  caption TEXT NULL,
   exif_json TEXT NULL,
   thumbnail_path TEXT NOT NULL,
   preview_path TEXT NOT NULL,
