@@ -87,7 +87,7 @@ html {
 }
 
 .VPNavBarTitle .title::after {
-  content: 'v1.2.0';
+  content: 'v1.2.1';
   display: inline-block;
   margin-left: 0.38rem;
   font-size: 0.48em;
