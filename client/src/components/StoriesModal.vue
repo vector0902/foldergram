@@ -1126,7 +1126,7 @@ onUnmounted(() => {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (orientation: landscape) {
   .story-overlay {
     grid-template-columns: minmax(0, 11rem) minmax(0, 34rem) minmax(0, 22rem);
   }
@@ -1146,6 +1146,60 @@ onUnmounted(() => {
 
   .story-stage__pager {
     display: inline-flex;
+  }
+}
+
+@media (min-width: 769px) and (orientation: portrait) {
+  .story-overlay {
+    grid-template-columns: clamp(4.5rem, 11vw, 6.75rem) minmax(0, 1fr) clamp(4.5rem, 11vw, 6.75rem);
+    gap: clamp(0.8rem, 1.8vw, 1.35rem);
+    padding:
+      clamp(1.25rem, 2.6vh, 2.25rem)
+      clamp(0.55rem, 1.8vw, 1rem);
+  }
+
+  .story-preview-slot {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .story-preview-slot--left {
+    justify-content: flex-end;
+  }
+
+  .story-preview-slot--right {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .story-stage-shell {
+    width: min(100%, 40rem);
+    grid-template-columns: 2.5rem minmax(0, 1fr) 2.5rem;
+    gap: 0.55rem;
+  }
+
+  .story-stage {
+    width: min(100%, 34rem, 52vh, calc(100vw - 11rem));
+    width: min(100%, 34rem, 52dvh, calc(100vw - 11rem));
+    height: auto;
+    aspect-ratio: 9 / 16;
+  }
+
+  .story-stage__pager {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .story-side-card {
+    width: 14.25rem;
+    height: 25.35rem;
+  }
+
+  .story-side-card--compact {
+    width: 12rem;
+    height: 21.3rem;
   }
 }
 

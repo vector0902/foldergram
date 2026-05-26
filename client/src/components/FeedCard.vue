@@ -33,7 +33,7 @@
           </RouterLink>
           <RouterLink
             v-if="item.place"
-            class="mt-[0.08rem] block truncate text-[0.78rem] font-medium text-muted no-underline hover:text-text"
+            class="block truncate text-[0.78rem] font-medium text-muted no-underline hover:text-text"
             :to="{ name: 'place', params: { slug: item.place.slug } }"
           >
             {{ item.place.name }}
