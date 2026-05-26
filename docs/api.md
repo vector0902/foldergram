@@ -138,6 +138,7 @@ Notes:
 - `items` contain both images and videos.
 - `thumbnailUrl` points to `/thumbnails/...`.
 - `previewUrl` points to `/previews/...`.
+- feed items can include a nullable `caption`.
 
 ### `GET /api/feed/search`
 
@@ -568,6 +569,9 @@ Response shape:
 
 Each trash item uses the normal feed-item shape plus `trashedAt`.
 
+That shared shape also includes the nullable `caption` field used by feed and
+viewer surfaces.
+
 ### `GET /api/images/:id`
 
 Query parameters:
@@ -579,6 +583,7 @@ Query parameters:
 Returns one post detail payload with:
 
 - feed-item fields
+- `caption`
 - `place` when the post has an assigned place
 - `relativePath`
 - `mimeType`
@@ -1106,6 +1111,38 @@ Success:
   "ok": true
 }
 ```
+
+### `PATCH /api/images/:id/caption`
+
+Updates the custom caption for one visible post.
+
+Body:
+
+```json
+{
+  "caption": "Weekend ferry ride."
+}
+```
+
+Notes:
+
+- admin-only
+- `caption` is trimmed before save
+- empty or whitespace-only input clears the custom caption back to `null`
+- maximum custom caption length is `300`
+- missing or non-visible posts return `404`
+
+Success:
+
+```json
+{
+  "ok": true,
+  "image": {}
+}
+```
+
+`image` contains the updated post payload so the client can refresh loaded
+surfaces immediately.
 
 ### `POST /api/images/:id/like`
 

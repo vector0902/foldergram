@@ -98,6 +98,7 @@ Folder pages include:
 
 - a folder header with avatar, posts counts, descriptions, and optional avatar-story opening
 - editable folder name and description via an admin "Edit App Folder" flow
+- long descriptions that collapse to two lines by default and expose an expand/collapse caret only when the text actually overflows
 - a posts grid that follows the app-wide default folder order
 - highlight circles above the posts and reels tabs when the folder has story capsules
 - a reels tab when the folder contains videos
@@ -162,6 +163,8 @@ The detail view includes:
 - an optional `HD` toggle for compatible higher-resolution MP4 originals
 - previous and next navigation within the same folder and active media filter
 - folder link and breadcrumb context
+- caption text that uses a saved custom caption when present and otherwise falls back to a readable filename
+- an admin-only inline caption edit action in the sidebar summary, with the same caption reflected across feed-style surfaces
 - size, dimensions, MIME type, duration, and location metadata when available
 - like toggle
 - save and collection controls
