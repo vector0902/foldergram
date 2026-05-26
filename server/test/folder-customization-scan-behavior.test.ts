@@ -133,6 +133,25 @@ describe.sequential('folder customization scan behavior', () => {
     expect(rescannedFolder?.avatar_source).toBe('manual');
   });
 
+  it('preserves a custom caption across normal rescans', async () => {
+    maintenanceRepository.resetLibraryIndex();
+
+    await createSourceFile('albums/photo-1.jpg');
+    await scannerService.scanAll('manual');
+
+    const image = imageRepository.getByRelativePath('albums/photo-1.jpg');
+    expect(image).toBeDefined();
+
+    const updated = galleryService.updateImageCaption(image!.id, 'Golden hour on the ridge');
+    expect(updated?.caption).toBe('Golden hour on the ridge');
+
+    await createSourceFile('albums/photo-2.jpg');
+    await scannerService.scanAll('manual');
+
+    expect(imageRepository.getById(image!.id)?.caption).toBe('Golden hour on the ridge');
+    expect(galleryService.getImageDetail(image!.id)?.caption).toBe('Golden hour on the ridge');
+  });
+
   it('detects case-insensitive cover files in child albums and hides them from the feed, folder grid, and detail view', async () => {
     maintenanceRepository.resetLibraryIndex();
 

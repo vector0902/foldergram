@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchFolderStories, fetchFolderStoryFeed } from '../api/gallery';
 import type { FeedItem, FolderStoriesPayload, RailCapsule } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 
 interface FolderStoriesState {
   currentFolderSlug: string | null;
@@ -138,6 +139,10 @@ export const useFolderStoriesStore = defineStore('folderStories', {
       } finally {
         this.loadingStory = false;
       }
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.currentImages = updateCaptionInItems(this.currentImages, id, caption);
     }
   }
 });

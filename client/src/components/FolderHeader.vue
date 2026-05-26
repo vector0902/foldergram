@@ -57,7 +57,33 @@
         <p class="m-0 font-mono text-[0.8rem] leading-[1.5] text-muted break-all">{{ folder.folderPath }}</p>
       </div>
       <div v-if="folder.description" class="max-w-[34rem] pt-[0.25rem]">
-        <p class="m-0 text-[0.95rem] leading-[1.4] whitespace-pre-wrap">{{ folder.description }}</p>
+        <div class="flex items-start gap-[0.35rem]">
+          <p
+            :id="descriptionId"
+            ref="descriptionElement"
+            :class="[
+              'm-0 text-[0.95rem] leading-[1.4] whitespace-pre-wrap',
+              { 'folder-description--collapsed': !isDescriptionExpanded }
+            ]"
+          >
+            {{ folder.description }}
+          </p>
+          <button
+            v-if="isDescriptionOverflowing"
+            class="inline-flex items-center justify-center mt-[0.05rem] w-6 h-6 p-0 border-0 rounded-full bg-transparent text-muted cursor-pointer transition-colors hover:text-text"
+            type="button"
+            :aria-expanded="isDescriptionExpanded"
+            :aria-controls="descriptionId"
+            :aria-label="isDescriptionExpanded ? 'Collapse description' : 'Expand description'"
+            @click="isDescriptionExpanded = !isDescriptionExpanded"
+          >
+            <span
+              :class="isDescriptionExpanded ? 'i-fluent-chevron-up-16-regular' : 'i-fluent-chevron-down-16-regular'"
+              class="w-4 h-4"
+              aria-hidden="true"
+            />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -76,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import type { FolderSummary } from '../types/api';
 import Avatar from './Avatar.vue';
@@ -102,6 +128,13 @@ const route = useRoute();
 const isEditingProfile = ref(false);
 const savingProfile = ref(false);
 const profileError = ref<string | null>(null);
+const descriptionElement = ref<HTMLElement | null>(null);
+const isDescriptionExpanded = ref(false);
+const isDescriptionOverflowing = ref(false);
+const descriptionId = `folder-description-${Math.random().toString(36).slice(2, 10)}`;
+
+let descriptionResizeObserver: ResizeObserver | null = null;
+let syncingDescriptionOverflow = false;
 
 const formattedUpdatedDate = computed(() =>
   props.folder.latestImageMtimeMs
@@ -136,6 +169,55 @@ function closeProfileEditor() {
   isEditingProfile.value = false;
 }
 
+function disconnectDescriptionObserver() {
+  if (!descriptionResizeObserver) {
+    return;
+  }
+
+  descriptionResizeObserver.disconnect();
+  descriptionResizeObserver = null;
+}
+
+function observeDescriptionElement() {
+  disconnectDescriptionObserver();
+
+  if (!descriptionElement.value || !props.folder.description) {
+    return;
+  }
+
+  descriptionResizeObserver = new ResizeObserver(() => {
+    if (syncingDescriptionOverflow) {
+      return;
+    }
+
+    void syncDescriptionOverflow();
+  });
+  descriptionResizeObserver.observe(descriptionElement.value);
+}
+
+async function syncDescriptionOverflow() {
+  await nextTick();
+
+  const element = descriptionElement.value;
+  if (!element) {
+    isDescriptionOverflowing.value = false;
+    return;
+  }
+
+  syncingDescriptionOverflow = true;
+
+  element.classList.add('folder-description--measure');
+  const isOverflowing = element.scrollHeight > element.clientHeight + 1;
+  element.classList.remove('folder-description--measure');
+
+  isDescriptionOverflowing.value = isOverflowing;
+  if (!isOverflowing) {
+    isDescriptionExpanded.value = false;
+  }
+
+  syncingDescriptionOverflow = false;
+}
+
 function buildAvatarRoute(id: number) {
   return {
     name: 'image',
@@ -153,4 +235,48 @@ function handleAvatarNavigation(event: MouseEvent, navigate: () => void) {
   appStore.setImageModalBackground(route.fullPath);
   navigate();
 }
+
+watch(
+  () => props.folder.slug,
+  async () => {
+    isDescriptionExpanded.value = false;
+    await nextTick();
+    observeDescriptionElement();
+    void syncDescriptionOverflow();
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.folder.description,
+  async () => {
+    await nextTick();
+    observeDescriptionElement();
+    void syncDescriptionOverflow();
+  }
+);
+
+watch(descriptionElement, () => {
+  observeDescriptionElement();
+  void syncDescriptionOverflow();
+});
+
+onMounted(() => {
+  observeDescriptionElement();
+  void syncDescriptionOverflow();
+});
+
+onBeforeUnmount(() => {
+  disconnectDescriptionObserver();
+});
 </script>
+
+<style scoped>
+.folder-description--collapsed,
+.folder-description--measure {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+</style>

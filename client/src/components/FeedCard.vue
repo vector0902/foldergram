@@ -301,6 +301,15 @@
     <div v-if="menuOpen" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/48" @click.self="menuOpen = false">
       <div class="w-[min(100%,22rem)] overflow-hidden bg-surface border border-border rounded-[1rem] shadow-[var(--shadow)]">
         <button
+          v-if="authStore.canManageLibrary"
+          class="flex items-center gap-[0.8rem] w-full px-4 py-[0.95rem] border-0 border-b border-border text-text bg-transparent cursor-pointer text-left"
+          type="button"
+          @click="openCaptionEditor"
+        >
+          <span class="i-fluent-edit-16-regular w-[1.15rem] h-[1.15rem] shrink-0" aria-hidden="true" />
+          <span>Edit caption</span>
+        </button>
+        <button
           class="flex items-center gap-[0.8rem] w-full px-4 py-[0.95rem] border-0 border-b border-border text-text bg-transparent cursor-pointer text-left"
           type="button"
           @click="openOriginal"
@@ -355,6 +364,18 @@
       </div>
     </div>
 
+    <Teleport to="body">
+      <PostCaptionModal
+        v-if="isEditingCaption"
+        :filename="item.filename"
+        :caption="item.caption"
+        :error="captionError"
+        :loading="captionSaving"
+        @cancel="closeCaptionEditor"
+        @save="handleCaptionSave"
+      />
+    </Teleport>
+
     <ConfirmDialog
       v-if="confirmDeleteOpen"
       title="Delete this post?"
@@ -397,12 +418,13 @@
 <script setup lang="ts">
 import 'vidstack/bundle';
 
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import type { PlayerSrc } from 'vidstack';
 import type { MediaPlayerElement } from 'vidstack/elements';
 
 import { deleteImage, trashImage } from '../api/gallery';
+import { useImageCaptionEditor } from '../composables/useImageCaptionEditor';
 import { useAppStore } from '../stores/app';
 import { useAuthStore } from '../stores/auth';
 import { useFeedStore } from '../stores/feed';
@@ -410,12 +432,14 @@ import { useFoldersStore } from '../stores/folders';
 import { useLikesStore } from '../stores/likes';
 import { useMomentsStore } from '../stores/moments';
 import type { FeedItem } from '../types/api';
+import { resolveDisplayCaption } from '../utils/caption';
 import { formatMediaDuration, formatVideoTimestamp } from '../utils/media';
 import { resolveFeedAspectRatio } from '../utils/media-layout';
 import { getOriginalMediaDownloadUrl, getOriginalMediaUrl } from '../utils/original-media';
 import Avatar from './Avatar.vue';
 import CollectionBookmark from './CollectionBookmark.vue';
 import ConfirmDialog from './ConfirmDialog.vue';
+import PostCaptionModal from './PostCaptionModal.vue';
 import ResilientImage from './ResilientImage.vue';
 import VideoProgressFooter from './VideoProgressFooter.vue';
 
@@ -460,6 +484,7 @@ const deleting = ref(false);
 const confirmDeleteOpen = ref(false);
 const deleteOriginalFromDisk = ref(false);
 const deleteError = ref<string | null>(null);
+const isEditingCaption = ref(false);
 const homeVideoTarget = ref<HTMLElement | null>(null);
 const homePlayerElement = ref<MediaPlayerElement | null>(null);
 const loadedHomeVideoAspectRatio = ref<string | null>(null);
@@ -475,6 +500,12 @@ let homeVideoObserver: IntersectionObserver | null = null;
 let homeVideoMuteSyncToken = 0;
 let homePlayerReady = false;
 let removeHomePlayerEventListeners: (() => void) | null = null;
+const {
+  saving: captionSaving,
+  error: captionError,
+  saveCaption,
+  clearError: clearCaptionError
+} = useImageCaptionEditor();
 
 const imageRoute = computed(() => ({
   name: 'image',
@@ -488,13 +519,7 @@ const folderStoriesLabel = computed(() => `Open ${props.item.folderName} stories
 const folderAvatarLabel = computed(() => `Open ${props.item.folderName}`);
 const likeActionLabel = computed(() => likesStore.toggleAriaLabel(likesStore.isLiked(props.item.id)));
 const openMediaLabel = computed(() => (props.item.mediaType === 'video' ? 'Open reel' : 'Open post'));
-const caption = computed(() =>
-  props.item.filename
-    .replace(/\.[^.]+$/, '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-);
+const caption = computed(() => resolveDisplayCaption(props.item));
 const formattedDate = computed(() =>
   new Date(props.item.takenAt ?? props.item.sortTimestamp).toLocaleDateString(undefined, {
     month: 'short',
@@ -912,6 +937,27 @@ function bindHomePlayerEventListeners(player: MediaPlayerElement | null) {
 function openOriginal() {
   menuOpen.value = false;
   window.open(getOriginalMediaUrl(props.item.id), '_blank', 'noopener,noreferrer');
+}
+
+async function openCaptionEditor() {
+  menuOpen.value = false;
+  clearCaptionError();
+  await nextTick();
+  isEditingCaption.value = true;
+}
+
+function closeCaptionEditor() {
+  clearCaptionError();
+  isEditingCaption.value = false;
+}
+
+async function handleCaptionSave(nextCaption: string | null) {
+  try {
+    await saveCaption(props.item, nextCaption);
+    closeCaptionEditor();
+  } catch {
+    // The modal surfaces the current error state.
+  }
 }
 
 function handleDelete() {

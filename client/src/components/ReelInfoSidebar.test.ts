@@ -25,7 +25,8 @@ function createFeedItem(id: number): FeedItem {
     thumbnailUrl: `/thumbs/${id}.webp`,
     previewUrl: `/previews/${id}.mp4`,
     sortTimestamp: 1_777_000_000_000 + id,
-    takenAt: 1_777_000_000_000 + id
+    takenAt: 1_777_000_000_000 + id,
+    caption: null
   };
 }
 
@@ -48,6 +49,7 @@ function createFolder(): FolderSummary {
 function createImageDetail(id: number): ImageDetail {
   return {
     ...createFeedItem(id),
+    caption: 'Snow leopard sprint',
     folderAvatarImageId: null,
     relativePath: `animals/big-cats/snow-leopard-${id}.mp4`,
     mimeType: 'video/mp4',
@@ -156,5 +158,44 @@ describe('ReelInfoSidebar', () => {
     await flushPromises();
 
     expect(wrapper.get('.reels-info-sidebar').classes()).toContain('reels-info-sidebar--anchor-right');
+  });
+
+  it('falls back to the filename when a cleared caption should override cached detail text', async () => {
+    fetchImageMock.mockResolvedValue(createImageDetail(21));
+
+    const wrapper = mount(ReelInfoSidebar, {
+      props: {
+        item: {
+          ...createFeedItem(21),
+          caption: 'Snow leopard sprint'
+        },
+        folder: createFolder(),
+        open: true
+      },
+      global: {
+        stubs: {
+          Avatar: {
+            template: '<div data-test="avatar" />'
+          },
+          RouterLink: {
+            template: '<a><slot /></a>'
+          }
+        }
+      }
+    });
+
+    await flushPromises();
+    expect(wrapper.text()).toContain('Snow leopard sprint');
+
+    await wrapper.setProps({
+      item: {
+        ...createFeedItem(21),
+        caption: null
+      }
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('snow leopard 21');
+    expect(wrapper.text()).not.toContain('Snow leopard sprint');
   });
 });

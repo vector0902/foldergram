@@ -103,6 +103,17 @@ export const patchFolderBodySchema = z.object({
   description: z.string().max(300).nullable().optional()
 });
 
+export const patchImageCaptionBodySchema = z
+  .object({
+    caption: z.preprocess(
+      (value) => (typeof value === 'string' ? value.trim() : value),
+      z.string().max(300).nullable().optional()
+    )
+  })
+  .transform((body) => ({
+    caption: body.caption === '' ? null : body.caption ?? null
+  }));
+
 export const folderCoverBodySchema = z.object({
   imageId: z.coerce.number().int().positive()
 });
@@ -674,6 +685,22 @@ router.get('/images/:id', (request, response) => {
   }
 
   response.json(image);
+});
+
+router.patch('/images/:id/caption', requireCapability('canManageLibrary', 'Admin access is required.'), (request, response) => {
+  const params = imageIdSchema.parse(request.params);
+  const body = patchImageCaptionBodySchema.parse(request.body);
+  const image = galleryService.updateImageCaption(params.id, body.caption);
+
+  if (!image) {
+    response.status(404).json({ message: 'Post not found' });
+    return;
+  }
+
+  response.json({
+    ok: true,
+    image
+  });
 });
 
 router.get('/images/:id/collections', requireCapability('canUseSharedCollections', 'Authentication required.'), (request, response) => {

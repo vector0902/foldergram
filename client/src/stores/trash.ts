@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchTrashImages } from '../api/gallery';
 import type { TrashItem } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 
 interface TrashState {
   items: TrashItem[];
@@ -97,6 +98,10 @@ export const useTrashStore = defineStore('trash', {
       } finally {
         this.loading = false;
       }
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.items = updateCaptionInItems(this.items, id, caption);
     }
   }
 });

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchLikes, likeImage, unlikeImage } from '../api/gallery';
 import type { FeedItem, LikesMode } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 import { useAuthStore } from './auth';
 
 interface LikesState {
@@ -221,6 +222,14 @@ export const useLikesStore = defineStore('likes', {
       this.items = this.items.filter((item) => item.folderSlug !== folderSlug);
       this.likedIds = this.likedIds.filter((id) => !removedIds.has(id));
       this.pendingIds = this.pendingIds.filter((id) => !removedIds.has(id));
+
+      if (this.mode === 'local') {
+        writeLocalFavorites(this.items);
+      }
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.items = updateCaptionInItems(this.items, id, caption);
 
       if (this.mode === 'local') {
         writeLocalFavorites(this.items);

@@ -50,7 +50,7 @@
       <span class="reels-info-sidebar__date">{{ formattedDate }}</span>
     </div>
 
-    <p class="reels-info-sidebar__caption">{{ readableFilename }}</p>
+    <p class="reels-info-sidebar__caption">{{ caption }}</p>
 
     <dl class="reels-info-sidebar__stats">
       <div class="reels-info-sidebar__stat">
@@ -104,6 +104,7 @@ import { RouterLink } from 'vue-router';
 
 import { fetchImage } from '../api/gallery';
 import type { FeedItem, FolderSummary, ImageDetail } from '../types/api';
+import { resolveDisplayCaption } from '../utils/caption';
 import { formatMediaDuration } from '../utils/media';
 import Avatar from './Avatar.vue';
 
@@ -127,12 +128,12 @@ const error = ref<string | null>(null);
 const detailCache = new Map<number, ImageDetail>();
 let requestToken = 0;
 
-const readableFilename = computed(() =>
-  props.item.filename
-    .replace(/\.[^.]+$/, '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+const hasExplicitItemCaption = computed(() => Object.hasOwn(props.item, 'caption'));
+const caption = computed(() =>
+  resolveDisplayCaption({
+    filename: props.item.filename,
+    caption: hasExplicitItemCaption.value ? props.item.caption ?? null : detail.value?.caption
+  })
 );
 const formattedDate = computed(() =>
   new Date(detail.value?.takenAt ?? detail.value?.sortTimestamp ?? props.item.takenAt ?? props.item.sortTimestamp).toLocaleDateString(

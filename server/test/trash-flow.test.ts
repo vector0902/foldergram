@@ -190,6 +190,23 @@ describe.sequential('trash flow', () => {
     expect(galleryService.getFeed(1, 20, 'recent').items.map((item) => item.id)).not.toContain(image.id);
   });
 
+  it('preserves custom captions in likes and trash payloads', async () => {
+    await createSourceFile('captions/photo-a.jpg');
+    await scanAll('initial');
+
+    const image = mustGetImage('captions/photo-a.jpg');
+    expect(galleryService.updateImageCaption(image.id, 'Misty morning by the lake')).toMatchObject({
+      id: image.id,
+      caption: 'Misty morning by the lake'
+    });
+
+    expect(galleryService.likeImage(image.id)).toMatchObject({ id: image.id, liked: true });
+    expect(galleryService.getLikes().items.find((item) => item.id === image.id)?.caption).toBe('Misty morning by the lake');
+
+    expect(galleryService.trashImage(image.id)).toMatchObject({ id: image.id });
+    expect(galleryService.getTrashImages(1, 20).items.find((item) => item.id === image.id)?.caption).toBe('Misty morning by the lake');
+  });
+
   it('permanently deletes rows and derivatives and still succeeds when original files are already missing', async () => {
     await createSourceFile('cleanup/photo-a.jpg');
     await scanAll('initial');

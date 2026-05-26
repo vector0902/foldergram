@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchFolderImages, fetchFolders, updateFolderProfile, setFolderCover } from '../api/gallery';
 import type { FeedItem, FolderSummary } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 
 type FolderMediaFilter = 'all' | 'video';
 
@@ -90,6 +91,10 @@ export const useFoldersStore = defineStore('folders', {
         this.currentPage = 1;
         this.currentHasMore = false;
       }
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.currentImages = updateCaptionInItems(this.currentImages, id, caption);
     },
 
     resetForRebuild() {

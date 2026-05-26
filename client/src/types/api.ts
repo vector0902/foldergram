@@ -50,6 +50,7 @@ export interface FeedItem {
   folderPath: string;
   folderBreadcrumb: string | null;
   filename: string;
+  caption?: string | null;
   width: number;
   height: number;
   mediaType: 'image' | 'video';
@@ -297,6 +298,11 @@ export interface DeleteImageResult {
 
 export type TrashImageResult = DeleteImageResult;
 export type RestoreImageResult = DeleteImageResult;
+
+export interface ImageCaptionMutationResult {
+  ok: boolean;
+  image: ImageDetail;
+}
 
 export interface DeleteFolderResult {
   slug: string;

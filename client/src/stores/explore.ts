@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchFeed, fetchFeedSearch } from '../api/gallery';
 import type { FeedItem } from '../types/api';
+import { updateCaptionInItems } from '../utils/caption';
 
 interface ExploreState {
   items: FeedItem[];
@@ -188,6 +189,11 @@ export const useExploreStore = defineStore('explore', {
       this.initializeRecentSearches();
       this.recentSearchQueries = [];
       window.localStorage.removeItem(RECENT_SEARCHES_STORAGE_KEY);
+    },
+
+    updateImageCaption(id: number, caption: string | null) {
+      this.items = updateCaptionInItems(this.items, id, caption);
+      this.searchItems = updateCaptionInItems(this.searchItems, id, caption);
     },
 
     async loadInitial(force = false) {

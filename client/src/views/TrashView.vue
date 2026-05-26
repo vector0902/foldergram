@@ -83,7 +83,7 @@
               class="relative block w-full aspect-square overflow-hidden border-0 p-0 text-left cursor-pointer bg-surface-alt"
               type="button"
               :aria-pressed="isSelected(item.id)"
-              :aria-label="`${isSelected(item.id) ? 'Deselect' : 'Select'} ${readableFilename(item.filename)}`"
+              :aria-label="`${isSelected(item.id) ? 'Deselect' : 'Select'} ${displayCaption(item)}`"
               @click="toggleSelected(item.id)"
             >
               <ResilientImage
@@ -124,7 +124,7 @@
             </button>
 
             <div class="grid gap-[0.35rem] px-3 py-3">
-              <p class="m-0 text-[0.84rem] truncate">{{ readableFilename(item.filename) }}</p>
+              <p class="m-0 text-[0.84rem] truncate">{{ displayCaption(item) }}</p>
               <p class="m-0 text-[0.74rem] text-muted">Trashed {{ formatTrashedAt(item.trashedAt) }}</p>
               <RouterLink class="text-[0.74rem] font-semibold text-accent-strong" :to="{ name: 'folder', params: { slug: item.folderSlug } }">
                 Open folder
@@ -183,6 +183,7 @@ import { useFoldersStore } from '../stores/folders';
 import { useLikesStore } from '../stores/likes';
 import { useMomentsStore } from '../stores/moments';
 import { useTrashStore } from '../stores/trash';
+import { resolveDisplayCaption } from '../utils/caption';
 
 const appStore = useAppStore();
 const feedStore = useFeedStore();
@@ -211,12 +212,8 @@ function toggleSelected(id: number) {
   selectedIds.value = [...selectedIds.value, id];
 }
 
-function readableFilename(filename: string) {
-  return filename
-    .replace(/\.[^.]+$/, '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+function displayCaption(item: { filename: string; caption?: string | null }) {
+  return resolveDisplayCaption(item);
 }
 
 function formatTrashedAt(value: string | null) {

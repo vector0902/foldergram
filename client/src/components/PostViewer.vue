@@ -335,10 +335,22 @@
 
         <!-- Description -->
         <div class="viewer__sidebar-summary grid gap-[0.3rem] px-5 pt-[1.1rem]">
-          <p class="viewer__sidebar-caption m-0 text-text">
-            <strong class="mr-[0.35rem]">{{ image.folderName }}</strong>
-            {{ readableFilename }}
-          </p>
+          <div class="flex items-start gap-[0.35rem]">
+            <p class="viewer__sidebar-caption m-0 text-text">
+              <strong class="mr-[0.35rem]">{{ image.folderName }}</strong>
+              {{ caption }}
+            </p>
+            <button
+              v-if="authStore.canManageLibrary"
+              class="inline-flex items-center justify-center mt-[0.05rem] w-6 h-6 p-0 border-0 rounded-full bg-transparent text-muted cursor-pointer transition-colors hover:text-text"
+              type="button"
+              aria-label="Edit caption"
+              title="Edit caption"
+              @click="openCaptionEditor"
+            >
+              <span class="i-fluent-edit-16-regular w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
           <p class="viewer__sidebar-path mt-3 text-muted">
             <span class="viewer__sidebar-path-label">Folder Path</span>
             <span class="viewer__sidebar-path-value">{{ image.relativePath }}</span>
@@ -557,6 +569,18 @@
         </div>
       </aside>
     </div>
+
+    <Teleport to="body">
+      <PostCaptionModal
+        v-if="isEditingCaption && image"
+        :filename="image.filename"
+        :caption="image.caption"
+        :error="captionError"
+        :loading="captionSaving"
+        @cancel="closeCaptionEditor"
+        @save="handleCaptionSave"
+      />
+    </Teleport>
   </section>
 </template>
 
@@ -569,14 +593,17 @@
   import type { MediaPlayerElement } from "vidstack/elements"
 
   import { useHorizontalSwipe } from "../composables/useHorizontalSwipe"
+  import { useImageCaptionEditor } from "../composables/useImageCaptionEditor"
   import type { ImageDetail, FolderSummary } from "../types/api"
   import { useAppStore } from "../stores/app"
   import { useAuthStore } from "../stores/auth"
   import { useLikesStore } from "../stores/likes"
   import { useFoldersStore } from "../stores/folders"
+  import { resolveDisplayCaption } from "../utils/caption"
   import { getOriginalMediaDownloadUrl, getOriginalMediaUrl } from "../utils/original-media"
   import Avatar from "./Avatar.vue"
   import CollectionBookmark from "./CollectionBookmark.vue"
+  import PostCaptionModal from "./PostCaptionModal.vue"
   import ResilientImage from "./ResilientImage.vue"
   import VideoProgressFooter from "./VideoProgressFooter.vue"
   import { formatMediaDuration, formatVideoTimestamp, videoPreviewWouldDownscale } from "../utils/media"
@@ -614,6 +641,13 @@
   const videoCurrentTimeMs = ref(0)
   const sidebarSheetDragOffset = ref(0)
   const settingCover = ref(false)
+  const isEditingCaption = ref(false)
+  const {
+    saving: captionSaving,
+    error: captionError,
+    saveCaption,
+    clearError: clearCaptionError,
+  } = useImageCaptionEditor()
 
   const WHEEL_NAVIGATION_THRESHOLD = 72
   const NAVIGATION_COOLDOWN_MS = 320
@@ -719,15 +753,7 @@
   })
 
   const folderAvatar = computed(() => props.folder?.avatarUrl ?? null)
-  const readableFilename = computed(() =>
-    props.image
-      ? props.image.filename
-          .replace(/\.[^.]+$/, "")
-          .replace(/[_-]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim()
-      : "",
-  )
+  const caption = computed(() => (props.image ? resolveDisplayCaption(props.image) : ""))
   const formattedDate = computed(() =>
     props.image
       ? new Date(
@@ -820,6 +846,29 @@
 
     return details
   })
+
+  function openCaptionEditor() {
+    clearCaptionError()
+    isEditingCaption.value = true
+  }
+
+  function closeCaptionEditor() {
+    clearCaptionError()
+    isEditingCaption.value = false
+  }
+
+  async function handleCaptionSave(nextCaption: string | null) {
+    if (!props.image) {
+      return
+    }
+
+    try {
+      await saveCaption(props.image, nextCaption)
+      closeCaptionEditor()
+    } catch {
+      // The modal surfaces the current error state.
+    }
+  }
   const isModalSidebarCollapsible = computed(
     () => props.isModal === true && isSidebarCollapsible.value,
   )
@@ -1609,6 +1658,10 @@
       return
     }
 
+    if (isEditingCaption.value) {
+      return
+    }
+
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
       return
     }
@@ -1703,4 +1756,15 @@
     removePlayerEventListeners = null
     void playerElement.value?.pause().catch(() => { /* ignore */ })
   })
+
+  watch(
+    () => props.image?.id,
+    (nextImageId, previousImageId) => {
+      if (!nextImageId || nextImageId === previousImageId) {
+        return
+      }
+
+      closeCaptionEditor()
+    },
+  )
 </script>
