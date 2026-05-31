@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchPlaceImages, fetchPlaces, fetchPlacesStatus, preparePlacesGeodata, rebuildPlaces } from '../api/gallery';
+import { i18n } from '../locales';
 import type { FeedItem, PlaceDetail, PlacesStatus } from '../types/api';
 import { updateCaptionInItems } from '../utils/caption';
 
@@ -62,7 +63,7 @@ export const usePlacesStore = defineStore('places', {
       } catch (error) {
         this.items = [];
         this.hasLoadedList = false;
-        this.listError = error instanceof Error ? error.message : 'Unable to load places';
+        this.listError = error instanceof Error ? error.message : i18n.global.t('placesPage.errors.load');
       } finally {
         this.loadingList = false;
       }
@@ -105,7 +106,7 @@ export const usePlacesStore = defineStore('places', {
         }
 
         this.currentPlace = null;
-        this.placeError = error instanceof Error ? error.message : 'Unable to load place';
+        this.placeError = error instanceof Error ? error.message : i18n.global.t('placePage.errors.load');
       } finally {
         if (this.placeRequestId === requestId && this.currentSlug === slug) {
           this.loadingPlace = false;
@@ -118,7 +119,7 @@ export const usePlacesStore = defineStore('places', {
       try {
         this.status = await fetchPlacesStatus();
       } catch (error) {
-        this.statusError = error instanceof Error ? error.message : 'Unable to load places status';
+        this.statusError = error instanceof Error ? error.message : i18n.global.t('settings.places.section.loadStatusError');
       }
     },
 
@@ -128,9 +129,9 @@ export const usePlacesStore = defineStore('places', {
       try {
         const payload = await preparePlacesGeodata();
         this.status = payload.status;
-        this.actionMessage = 'Offline place data is ready.';
+        this.actionMessage = i18n.global.t('settings.places.section.actions.ready');
       } catch (error) {
-        this.actionMessage = error instanceof Error ? error.message : 'Unable to prepare offline place data.';
+        this.actionMessage = error instanceof Error ? error.message : i18n.global.t('settings.places.section.actions.prepareError');
       } finally {
         this.preparing = false;
       }
@@ -141,10 +142,13 @@ export const usePlacesStore = defineStore('places', {
       this.actionMessage = null;
       try {
         const result = await rebuildPlaces();
-        this.actionMessage = `Rebuilt places for ${result.assigned} of ${result.processed} posts.`;
+        this.actionMessage = i18n.global.t('settings.places.section.actions.rebuilt', {
+          assigned: new Intl.NumberFormat(i18n.global.locale.value).format(result.assigned),
+          processed: new Intl.NumberFormat(i18n.global.locale.value).format(result.processed)
+        });
         await this.fetchPlaces(true);
       } catch (error) {
-        this.actionMessage = error instanceof Error ? error.message : 'Unable to rebuild place assignments.';
+        this.actionMessage = error instanceof Error ? error.message : i18n.global.t('settings.places.section.actions.rebuildError');
       } finally {
         this.rebuilding = false;
       }

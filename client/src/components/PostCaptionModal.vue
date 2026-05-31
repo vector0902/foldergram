@@ -7,12 +7,12 @@
       :aria-labelledby="titleId"
     >
       <div class="grid gap-[1.2rem]">
-        <h2 :id="titleId" class="m-0 text-[1.25rem] font-semibold">Edit caption</h2>
+        <h2 :id="titleId" class="m-0 text-[1.25rem] font-semibold">{{ t('post.captionModal.title') }}</h2>
 
         <form class="grid gap-[1.1rem]" @submit.prevent="submit">
           <div class="grid gap-[0.35rem]">
             <div class="flex items-center justify-between gap-4">
-              <label for="post-caption" class="text-[0.85rem] font-semibold text-text">Caption</label>
+              <label for="post-caption" class="text-[0.85rem] font-semibold text-text">{{ t('post.captionModal.captionLabel') }}</label>
               <span class="text-[0.75rem] text-muted">{{ formData.caption.length }} / 300</span>
             </div>
             <textarea
@@ -20,7 +20,7 @@
               v-model="formData.caption"
               class="w-full min-h-[7rem] rounded-lg border border-border bg-surface px-[0.75rem] py-[0.6rem] text-[0.95rem] text-text placeholder-muted resize-y focus:border-text focus:outline-none focus:ring-1 focus:ring-text"
               maxlength="300"
-              placeholder="Write a caption..."
+              :placeholder="t('post.captionModal.placeholder')"
             />
           </div>
 
@@ -39,7 +39,7 @@
               :disabled="loading"
               @click="resetToFilename"
             >
-              Reset to filename
+              {{ t('post.captionModal.resetToFilename') }}
             </button>
             <div class="flex items-center gap-3 ml-auto">
               <button
@@ -48,14 +48,14 @@
                 :disabled="loading"
                 @click="$emit('cancel')"
               >
-                Cancel
+                {{ t('common.cancel') }}
               </button>
               <button
                 class="min-h-[2.5rem] px-4 py-[0.6rem] border border-transparent rounded-[0.75rem] font-semibold cursor-pointer bg-text text-bg disabled:opacity-70 disabled:cursor-wait"
                 type="submit"
                 :disabled="loading"
               >
-                {{ loading ? 'Saving...' : 'Save' }}
+                {{ loading ? t('common.saving') : t('common.save') }}
               </button>
             </div>
           </div>
@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { normalizeCaptionInput, resolveDisplayCaption } from '../utils/caption';
 
@@ -82,6 +83,7 @@ const emit = defineEmits<{
   save: [caption: string | null];
 }>();
 
+const { t } = useI18n();
 const titleId = `caption-dialog-title-${Math.random().toString(36).slice(2, 10)}`;
 const hasCustomCaption = computed(() => props.caption !== null && props.caption !== undefined);
 const formData = reactive({

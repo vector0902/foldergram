@@ -2,13 +2,17 @@
   <section class="w-[min(100%,58rem)] mx-auto">
     <EmptyState
       v-if="appStore.isLibraryUnavailable"
-      title="Library storage unavailable"
+      :title="t('collections.list.libraryUnavailableTitle')"
       :description="appStore.libraryUnavailableReason"
     />
-    <ErrorState v-else-if="collectionsStore.error" title="Could not load collections" :message="collectionsStore.error" />
+    <ErrorState
+      v-else-if="collectionsStore.error"
+      :title="t('collections.list.loadErrorTitle')"
+      :message="collectionsStore.error"
+    />
     <template v-else>
       <div v-if="collectionsStore.loading" class="card p-8 text-center">
-        <p class="text-muted">Loading collections...</p>
+        <p class="text-muted">{{ t('collections.list.loading') }}</p>
       </div>
 
       <section v-else-if="collectionsStore.items.length > 0" class="grid gap-[1px] grid-cols-2 md:grid-cols-3">
@@ -46,15 +50,15 @@
           <div v-else class="h-full w-full bg-[linear-gradient(135deg,#262b31_0%,#111827_100%)]"></div>
           <div class="absolute inset-x-0 bottom-0 grid gap-[0.15rem] px-3 py-3 bg-[linear-gradient(180deg,rgba(10,14,24,0)_0%,rgba(10,14,24,0.82)_100%)]">
             <strong class="truncate text-[0.95rem]">{{ displayCollectionName(collection) }}</strong>
-            <span class="text-[0.74rem] font-semibold text-white/78">{{ formatCount(collection.itemCount) }} posts</span>
+            <span class="text-[0.74rem] font-semibold text-white/78">{{ formatPostCount(collection.itemCount) }}</span>
           </div>
         </RouterLink>
       </section>
 
       <EmptyState
         v-else
-        title="No collections yet"
-        description="Saved posts will appear in All Posts."
+        :title="t('collections.list.emptyTitle')"
+        :description="t('collections.list.emptyDescription')"
       />
     </template>
   </section>
@@ -62,6 +66,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
 import EmptyState from '../components/EmptyState.vue';
@@ -73,13 +78,20 @@ import type { CollectionSummary } from '../types/api';
 
 const appStore = useAppStore();
 const collectionsStore = useCollectionsStore();
+const { t, locale } = useI18n();
 
 function formatCount(value: number) {
-  return new Intl.NumberFormat().format(value);
+  return new Intl.NumberFormat(locale.value).format(value);
 }
 
 function displayCollectionName(collection: CollectionSummary) {
-  return collection.isDefault ? 'All Posts' : collection.name;
+  return collection.isDefault ? t('collections.shared.defaultName') : collection.name;
+}
+
+function formatPostCount(value: number) {
+  return value === 1
+    ? t('collections.shared.postCountOne', { count: formatCount(value) })
+    : t('collections.shared.postCountOther', { count: formatCount(value) });
 }
 
 function showAllPostsMosaic(collection: CollectionSummary) {

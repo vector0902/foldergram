@@ -11,7 +11,7 @@
           v-if="showSearchChrome"
           class="inline-flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent p-0 text-muted transition-colors duration-150 hover:bg-surface-hover hover:text-text"
           type="button"
-          aria-label="Back to explore posts"
+          :aria-label="t('explore.back')"
           @click="closeSearch"
         >
           <svg
@@ -62,7 +62,7 @@
             v-model="searchQuery"
             class="w-full border-0 bg-transparent p-0 text-[1rem] text-text outline-none placeholder:text-muted"
             type="search"
-            placeholder="Search"
+            :placeholder="t('explore.searchPlaceholder')"
             spellcheck="false"
             @focus="activateSearch"
             @keydown.enter.prevent="commitSearch()"
@@ -72,7 +72,7 @@
             v-if="searchQuery.length > 0"
             class="inline-flex h-6 w-6 items-center justify-center rounded-full border-0 bg-surface-hover p-0 text-muted transition-colors duration-150 hover:bg-border hover:text-text"
             type="button"
-            aria-label="Clear search"
+            :aria-label="t('explore.clearSearch')"
             @click="clearSearch"
           >
             <svg
@@ -98,7 +98,7 @@
         class="explore-view__message-card max-w-[35rem]"
       >
         <h1 class="m-0 text-[1.15rem] font-semibold text-text">
-          Library storage unavailable
+          {{ t('reels.view.libraryUnavailableTitle') }}
         </h1>
         <p class="m-0 text-muted">{{ appStore.libraryUnavailableReason }}</p>
       </section>
@@ -109,14 +109,14 @@
             <h1
               class="m-0 text-[1.45rem] font-semibold tracking-[-0.03em] text-text"
             >
-              Recent
+              {{ t('explore.recentTitle') }}
             </h1>
             <button
               class="explore-view__recent-clear"
               type="button"
               @click="clearRecentSearches"
             >
-              Clear all
+              {{ t('explore.clearAll') }}
             </button>
           </div>
 
@@ -162,7 +162,7 @@
         <div
           class="explore-view__tabs flex flex-wrap gap-2"
           role="tablist"
-          aria-label="Search result tabs"
+          :aria-label="t('explore.tabsAria')"
         >
           <button
             class="explore-view__tab"
@@ -172,7 +172,7 @@
             :aria-selected="activeSearchTab === 'media'"
             @click="selectSearchTab('media')"
           >
-            Photos &amp; Videos
+            {{ t('explore.tabs.media') }}
           </button>
           <button
             class="explore-view__tab"
@@ -182,7 +182,7 @@
             :aria-selected="activeSearchTab === 'folders'"
             @click="selectSearchTab('folders')"
           >
-            App Folders
+            {{ t('explore.tabs.folders') }}
           </button>
         </div>
 
@@ -205,7 +205,7 @@
             class="explore-view__message-card mx-auto"
           >
             <h1 class="m-0 text-[1.15rem] font-semibold text-text">
-              Could not search posts
+              {{ t('explore.errors.search') }}
             </h1>
             <p class="m-0 text-muted">{{ exploreStore.searchError }}</p>
           </section>
@@ -218,10 +218,10 @@
             class="explore-view__message-card mx-auto"
           >
             <h1 class="m-0 text-[1.15rem] font-semibold text-text">
-              No matching photos or videos
+              {{ t('explore.emptySearchTitle') }}
             </h1>
             <p class="m-0 text-muted">
-              Try a different filename or folder keyword.
+              {{ t('explore.emptySearchDescription') }}
             </p>
           </section>
 
@@ -244,7 +244,7 @@
             v-if="foldersStore.loadingList && foldersStore.items.length === 0"
             class="m-0 text-[0.96rem] text-muted"
           >
-            Loading folders...
+            {{ t('explore.loadingFolders') }}
           </p>
 
           <div v-else class="grid gap-1">
@@ -276,7 +276,7 @@
               v-if="folderSearchResults.length === 0"
               class="m-0 pt-2 text-[1rem] text-muted"
             >
-              No app folders found.
+              {{ t('explore.noFoldersFound') }}
             </p>
           </div>
         </section>
@@ -301,7 +301,7 @@
           class="explore-view__message-card mx-auto"
         >
           <h1 class="m-0 text-[1.15rem] font-semibold text-text">
-            Could not load explore
+            {{ t('explore.errors.load') }}
           </h1>
           <p class="m-0 text-muted">{{ exploreStore.error }}</p>
         </section>
@@ -311,10 +311,10 @@
           class="explore-view__message-card mx-auto"
         >
           <h1 class="m-0 text-[1.15rem] font-semibold text-text">
-            Nothing to explore yet
+            {{ t('explore.emptyTitle') }}
           </h1>
           <p class="m-0 text-muted">
-            Index a few folders and this page will start surfacing posts here.
+            {{ t('explore.emptyDescription') }}
           </p>
         </section>
 
@@ -334,6 +334,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
 import Avatar from '../components/Avatar.vue';
@@ -357,6 +358,7 @@ const foldersStore = useFoldersStore();
 const likesStore = useLikesStore();
 const route = useRoute();
 const router = useRouter();
+const { t, locale } = useI18n();
 
 const searchInput = ref<HTMLInputElement | null>(null);
 const searchQuery = ref(readRouteQueryValue(route.query.q));
@@ -575,7 +577,9 @@ function handleSearchMediaOpen() {
 
 function describeFolder(folder: FolderSummary): string {
   const location = folder.breadcrumb ?? folder.folderPath;
-  const postLabel = `${folder.imageCount} post${folder.imageCount === 1 ? '' : 's'}`;
+  const postLabel = folder.imageCount === 1
+    ? t('explore.folderPostsOne', { count: new Intl.NumberFormat(locale.value).format(folder.imageCount) })
+    : t('explore.folderPostsOther', { count: new Intl.NumberFormat(locale.value).format(folder.imageCount) });
 
   return `${location} • ${postLabel}`;
 }

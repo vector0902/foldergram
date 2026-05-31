@@ -6,16 +6,17 @@
       type="button"
       @click="$emit('load-more')"
     >
-      Load more
+      {{ t('common.loadMore') }}
     </button>
-    <span v-else-if="loading" class="text-muted">Loading more...</span>
+    <span v-else-if="loading" class="text-muted">{{ t('common.loadingMore') }}</span>
     <span v-else-if="hasMore" class="sr-only">Loading continues automatically when you reach the end.</span>
-    <span v-else class="text-muted">You are caught up</span>
+    <span v-else class="text-muted">{{ t('common.youAreCaughtUp') }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = withDefaults(defineProps<{
   loading: boolean;
@@ -29,6 +30,7 @@ const emit = defineEmits<{
   'load-more': [];
 }>();
 
+const { t } = useI18n();
 const sentinel = ref<HTMLElement | null>(null);
 const isIntersecting = ref(false);
 let observer: IntersectionObserver | null = null;

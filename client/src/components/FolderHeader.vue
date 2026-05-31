@@ -5,7 +5,7 @@
         v-if="hasAvatarStory"
         type="button"
         class="block border-0 bg-transparent p-0 rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text/55 focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
-        aria-label="Open folder stories"
+        :aria-label="t('folder.header.openStories')"
         @click="emit('openAvatarStory')"
       >
         <div class="rounded-full p-[0.22rem] shadow-[0_16px_34px_rgba(246,106,61,0.12)] transition-transform duration-[180ms] hover:scale-[1.02]" style="background: var(--story-ring);">
@@ -18,7 +18,7 @@
         <a
           :href="href"
           class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text/55 focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
-          aria-label="Open folder avatar"
+          :aria-label="t('folder.header.openAvatar')"
           @click="handleAvatarNavigation($event, navigate)"
         >
           <div class="rounded-full p-[0.22rem] shadow-[0_12px_24px_rgba(99,115,129,0.12)] transition-transform duration-[180ms] hover:scale-[1.02]" style="background: rgba(43, 48, 54, 0.8);">
@@ -43,17 +43,17 @@
           class="inline-flex items-center justify-center px-4 pt-2 pb-1.5 text-[0.75rem] font-semibold leading-none rounded-lg bg-surface-hover text-text hover:bg-border transition-colors border border-border cursor-pointer"
           @click="openProfileEditor"
         >
-          Edit App Folder
+          {{ t('folder.header.editButton') }}
         </button>
       </div>
       <p v-if="folder.breadcrumb" class="m-0 text-[0.84rem] font-medium tracking-[0.02em] text-muted">{{ folder.breadcrumb }}</p>
       <div class="flex items-center gap-[1.6rem] flex-wrap text-[0.95rem] leading-none max-sm:justify-center">
-        <span><strong class="mr-[0.35rem] font-semibold">{{ folder.imageCount }}</strong>posts</span>
-        <span><strong class="mr-[0.35rem] font-semibold">{{ folder.videoCount }}</strong>reels</span>
-        <span v-if="folder.latestImageMtimeMs"><strong class="mr-[0.35rem] font-semibold">{{ formattedUpdatedDate }}</strong>updated</span>
+        <span>{{ t('folder.header.posts', { count: folder.imageCount }) }}</span>
+        <span>{{ t('folder.header.reels', { count: folder.videoCount }) }}</span>
+        <span v-if="folder.latestImageMtimeMs">{{ t('folder.header.updated', { date: formattedUpdatedDate }) }}</span>
       </div>
       <div class="grid max-w-[29rem] gap-[0.28rem] max-sm:max-w-none">
-        <span class="text-[0.74rem] font-bold tracking-[0.1em] text-muted uppercase">Library path</span>
+        <span class="text-[0.74rem] font-bold tracking-[0.1em] text-muted uppercase">{{ t('folder.header.libraryPath') }}</span>
         <p class="m-0 font-mono text-[0.8rem] leading-[1.5] text-muted break-all">{{ folder.folderPath }}</p>
       </div>
       <div v-if="folder.description" class="max-w-[34rem] pt-[0.25rem]">
@@ -74,7 +74,7 @@
             type="button"
             :aria-expanded="isDescriptionExpanded"
             :aria-controls="descriptionId"
-            :aria-label="isDescriptionExpanded ? 'Collapse description' : 'Expand description'"
+            :aria-label="isDescriptionExpanded ? t('folder.header.collapseDescription') : t('folder.header.expandDescription')"
             @click="isDescriptionExpanded = !isDescriptionExpanded"
           >
             <span
@@ -103,6 +103,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink, useRoute } from 'vue-router';
 import type { FolderSummary } from '../types/api';
 import Avatar from './Avatar.vue';
@@ -124,6 +125,7 @@ const appStore = useAppStore();
 const authStore = useAuthStore();
 const foldersStore = useFoldersStore();
 const route = useRoute();
+const { locale, t } = useI18n();
 
 const isEditingProfile = ref(false);
 const savingProfile = ref(false);
@@ -138,7 +140,7 @@ let syncingDescriptionOverflow = false;
 
 const formattedUpdatedDate = computed(() =>
   props.folder.latestImageMtimeMs
-    ? new Date(props.folder.latestImageMtimeMs).toLocaleDateString(undefined, {
+    ? new Date(props.folder.latestImageMtimeMs).toLocaleDateString(locale.value, {
         month: 'short',
         day: 'numeric',
         year: 'numeric'
@@ -153,7 +155,7 @@ async function handleSaveProfile(data: { name: string; description: string | nul
     await foldersStore.updateFolderProfile(props.folder.slug, data.name, data.description);
     closeProfileEditor();
   } catch (error) {
-    profileError.value = error instanceof Error ? error.message : 'Failed to update profile';
+    profileError.value = error instanceof Error ? error.message : t('folder.header.errors.updateProfile');
   } finally {
     savingProfile.value = false;
   }

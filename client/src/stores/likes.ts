@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchLikes, likeImage, unlikeImage } from '../api/gallery';
+import { i18n } from '../locales';
 import type { FeedItem, LikesMode } from '../types/api';
 import { updateCaptionInItems } from '../utils/caption';
 import { useAuthStore } from './auth';
@@ -98,17 +99,50 @@ export const useLikesStore = defineStore('likes', {
   getters: {
     isLiked: (state) => (id: number) => state.likedIds.includes(id),
     isPending: (state) => (id: number) => state.pendingIds.includes(id),
-    collectionLabel: (state) => (state.mode === 'local' ? 'Favorites' : 'Likes'),
-    collectionSectionLabel: (state) => (state.mode === 'local' ? 'Favorite posts' : 'Liked posts'),
-    emptyTitle: (state) => (state.mode === 'local' ? 'No favorites yet' : 'No liked posts yet'),
-    emptyDescription: (state) =>
-      state.mode === 'local'
-        ? 'Tap the heart under any post and it will appear here in this browser.'
-        : 'Tap the heart under any post and it will appear here.',
-    loadingLabel: (state) => (state.mode === 'local' ? 'Loading favorites...' : 'Loading likes...'),
-    errorTitle: (state) => (state.mode === 'local' ? 'Could not load favorites' : 'Could not load likes'),
+    collectionLabel: (state) => {
+      void i18n.global.locale.value;
+      return state.mode === 'local'
+        ? i18n.global.t('likes.labels.localCollection')
+        : i18n.global.t('likes.labels.sharedCollection');
+    },
+    collectionSectionLabel: (state) => {
+      void i18n.global.locale.value;
+      return state.mode === 'local'
+        ? i18n.global.t('likes.labels.localSection')
+        : i18n.global.t('likes.labels.sharedSection');
+    },
+    emptyTitle: (state) => {
+      void i18n.global.locale.value;
+      return state.mode === 'local'
+        ? i18n.global.t('likes.states.localEmptyTitle')
+        : i18n.global.t('likes.states.sharedEmptyTitle');
+    },
+    emptyDescription: (state) => {
+      void i18n.global.locale.value;
+      return state.mode === 'local'
+        ? i18n.global.t('likes.states.localEmptyDescription')
+        : i18n.global.t('likes.states.sharedEmptyDescription');
+    },
+    loadingLabel: (state) => {
+      void i18n.global.locale.value;
+      return state.mode === 'local'
+        ? i18n.global.t('likes.states.localLoadingLabel')
+        : i18n.global.t('likes.states.sharedLoadingLabel');
+    },
+    errorTitle: (state) => {
+      void i18n.global.locale.value;
+      return state.mode === 'local'
+        ? i18n.global.t('likes.states.localErrorTitle')
+        : i18n.global.t('likes.states.sharedErrorTitle');
+    },
     toggleAriaLabel: (state) => (liked: boolean) =>
-      state.mode === 'local' ? (liked ? 'Remove favorite from post' : 'Favorite post') : liked ? 'Unlike post' : 'Like post'
+      state.mode === 'local'
+        ? liked
+          ? i18n.global.t('likes.actions.removeFavoriteFromPost')
+          : i18n.global.t('likes.actions.favoritePost')
+        : liked
+          ? i18n.global.t('likes.actions.unlikePost')
+          : i18n.global.t('likes.actions.likePost')
   },
   actions: {
     syncFromItems(items: FeedItem[], mode: LikesMode) {
@@ -153,7 +187,11 @@ export const useLikesStore = defineStore('likes', {
 
         this.initialized = true;
       } catch (error) {
-        this.error = error instanceof Error ? error.message : `Unable to load ${this.mode === 'local' ? 'favorites' : 'likes'}`;
+        this.error = error instanceof Error
+          ? error.message
+          : this.mode === 'local'
+            ? i18n.global.t('likes.errors.loadLocal')
+            : i18n.global.t('likes.errors.loadShared');
       } finally {
         this.loading = false;
       }
@@ -197,7 +235,11 @@ export const useLikesStore = defineStore('likes', {
           this.items = this.items.filter((entry) => entry.id !== item.id);
         }
 
-        this.error = error instanceof Error ? error.message : `Unable to update ${mode === 'local' ? 'favorites' : 'likes'}`;
+        this.error = error instanceof Error
+          ? error.message
+          : mode === 'local'
+            ? i18n.global.t('likes.errors.updateLocal')
+            : i18n.global.t('likes.errors.updateShared');
       } finally {
         if (mode === 'local') {
           writeLocalFavorites(this.items);

@@ -1,6 +1,6 @@
 <template>
   <!-- Mobile bottom nav — hidden on desktop (md+) -->
-  <nav class="mobile-nav" aria-label="Primary navigation">
+  <nav class="mobile-nav" :aria-label="t('nav.primary')">
     <div v-if="moreMenuOpen" class="mobile-nav__backdrop" @click="closeMoreMenu" />
 
     <div class="mobile-nav__bar">
@@ -9,7 +9,7 @@
           :href="href"
           class="mobile-nav__item mobile-nav__brand"
           :class="isActive ? mobileNavActiveClass : ''"
-          aria-label="Foldergram home"
+          :aria-label="t('nav.foldergramHome')"
           @click="handleNavNavigate($event, navigate)"
         >
           <BrandMark />
@@ -22,7 +22,7 @@
             :href="href"
             class="mobile-nav__item"
             :class="isActive ? mobileNavActiveClass : ''"
-            aria-label="Reels"
+            :aria-label="t('nav.reels')"
             @click="handleNavNavigate($event, navigate)"
           >
             <span class="mobile-nav__icon" :class="isActive ? 'i-fluent-play-circle-24-filled' : 'i-fluent-play-circle-24-regular'" aria-hidden="true" />
@@ -34,7 +34,7 @@
             :href="href"
             class="mobile-nav__item"
             :class="isActive ? mobileNavActiveClass : ''"
-            aria-label="Search"
+            :aria-label="t('nav.search')"
             @click="handleNavNavigate($event, navigate)"
           >
             <span class="mobile-nav__icon" :class="isActive ? 'i-fluent-search-16-filled' : 'i-fluent-search-16-regular'" aria-hidden="true" />
@@ -46,7 +46,7 @@
             :href="href"
             class="mobile-nav__item"
             :class="isActive ? mobileNavActiveClass : ''"
-            aria-label="Library"
+            :aria-label="t('nav.library')"
             @click="handleNavNavigate($event, navigate)"
           >
             <span class="mobile-nav__icon" :class="isActive ? 'i-fluent-folder-16-filled' : 'i-fluent-folder-16-regular'" aria-hidden="true" />
@@ -58,7 +58,7 @@
             :href="href"
             class="mobile-nav__item mobile-nav__item--places"
             :class="isActive || isPlacesRoute ? mobileNavActiveClass : ''"
-            aria-label="Places"
+            :aria-label="t('nav.places')"
             @click="handleNavNavigate($event, navigate)"
           >
             <span class="mobile-nav__icon" :class="isActive || isPlacesRoute ? 'i-fluent-location-20-filled' : 'i-fluent-location-20-regular'" aria-hidden="true" />
@@ -70,7 +70,7 @@
             :href="href"
             class="mobile-nav__item mobile-nav__item--likes"
             :class="isActive ? mobileNavActiveClass : ''"
-            :aria-label="`${likesStore.collectionLabel} (${likesStore.items.length})`"
+            :aria-label="t('nav.likesAriaLabel', { label: likesStore.collectionLabel, count: likesStore.items.length })"
             @click="handleNavNavigate($event, navigate)"
           >
             <span class="mobile-nav__icon" :class="isActive ? 'i-fluent-heart-20-filled' : 'i-fluent-heart-20-regular'" aria-hidden="true" />
@@ -87,7 +87,7 @@
             :href="href"
             class="mobile-nav__item mobile-nav__item--collections"
             :class="isActive || isCollectionsRoute ? mobileNavActiveClass : ''"
-            aria-label="Collections"
+            :aria-label="t('nav.collections')"
             @click="handleNavNavigate($event, navigate)"
           >
             <span class="mobile-nav__icon" :class="isActive || isCollectionsRoute ? 'i-fluent-bookmark-20-filled' : 'i-fluent-bookmark-20-regular'" aria-hidden="true" />
@@ -99,7 +99,7 @@
             class="mobile-nav__item mobile-nav__more-button"
             :class="moreButtonClasses"
             type="button"
-            aria-label="More"
+            :aria-label="t('nav.more')"
             aria-haspopup="menu"
             :aria-expanded="moreMenuOpen"
             :data-open="moreMenuOpen ? 'true' : 'false'"
@@ -135,7 +135,7 @@
                 @click="handleNavNavigate($event, navigate)"
               >
                 <span class="mobile-nav__menu-icon" :class="isActive || isCollectionsRoute ? 'i-fluent-bookmark-20-filled' : 'i-fluent-bookmark-20-regular'" aria-hidden="true" />
-                <span>Collections</span>
+                <span>{{ t('nav.collections') }}</span>
                 <small class="mobile-nav__menu-badge">{{ collectionsStore.defaultCollection?.itemCount ?? 0 }}</small>
               </a>
             </RouterLink>
@@ -147,7 +147,7 @@
               @click="closeMoreMenu"
             >
               <span class="mobile-nav__menu-icon i-fluent-delete-16-regular" aria-hidden="true" />
-              <span>Trash</span>
+              <span>{{ t('nav.trash') }}</span>
             </RouterLink>
 
             <RouterLink v-if="authStore.canAccessSettings" custom :to="{ name: 'settings' }" v-slot="{ href, navigate, isActive }">
@@ -162,7 +162,7 @@
                   :class="isActive ? 'i-fluent-settings-20-filled' : 'i-fluent-settings-20-regular'"
                   aria-hidden="true"
                 />
-                <span>Settings</span>
+                <span>{{ t('nav.settings') }}</span>
               </a>
             </RouterLink>
 
@@ -174,7 +174,7 @@
               @click="handleUnlockAdmin"
             >
               <span class="mobile-nav__menu-icon i-fluent-key-16-regular" aria-hidden="true" />
-              <span>Unlock admin</span>
+              <span>{{ t('nav.unlockAdmin') }}</span>
             </button>
 
             <button
@@ -193,7 +193,7 @@
                 class="mobile-nav__menu-icon i-fluent-weather-sunny-20-regular"
                 aria-hidden="true"
               />
-              <span>Switch appearance</span>
+              <span>{{ t('nav.switchAppearance') }}</span>
             </button>
 
             <button
@@ -215,6 +215,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink, useRoute } from 'vue-router';
 
 import { useAppStore } from '../stores/app';
@@ -224,6 +225,7 @@ import { useLikesStore } from '../stores/likes';
 import { usePlacesStore } from '../stores/places';
 import BrandMark from './BrandMark.vue';
 
+const { t } = useI18n();
 const appStore = useAppStore();
 const authStore = useAuthStore();
 const collectionsStore = useCollectionsStore();
@@ -231,8 +233,8 @@ const likesStore = useLikesStore();
 const placesStore = usePlacesStore();
 const route = useRoute();
 const moreMenuOpen = ref(false);
-const themeLabel = computed(() => (appStore.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'));
-const signOutLabel = computed(() => (authStore.accessMode === 'public' ? 'Return to public view' : 'Sign out'));
+const themeLabel = computed(() => (appStore.theme === 'light' ? t('nav.switchToDarkMode') : t('nav.switchToLightMode')));
+const signOutLabel = computed(() => (authStore.accessMode === 'public' ? t('nav.returnToPublicView') : t('nav.signOut')));
 const showPlacesNav = computed(() => placesStore.items.length > 0 && placesStore.listError === null);
 const isPlacesRoute = computed(() => route.name === 'places' || route.name === 'place');
 const isLikesRoute = computed(() => route.name === 'likes');

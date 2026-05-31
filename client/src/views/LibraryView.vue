@@ -5,14 +5,14 @@
       class="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start"
     >
       <div>
-        <span class="eyebrow">Library</span>
+        <span class="eyebrow">{{ t('libraryPage.eyebrow') }}</span>
         <h1
           class="mt-[0.15rem] mb-0 text-[clamp(1.55rem,2.4vw,2rem)] font-medium tracking-[-0.04em]"
         >
-          All folders
+          {{ t('libraryPage.title') }}
         </h1>
         <p class="m-0 mt-1 text-muted">
-          Browse and search every indexed app folder.
+          {{ t('libraryPage.description') }}
         </p>
       </div>
       <div
@@ -23,7 +23,7 @@
             {{ formatCount(foldersStore.items.length) }}
           </p>
           <p class="m-0 text-muted text-[0.72rem] uppercase tracking-[0.08em]">
-            Folders
+            {{ t('libraryPage.stats.folders') }}
           </p>
         </div>
         <div class="w-px h-8 bg-border"></div>
@@ -32,7 +32,7 @@
             {{ formatCount(totalIndexedImages) }}
           </p>
           <p class="m-0 text-muted text-[0.72rem] uppercase tracking-[0.08em]">
-            Posts
+            {{ t('libraryPage.stats.posts') }}
           </p>
         </div>
       </div>
@@ -40,12 +40,12 @@
 
     <EmptyState
       v-if="appStore.isLibraryUnavailable"
-      title="Library storage unavailable"
+      :title="t('reels.view.libraryUnavailableTitle')"
       :description="appStore.libraryUnavailableReason"
     />
     <ErrorState
       v-else-if="foldersStore.listError && foldersStore.items.length === 0"
-      title="Could not load folders"
+      :title="t('libraryPage.errors.load')"
       :message="foldersStore.listError"
     />
     <template v-else>
@@ -70,7 +70,7 @@
             v-model.trim="searchQuery"
             class="w-full h-10 pl-9 pr-4 border border-border rounded-[0.75rem] text-text text-[0.88rem] bg-surface-alt transition-[border-color,box-shadow] duration-150 focus:outline-none focus:border-accent/40 focus:shadow-[0_0_0_3px_var(--accent-soft)]"
             type="search"
-            placeholder="Search names or path segments…"
+            :placeholder="t('libraryPage.searchPlaceholder')"
           />
         </div>
 
@@ -79,11 +79,11 @@
             v-model="sortMode"
             class="h-10 pl-3 pr-9 border border-border rounded-[0.75rem] text-text text-[0.82rem] bg-surface-alt cursor-pointer appearance-none focus:outline-none focus:border-accent/40"
           >
-            <option value="recent-desc">Recently updated</option>
-            <option value="images-desc">Most posts</option>
-            <option value="name-asc">Name A–Z</option>
-            <option value="name-desc">Name Z–A</option>
-            <option value="path-asc">Path A–Z</option>
+            <option value="recent-desc">{{ t('libraryPage.sort.recentDesc') }}</option>
+            <option value="images-desc">{{ t('libraryPage.sort.imagesDesc') }}</option>
+            <option value="name-asc">{{ t('libraryPage.sort.nameAsc') }}</option>
+            <option value="name-desc">{{ t('libraryPage.sort.nameDesc') }}</option>
+            <option value="path-asc">{{ t('libraryPage.sort.pathAsc') }}</option>
           </select>
           <svg
             class="pointer-events-none absolute right-[0.65rem] top-1/2 -translate-y-1/2 w-[0.85rem] h-[0.85rem] text-muted"
@@ -98,24 +98,20 @@
           </svg>
         </div>
 
-        <span class="ml-auto text-muted text-[0.8rem] shrink-0"
-          >{{ formatCount(filteredFolders.length) }} result{{
-            filteredFolders.length !== 1 ? "s" : ""
-          }}</span
-        >
+        <span class="ml-auto text-muted text-[0.8rem] shrink-0">{{ formatResultsCount(filteredFolders.length) }}</span>
       </div>
 
       <section
         v-if="foldersStore.loadingList && foldersStore.items.length === 0"
         class="card p-12 text-center"
       >
-        <p class="text-muted">Loading folders…</p>
+        <p class="text-muted">{{ t('libraryPage.loading') }}</p>
       </section>
 
       <EmptyState
         v-else-if="foldersStore.items.length === 0"
-        title="No folders indexed yet"
-        description="Add media-containing source folders under the gallery root and run a scan."
+        :title="t('libraryPage.emptyTitle')"
+        :description="t('libraryPage.emptyDescription')"
       />
 
       <section
@@ -123,14 +119,14 @@
         class="card p-12 text-center"
       >
         <p class="m-0 text-muted">
-          No folders match. Try a different search or filter.
+          {{ t('libraryPage.noMatch') }}
         </p>
       </section>
 
       <section
         v-else
         class="bg-surface border border-border rounded-[1.1rem] shadow-[var(--shadow)] overflow-hidden"
-        aria-label="All folders"
+        :aria-label="t('libraryPage.title')"
       >
         <div
           v-for="(folder, i) in filteredFolders"
@@ -153,7 +149,7 @@
                 {{ folder.name }}
               </p>
               <p class="m-0 text-muted text-[0.76rem] truncate">
-                {{ folder.breadcrumb ?? "Top-level source folder" }}
+                {{ folder.breadcrumb ?? t('libraryPage.topLevelSourceFolder') }}
               </p>
               <p
                 class="m-0 hidden text-muted text-[0.74rem] truncate font-mono opacity-70 sm:block"
@@ -162,8 +158,8 @@
               </p>
               <div class="mt-1 grid gap-[0.1rem] sm:hidden">
                 <span class="text-[0.74rem] font-semibold text-text">
-                  {{ formatCount(folder.imageCount) }} posts ·
-                  {{ formatCount(folder.videoCount) }} reels
+                  {{ formatPostsCount(folder.imageCount) }} ·
+                  {{ formatReelsCount(folder.videoCount) }}
                 </span>
                 <span class="text-[0.72rem] text-muted">
                   {{ formatLatestDate(folder.latestImageMtimeMs) }}
@@ -176,23 +172,24 @@
             <div class="grid gap-[0.15rem] justify-items-end">
               <span
                 class="text-[0.82rem] font-semibold text-text tabular-nums"
-                >{{ formatCount(folder.imageCount) }} posts</span
+                >{{ formatPostsCount(folder.imageCount) }}</span
               >
               <span class="text-[0.72rem] text-muted">
-                {{ formatCount(folder.videoCount) }} reels · {{ formatLatestDate(folder.latestImageMtimeMs) }}
+                {{ formatReelsCount(folder.videoCount) }} · {{ formatLatestDate(folder.latestImageMtimeMs) }}
               </span>
             </div>
             <span
               class="w-[7px] h-[7px] rounded-full shrink-0"
               :class="folder.imageCount > 0 ? 'bg-[#1ca44e]' : 'bg-border'"
-              :title="folder.imageCount > 0 ? 'Ready' : 'Empty'"
+              :title="folder.imageCount > 0 ? t('libraryPage.readiness.ready') : t('libraryPage.readiness.empty')"
             ></span>
           </div>
 
           <button
             class="inline-flex items-center justify-center w-8 h-8 p-0 border-0 text-muted bg-transparent cursor-pointer rounded-full hover:bg-surface-alt transition-colors duration-150 shrink-0 max-sm:mt-[0.1rem]"
             type="button"
-            aria-label="More options"
+            :aria-label="t('libraryPage.moreOptions')"
+            :title="t('libraryPage.moreOptions')"
             @click.prevent="openMenu(folder)"
           >
             <svg
@@ -237,7 +234,7 @@
               stroke-width="1.8"
             />
           </svg>
-          <span>Open folder</span>
+          <span>{{ t('libraryPage.openFolder') }}</span>
         </button>
         <button
           v-if="authStore.canDeleteMedia"
@@ -259,7 +256,7 @@
               stroke-width="1.8"
             />
           </svg>
-          <span>Delete folder</span>
+          <span>{{ t('libraryPage.deleteFolder') }}</span>
         </button>
         <button
           class="flex items-center gap-[0.8rem] w-full px-4 py-[0.95rem] border-0 text-text bg-transparent cursor-pointer text-left"
@@ -280,7 +277,7 @@
               stroke-width="1.8"
             />
           </svg>
-          <span>Cancel</span>
+          <span>{{ t('common.cancel') }}</span>
         </button>
       </div>
     </div>
@@ -288,7 +285,7 @@
     <!-- Delete confirmation dialog -->
     <ConfirmDialog
       v-if="confirmDeleteFolder"
-      title="Delete this app folder?"
+      :title="t('libraryPage.delete.title')"
       :message="deleteFolderMessage"
       :confirm-label="deleteFolderConfirmLabel"
       :loading-label="deleteFolderLoadingLabel"
@@ -305,9 +302,7 @@
             :disabled="deleting"
           />
           <span class="grid gap-[0.18rem]">
-            <span class="text-[0.92rem] font-semibold text-text"
-              >Delete the source folder too</span
-            >
+            <span class="text-[0.92rem] font-semibold text-text">{{ t('libraryPage.delete.sourceTooTitle') }}</span>
             <span class="text-[0.84rem] text-muted">
               {{ deleteSourceFolderLabel }}
             </span>
@@ -317,9 +312,7 @@
           v-if="deleteSourceFolder"
           class="m-0 mt-3 px-3 py-[0.8rem] rounded-[0.9rem] border border-[rgba(217,48,37,0.24)] text-[0.84rem] text-[#b42318] bg-[rgba(217,48,37,0.08)]"
         >
-          Doing this will permanently delete the selected source folder and
-          every child folder and file inside it, including unsupported files.
-          This action cannot be undone.
+          {{ t('libraryPage.delete.warning') }}
         </p>
         <p
           v-if="deleteError"
@@ -334,6 +327,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from "vue"
+  import { useI18n } from "vue-i18n"
   import { RouterLink, useRouter } from "vue-router"
 
   import Avatar from "../components/Avatar.vue"
@@ -363,6 +357,7 @@
   const foldersStore = useFoldersStore()
   const momentsStore = useMomentsStore()
   const router = useRouter()
+  const { t, locale } = useI18n()
   const searchQuery = ref("")
   const sortMode = ref<LibrarySort>("recent-desc")
   const menuFolder = ref<FolderSummary | null>(null)
@@ -372,19 +367,37 @@
   const deleteError = ref<string | null>(null)
 
   function formatCount(value: number) {
-    return new Intl.NumberFormat().format(value)
+    return new Intl.NumberFormat(locale.value).format(value)
   }
 
   function formatLatestDate(value: number | null) {
     if (!value) {
-      return "No recent media"
+      return t("libraryPage.noRecentMedia")
     }
 
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(locale.value, {
       month: "short",
       day: "numeric",
       year: "numeric",
     })
+  }
+
+  function formatResultsCount(value: number) {
+    return value === 1
+      ? t("libraryPage.resultsOne", { count: formatCount(value) })
+      : t("libraryPage.resultsOther", { count: formatCount(value) })
+  }
+
+  function formatPostsCount(value: number) {
+    return value === 1
+      ? t("libraryPage.postsCountOne", { count: formatCount(value) })
+      : t("libraryPage.postsCountOther", { count: formatCount(value) })
+  }
+
+  function formatReelsCount(value: number) {
+    return value === 1
+      ? t("libraryPage.reelsCountOne", { count: formatCount(value) })
+      : t("libraryPage.reelsCountOther", { count: formatCount(value) })
   }
 
   const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase())
@@ -406,29 +419,38 @@
       return ""
     }
 
-    const directImageLabel = `${formatCount(confirmDeleteFolder.value.imageCount)} direct post${confirmDeleteFolder.value.imageCount !== 1 ? "s" : ""}`
+    const directImageLabel = confirmDeleteFolder.value.imageCount === 1
+      ? t("libraryPage.delete.directPostsOne", { count: formatCount(confirmDeleteFolder.value.imageCount) })
+      : t("libraryPage.delete.directPostsOther", { count: formatCount(confirmDeleteFolder.value.imageCount) })
     if (deleteSourceFolder.value) {
-      return `This will permanently delete ${directImageLabel} and remove this source folder from the hard drive.`
+      return t("libraryPage.delete.messageDeleteSource", { directPosts: directImageLabel })
     }
 
     if (deleteChildFolderCount.value > 0) {
-      return `This will permanently delete ${directImageLabel}. ${formatCount(deleteChildFolderCount.value)} child app folder${deleteChildFolderCount.value !== 1 ? "s" : ""} will be kept.`
+      return t("libraryPage.delete.messageKeepChildren", {
+        directPosts: directImageLabel,
+        childFolders: deleteChildFolderCount.value === 1
+          ? t("libraryPage.delete.childFoldersOne", { count: formatCount(deleteChildFolderCount.value) })
+          : t("libraryPage.delete.childFoldersOther", { count: formatCount(deleteChildFolderCount.value) })
+      })
     }
 
-    return `This will permanently delete ${directImageLabel}. The source folder itself will only be removed if it becomes empty.`
+    return t("libraryPage.delete.messageEmptyFolder", { directPosts: directImageLabel })
   })
   const deleteSourceFolderLabel = computed(() => {
     if (deleteChildFolderCount.value > 0) {
-      return `Also remove ${formatCount(deleteChildFolderCount.value)} child app folder${deleteChildFolderCount.value !== 1 ? "s" : ""} and every file inside the subtree.`
+      return deleteChildFolderCount.value === 1
+        ? t("libraryPage.delete.sourceTooWithChildrenOne", { count: formatCount(deleteChildFolderCount.value) })
+        : t("libraryPage.delete.sourceTooWithChildrenOther", { count: formatCount(deleteChildFolderCount.value) })
     }
 
-    return "Also remove the source folder itself instead of only deleting its direct posts."
+    return t("libraryPage.delete.sourceTooNoChildren")
   })
   const deleteFolderConfirmLabel = computed(() =>
-    deleteSourceFolder.value ? "Delete folder subtree" : "Delete app folder",
+    deleteSourceFolder.value ? t("libraryPage.delete.confirmSubtree") : t("libraryPage.delete.confirmFolder"),
   )
   const deleteFolderLoadingLabel = computed(() =>
-    deleteSourceFolder.value ? "Deleting subtree…" : "Deleting…",
+    deleteSourceFolder.value ? t("libraryPage.delete.loadingSubtree") : t("libraryPage.delete.loadingFolder"),
   )
 
   function matchesSearch(folder: FolderSummary, query: string) {
@@ -532,7 +554,7 @@
       deleteError.value =
         error instanceof Error
           ? error.message
-          : "Unable to delete this app folder."
+          : t("libraryPage.delete.error")
     } finally {
       deleting.value = false
     }

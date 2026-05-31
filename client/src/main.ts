@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 
 import App from './App.vue';
 import { AUTH_REQUIRED_EVENT } from './api/http';
+import { i18n } from './locales';
 import { canAccessRoute, router } from './router';
 import { useAppStore } from './stores/app';
 import { useAuthStore } from './stores/auth';
@@ -47,11 +48,13 @@ async function bootstrap() {
   const app = createApp(App);
 
   app.use(pinia);
+  app.use(i18n);
   app.use(router);
 
   const appStore = useAppStore(pinia);
   const authStore = useAuthStore(pinia);
 
+  appStore.initializeLocale();
   appStore.initializeTheme();
 
   if (typeof appStore.initializeVideoMuted === 'function') {

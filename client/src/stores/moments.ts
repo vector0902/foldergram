@@ -1,8 +1,12 @@
 import { defineStore } from 'pinia';
 
 import { fetchMomentFeed, fetchMoments } from '../api/gallery';
+import { i18n } from '../locales';
 import type { FeedItem, FeedRailKind, MomentCapsule } from '../types/api';
 import { updateCaptionInItems } from '../utils/caption';
+
+const THIS_WEEK_RADIUS_DAYS = 7;
+const LAST_YEAR_RADIUS_DAYS = 45;
 
 interface MomentsState {
   railKind: FeedRailKind;
@@ -19,6 +23,152 @@ interface MomentsState {
   currentHasMore: boolean;
   loadingMoment: boolean;
   momentError: string | null;
+}
+
+function parseLeadingCount(value: string): number | null {
+  const match = value.match(/^(\d+)/);
+  if (!match) {
+    return null;
+  }
+
+  return Number.parseInt(match[1], 10);
+}
+
+function localizeRailLabels(kind: FeedRailKind) {
+  void i18n.global.locale.value;
+
+  if (kind === 'highlights') {
+    return {
+      title: i18n.global.t('moments.rails.highlights.title'),
+      description: i18n.global.t('moments.rails.highlights.description'),
+      singularLabel: i18n.global.t('moments.rails.highlights.singularLabel')
+    };
+  }
+
+  return {
+    title: i18n.global.t('moments.rails.moments.title'),
+    description: i18n.global.t('moments.rails.moments.description'),
+    singularLabel: i18n.global.t('moments.rails.moments.singularLabel')
+  };
+}
+
+function getCurrentLocale() {
+  return i18n.global.locale.value;
+}
+
+function formatLocalizedMonthDay(date: Date) {
+  return new Intl.DateTimeFormat(getCurrentLocale(), {
+    month: 'long',
+    day: 'numeric'
+  }).format(date);
+}
+
+function formatLocalizedMonthYear(date: Date) {
+  return new Intl.DateTimeFormat(getCurrentLocale(), {
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+}
+
+function formatLocalizedDateRange(startDate: Date, endDate: Date) {
+  const formatter = new Intl.DateTimeFormat(getCurrentLocale(), {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
+  if (typeof formatter.formatRange === 'function') {
+    return formatter.formatRange(startDate, endDate);
+  }
+
+  return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
+}
+
+function localizeCapsule(capsule: MomentCapsule, railKind: FeedRailKind): MomentCapsule {
+  void i18n.global.locale.value;
+
+  switch (capsule.id) {
+    case 'on-this-day': {
+      const date = formatLocalizedMonthDay(new Date());
+
+      return {
+        ...capsule,
+        title: i18n.global.t('moments.capsules.onThisDay.title'),
+        subtitle: i18n.global.t('moments.capsules.onThisDay.subtitle', { date }),
+        dateContext: date
+      };
+    }
+    case 'this-week-previous-years': {
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - THIS_WEEK_RADIUS_DAYS);
+      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + THIS_WEEK_RADIUS_DAYS);
+      const range = formatLocalizedDateRange(startDate, endDate);
+
+      return {
+        ...capsule,
+        title: i18n.global.t('moments.capsules.thisWeekPreviousYears.title'),
+        subtitle: i18n.global.t('moments.capsules.thisWeekPreviousYears.subtitle', { range }),
+        dateContext: range
+      };
+    }
+    case 'from-last-year': {
+      const referenceDate = new Date();
+      referenceDate.setFullYear(referenceDate.getFullYear() - 1);
+
+      const startDate = new Date(referenceDate);
+      startDate.setDate(startDate.getDate() - LAST_YEAR_RADIUS_DAYS);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(referenceDate);
+      endDate.setDate(endDate.getDate() + LAST_YEAR_RADIUS_DAYS);
+      endDate.setHours(23, 59, 59, 999);
+
+      return {
+        ...capsule,
+        title: i18n.global.t('moments.capsules.fromLastYear.title'),
+        subtitle: i18n.global.t('moments.capsules.fromLastYear.subtitle', {
+          monthYear: formatLocalizedMonthYear(referenceDate)
+        }),
+        dateContext: formatLocalizedDateRange(startDate, endDate)
+      };
+    }
+    case 'highlight-recent-batches': {
+      const count = parseLeadingCount(capsule.dateContext) ?? 0;
+
+      return {
+        ...capsule,
+        title: i18n.global.t('moments.capsules.highlightRecentBatches.title'),
+        subtitle: i18n.global.t('moments.capsules.highlightRecentBatches.subtitle'),
+        dateContext:
+          count === 1
+            ? i18n.global.t('moments.capsules.highlightRecentBatches.dateContextOne', { count })
+            : i18n.global.t('moments.capsules.highlightRecentBatches.dateContextOther', { count })
+      };
+    }
+    case 'highlight-forgotten-favorites':
+      return {
+        ...capsule,
+        title: i18n.global.t('moments.capsules.highlightForgottenFavorites.title'),
+        subtitle: i18n.global.t('moments.capsules.highlightForgottenFavorites.subtitle'),
+        dateContext: i18n.global.t('moments.capsules.highlightForgottenFavorites.dateContext')
+      };
+    case 'highlight-deep-cuts':
+      return {
+        ...capsule,
+        title: i18n.global.t('moments.capsules.highlightDeepCuts.title'),
+        subtitle: i18n.global.t('moments.capsules.highlightDeepCuts.subtitle'),
+        dateContext: i18n.global.t('moments.capsules.highlightDeepCuts.dateContext')
+      };
+    case 'highlight-lucky-dip':
+      return {
+        ...capsule,
+        title: i18n.global.t('moments.capsules.highlightLuckyDip.title'),
+        subtitle: i18n.global.t('moments.capsules.highlightLuckyDip.subtitle'),
+        dateContext: i18n.global.t('moments.capsules.highlightLuckyDip.dateContext')
+      };
+    default:
+      return railKind === 'highlights' ? capsule : capsule;
+  }
 }
 
 export const useMomentsStore = defineStore('moments', {
@@ -39,7 +189,11 @@ export const useMomentsStore = defineStore('moments', {
     momentError: null
   }),
   getters: {
-    currentCapsule: (state) => state.currentMoment,
+    displayRailTitle: (state) => localizeRailLabels(state.railKind).title,
+    displayRailDescription: (state) => localizeRailLabels(state.railKind).description,
+    displayRailSingularLabel: (state) => localizeRailLabels(state.railKind).singularLabel,
+    localizedItems: (state) => state.items.map((item) => localizeCapsule(item, state.railKind)),
+    currentCapsule: (state) => (state.currentMoment ? localizeCapsule(state.currentMoment, state.railKind) : null),
     currentError: (state) => state.momentError
   },
   actions: {

@@ -39,12 +39,12 @@
       </section>
 
       <section v-if="!appStore.isLibraryUnavailable" class="grid min-w-0 gap-[1rem] mb-5 w-full max-w-[39.375rem]">
-        <section v-if="momentsStore.items.length" class="mb-2 min-w-0">
+        <section v-if="displayMomentItems.length" class="mb-2 min-w-0">
           <div class="story-rail-shell">
-            <div class="stories-bar story-rail pb-5 pt-[0.12rem]" :aria-label="momentsStore.railTitle">
+            <div class="stories-bar story-rail pb-5 pt-[0.12rem]" :aria-label="momentsStore.displayRailTitle">
               <div class="story-rail__track">
               <button
-                v-for="moment in momentsStore.items"
+                v-for="moment in displayMomentItems"
                 :key="moment.id"
                 class="story-rail__item story-rail__button"
                 :title="`${moment.title} · ${moment.subtitle}`"
@@ -199,10 +199,10 @@
       </template>
 
       <StoriesModal
-        v-if="activeRailViewerId && momentsStore.items.length"
-        :items="momentsStore.items"
+        v-if="activeRailViewerId && displayMomentItems.length"
+        :items="displayMomentItems"
         :initial-id="activeRailViewerId"
-        :rail-singular-label="momentsStore.railSingularLabel"
+        :rail-singular-label="momentsStore.displayRailSingularLabel"
         :store="momentsStore"
         @close="closeRailViewer"
       />
@@ -224,20 +224,20 @@
         !isCompactHomeLayout
       "
       class="sticky top-8 grid gap-[1.15rem] w-[19.9375rem] text-muted"
-      aria-label="Folder recommendations"
+      :aria-label="t('home.sidebar.ariaLabel')"
     >
       <div class="flex items-center gap-[0.8rem]">
         <Avatar class="w-11 h-11" :name="homeSummaryFolder.name" :src="homeSummaryFolder.avatarUrl" />
         <div class="flex-1 min-w-0">
           <strong class="block text-text text-[0.87rem] font-bold">{{ homeSummaryFolder.name }}</strong>
-          <p class="m-0 mt-[0.12rem] text-[0.79rem] truncate">{{ homeSummaryFolder.breadcrumb ?? 'Top-level source folder' }}</p>
+          <p class="m-0 mt-[0.12rem] text-[0.79rem] truncate">{{ homeSummaryFolder.breadcrumb ?? t('folder.shared.topLevelSourceFolder') }}</p>
         </div>
-        <RouterLink class="ml-auto text-accent-strong text-[0.76rem] font-bold" :to="{ name: 'folder', params: { slug: homeSummaryFolder.slug } }">Open</RouterLink>
+        <RouterLink class="ml-auto text-accent-strong text-[0.76rem] font-bold" :to="{ name: 'folder', params: { slug: homeSummaryFolder.slug } }">{{ t('home.sidebar.openFolder') }}</RouterLink>
       </div>
 
       <div class="flex items-center justify-between gap-4 text-text text-[0.96rem] font-bold">
-        <span>Suggested folders</span>
-        <RouterLink class="text-muted text-[0.76rem] font-bold" :to="{ name: 'likes' }">View {{ likesStore.collectionLabel.toLowerCase() }}</RouterLink>
+        <span>{{ t('home.sidebar.suggestedFolders') }}</span>
+        <RouterLink class="text-muted text-[0.76rem] font-bold" :to="{ name: 'likes' }">{{ homeSidebarLinkLabel }}</RouterLink>
       </div>
 
       <div class="grid gap-[0.95rem]">
@@ -250,21 +250,21 @@
           <Avatar class="w-11 h-11" :name="folder.name" :src="folder.avatarUrl" />
           <div class="flex-1 min-w-0">
             <strong class="block text-text text-[0.87rem] font-bold">{{ folder.name }}</strong>
-            <p class="m-0 mt-[0.12rem] text-[0.79rem] truncate">{{ folder.breadcrumb ?? 'Top-level source folder' }}</p>
+            <p class="m-0 mt-[0.12rem] text-[0.79rem] truncate">{{ folder.breadcrumb ?? t('folder.shared.topLevelSourceFolder') }}</p>
           </div>
-          <span class="ml-auto text-accent-strong text-[0.76rem] font-bold">Open</span>
+          <span class="ml-auto text-accent-strong text-[0.76rem] font-bold">{{ t('home.sidebar.openFolder') }}</span>
         </RouterLink>
       </div>
 
       <p class="m-0 mt-[1.4rem] text-center text-[0.64rem] font-semibold uppercase tracking-[0.08em] leading-[1.7] text-muted">
-        Foldergram is open source.
+        {{ t('home.sidebar.openSourceText') }}
         <a
           class="text-muted transition-colors duration-180 hover:text-text"
           href="https://github.com/foldergram/foldergram"
           target="_blank"
           rel="noreferrer"
         >
-          View on GitHub
+          {{ t('home.sidebar.viewOnGitHub') }}
         </a>
       </p>
     </aside>
@@ -273,6 +273,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
 import { triggerManualScan } from '../api/gallery';
@@ -300,6 +301,7 @@ const folderStoriesStore = useFolderStoriesStore();
 const likesStore = useLikesStore();
 const foldersStore = useFoldersStore();
 const momentsStore = useMomentsStore();
+const { t } = useI18n();
 const likedCountByFolder = computed(() => buildLikedCountByFolder(likesStore.items));
 const homeRecommendations = computed(() =>
   selectHomeRecommendations(foldersStore.items, likedCountByFolder.value, appStore.lastOpenedFolderSlug)
@@ -322,6 +324,11 @@ function formatCount(value: number) {
   return new Intl.NumberFormat().format(value);
 }
 
+const displayMomentItems = computed(() => momentsStore.localizedItems);
+const homeSidebarLinkLabel = computed(() =>
+  authStore.likesMode === 'local' ? t('home.sidebar.viewFavorites') : t('home.sidebar.viewLikes')
+);
+
 const indexedSummaryLabel = computed(() => {
   if (!appStore.stats) {
     return '';
@@ -332,23 +339,23 @@ const indexedSummaryLabel = computed(() => {
 const formattedIndexedImageCount = computed(() => formatCount(appStore.stats?.indexedImages ?? 0));
 const formattedIndexedVideoCount = computed(() => formatCount(appStore.stats?.indexedVideos ?? 0));
 const formattedFolderCount = computed(() => formatCount(appStore.stats?.folders ?? 0));
-const feedModes: Array<{ id: FeedMode; label: string; description: string }> = [
+const feedModes = computed<Array<{ id: FeedMode; label: string; description: string }>>(() => [
   {
     id: 'recent',
-    label: 'Recent',
-    description: 'Newest posts first.'
+    label: t('settings.general.homeFeed.options.recent.label'),
+    description: t('settings.general.homeFeed.options.recent.description')
   },
   {
     id: 'rediscover',
-    label: 'Rediscover',
-    description: 'Older posts resurface when they are worth another look.'
+    label: t('settings.general.homeFeed.options.rediscover.label'),
+    description: t('settings.general.homeFeed.options.rediscover.description')
   },
   {
     id: 'random',
-    label: 'Random',
-    description: 'A fresh shuffle that stays steady while you browse.'
+    label: t('settings.general.homeFeed.options.random.label'),
+    description: t('settings.general.homeFeed.options.random.description')
   }
-];
+]);
 const showInitialScanState = computed(
   () => appStore.isScanning && feedStore.items.length === 0 && !feedStore.loading && !feedStore.error
 );

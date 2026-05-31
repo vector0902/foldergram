@@ -1,9 +1,14 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { DEFAULT_LOCALE, i18n } from '../locales';
 import PostCaptionModal from './PostCaptionModal.vue';
 
 describe('PostCaptionModal', () => {
+  beforeEach(() => {
+    i18n.global.locale.value = DEFAULT_LOCALE;
+  });
+
   it('emits a trimmed caption when saving', async () => {
     const wrapper = mount(PostCaptionModal, {
       props: {
@@ -58,5 +63,20 @@ describe('PostCaptionModal', () => {
     });
 
     expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('city walk 002');
+  });
+
+  it('renders translated Chinese labels', () => {
+    i18n.global.locale.value = 'zh';
+
+    const wrapper = mount(PostCaptionModal, {
+      props: {
+        filename: 'road-trip_001.jpg',
+        caption: 'Golden hour'
+      }
+    });
+
+    expect(wrapper.text()).toContain('编辑说明');
+    expect(wrapper.text()).toContain('重置为文件名');
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).placeholder).toBe('写点说明...');
   });
 });

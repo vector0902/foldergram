@@ -68,7 +68,7 @@
             <div
               v-if="folderStoriesStore.highlights.length"
               class="story-rail-shell mb-5"
-              aria-label="Folder stories"
+              :aria-label="t('folder.header.openStories')"
             >
               <div class="story-rail pb-3 pt-[0.12rem]">
                 <div class="story-rail__track mx-auto justify-center">
@@ -93,14 +93,14 @@
                 </div>
               </div>
             </div>
-            <div class="flex justify-center border-b border-border" aria-label="Folder sections">
+            <div class="flex justify-center border-b border-border" :aria-label="t('folder.tabs.sections')">
               <div class="flex items-center gap-40 pt-[0.2rem] max-sm:gap-[2.9rem] max-sm:pt-[0.12rem]">
                 <button
                   class="relative inline-flex h-[2.2rem] w-[3.15rem] cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-muted transition-colors duration-[180ms] hover:text-text"
                   :class="activeTab === 'posts' ? 'text-text' : ''"
                   type="button"
-                  aria-label="Posts"
-                  title="Posts"
+                  :aria-label="t('folder.tabs.posts')"
+                  :title="t('folder.tabs.posts')"
                   :aria-pressed="activeTab === 'posts'"
                   @click="setTab('posts')"
                 >
@@ -131,8 +131,8 @@
                   class="relative inline-flex h-[2.2rem] w-[3.15rem] cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-muted transition-colors duration-[180ms] hover:text-text"
                   :class="activeTab === 'reels' ? 'text-text' : ''"
                   type="button"
-                  aria-label="Reels"
-                  title="Reels"
+                  :aria-label="t('folder.tabs.reels')"
+                  :title="t('folder.tabs.reels')"
                   :aria-pressed="activeTab === 'reels'"
                   @click="setTab('reels')"
                 >
@@ -183,6 +183,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from "vue"
+  import { useI18n } from "vue-i18n"
   import { useRoute, useRouter } from "vue-router"
 
   import EmptyState from "../components/EmptyState.vue"
@@ -205,6 +206,7 @@
   const foldersStore = useFoldersStore()
   const route = useRoute()
   const router = useRouter()
+  const { t } = useI18n()
   const hasLoadedOnce = ref(false)
   const activeStoryViewerId = ref<string | null>(null)
   const activeTab = computed(() =>

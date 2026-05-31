@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
+import { DEFAULT_LOCALE, i18n } from '../locales';
 import type { AppStatus, ScanProgress } from '../types/api';
 import { useAppStore } from '../stores/app';
 import { useFeedStore } from '../stores/feed';
@@ -124,6 +125,7 @@ describe('HomeView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.restoreAllMocks();
+    i18n.global.locale.value = DEFAULT_LOCALE;
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
@@ -198,5 +200,39 @@ describe('HomeView', () => {
     expect(wrapper.get('.stories-bar.story-rail').attributes('aria-label')).toBe('Moments');
     expect(wrapper.get('.story-rail__track').classes()).not.toContain('justify-center');
     expect(wrapper.findAll('.story-rail__item')).toHaveLength(4);
+  });
+
+  it('localizes static highlight capsule titles on the home rail', async () => {
+    const appStore = useAppStore();
+    const feedStore = useFeedStore();
+    const momentsStore = useMomentsStore();
+
+    i18n.global.locale.value = 'zh';
+
+    appStore.$patch({
+      stats: createAppStatus({
+        isScanning: false
+      })
+    });
+    feedStore.$patch({
+      initialized: true,
+      loading: false,
+      items: []
+    });
+    momentsStore.$patch({
+      railKind: 'highlights',
+      items: [
+        createMomentCapsule('highlight-recent-batches', 'Recent Batches')
+      ]
+    });
+
+    vi.spyOn(feedStore, 'loadInitial').mockResolvedValue();
+    vi.spyOn(momentsStore, 'fetchMoments').mockResolvedValue();
+
+    const wrapper = mountHomeView();
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('近期批次');
   });
 });

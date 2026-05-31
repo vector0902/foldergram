@@ -1,27 +1,27 @@
 <template>
   <section class="reels-view">
     <section v-if="appStore.isLibraryUnavailable" class="reels-view__message-card">
-      <p class="reels-view__eyebrow">Reels</p>
-      <h1 class="reels-view__title">Library storage unavailable</h1>
+      <p class="reels-view__eyebrow">{{ t('nav.reels') }}</p>
+      <h1 class="reels-view__title">{{ t('reels.view.libraryUnavailableTitle') }}</h1>
       <p class="reels-view__message">{{ appStore.libraryUnavailableReason }}</p>
     </section>
 
     <section v-else-if="reelsStore.error" class="reels-view__message-card">
-      <p class="reels-view__eyebrow">Reels</p>
-      <h1 class="reels-view__title">Could not load reels</h1>
+      <p class="reels-view__eyebrow">{{ t('nav.reels') }}</p>
+      <h1 class="reels-view__title">{{ t('reels.view.loadErrorTitle') }}</h1>
       <p class="reels-view__message">{{ reelsStore.error }}</p>
     </section>
 
     <section v-else-if="showLoadingState" class="reels-view__message-card">
-      <p class="reels-view__eyebrow">Reels</p>
-      <h1 class="reels-view__title">Loading reels</h1>
-      <p class="reels-view__message">Pulling together a video-only queue from your indexed library.</p>
+      <p class="reels-view__eyebrow">{{ t('nav.reels') }}</p>
+      <h1 class="reels-view__title">{{ t('reels.view.loadingTitle') }}</h1>
+      <p class="reels-view__message">{{ t('reels.view.loadingDescription') }}</p>
     </section>
 
     <section v-else-if="reelsStore.initialized && reelsStore.items.length === 0" class="reels-view__message-card">
-      <p class="reels-view__eyebrow">Reels</p>
-      <h1 class="reels-view__title">No reels available</h1>
-      <p class="reels-view__message">Add indexed videos to your library and they will show up here after the next scan.</p>
+      <p class="reels-view__eyebrow">{{ t('nav.reels') }}</p>
+      <h1 class="reels-view__title">{{ t('reels.view.emptyTitle') }}</h1>
+      <p class="reels-view__message">{{ t('reels.view.emptyDescription') }}</p>
     </section>
 
     <div v-else class="reels-view__layout">
@@ -62,11 +62,11 @@
       </div>
 
       <div v-if="!isMobileViewport" class="reels-view__right-column">
-        <div class="reels-view__nav-controls" aria-label="Reel navigation">
+        <div class="reels-view__nav-controls" :aria-label="t('reels.view.navigationAria')">
           <button
             class="reels-view__nav-button"
             type="button"
-            aria-label="Previous reel"
+            :aria-label="t('reels.view.previous')"
             :disabled="!canGoPrevious"
             @click="goToPrevious"
           >
@@ -84,7 +84,7 @@
           <button
             class="reels-view__nav-button"
             type="button"
-            aria-label="Next reel"
+            :aria-label="t('reels.view.next')"
             :disabled="!canGoNext"
             @click="goToNext"
           >
@@ -130,6 +130,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import ReelActionRail from '../components/ReelActionRail.vue';
 import ReelDeck from '../components/ReelDeck.vue';
@@ -141,6 +142,7 @@ import { useReelsStore } from '../stores/reels';
 const appStore = useAppStore();
 const foldersStore = useFoldersStore();
 const reelsStore = useReelsStore();
+const { t } = useI18n();
 const deckElement = ref<InstanceType<typeof ReelDeck> | null>(null);
 const isInfoSidebarOpen = ref(false);
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 0);

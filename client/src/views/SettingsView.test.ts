@@ -125,7 +125,9 @@ function mountSettingsView() {
 async function openGeneralSettingsSidebarTab(wrapper: ReturnType<typeof mountSettingsView>) {
   const generalSettingsButton = wrapper
     .findAll('button')
-    .find((button) => button.text().includes('General Settings'));
+    .find((button) =>
+      ['General Settings', 'Ajustes generales', '通用设置'].some((label) => button.text().includes(label))
+    );
 
   expect(generalSettingsButton).toBeDefined();
 
@@ -215,6 +217,28 @@ describe('SettingsView', () => {
 
     expect(saveButton).toBeDefined();
     expect(saveButton!.attributes('disabled')).toBeDefined();
+  });
+
+  it('switches the client locale from the General Settings language selector', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus()
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    const languageSelect = wrapper.get('select');
+    expect((languageSelect.element as HTMLSelectElement).value).toBe('en');
+
+    await languageSelect.setValue('es');
+    await flushPromises();
+
+    expect(appStore.locale).toBe('es');
+    expect(window.localStorage.getItem('foldergram-locale')).toBe('es');
+    expect(wrapper.text()).toContain('Idioma de la aplicación');
+    expect(wrapper.text()).toContain('Controles de la biblioteca');
   });
 
   it('shows the pending legacy derivative migration warning next to the scan action', async () => {
@@ -416,6 +440,43 @@ describe('SettingsView', () => {
 
     expect(updateExcludedFoldersSpy).toHaveBeenCalledWith(['Archive/cache', 'thumbnails']);
     expect(wrapper.text()).toContain('Excluded folders were saved. Run a library scan to apply them.');
+  });
+
+  it('keeps partial-save feedback localized after the language is switched', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus()
+    });
+    appStore.setLocale('es');
+
+    vi.spyOn(appStore, 'fetchStats').mockRejectedValue(new Error('Network down'));
+    vi.spyOn(galleryApi, 'updateExcludedFolders').mockResolvedValue({
+      envExcludedFolders: ['@eaDir'],
+      customExcludedFolders: ['Archive/cache'],
+      effectiveExcludedFolders: ['@eaDir', 'Archive/cache'],
+      requiresScan: true
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    await wrapper.get('textarea').setValue('Archive/cache');
+    await flushPromises();
+
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Guardar'));
+
+    expect(saveButton).toBeDefined();
+
+    await saveButton!.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'Se guardaron algunos ajustes (carpetas excluidas), pero la actualización no terminó: Network down'
+    );
+    expect(wrapper.text()).not.toContain('excluded folders');
   });
 
   it('dismisses the stories migration notice and scrolls to save when choosing Use Stories Feature', async () => {

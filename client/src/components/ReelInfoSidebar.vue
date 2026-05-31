@@ -2,15 +2,15 @@
   <aside
     class="reels-info-sidebar sidebar"
     :class="{ 'reels-info-sidebar--anchor-right': anchor === 'right' }"
-    aria-label="Reel details"
+    :aria-label="t('reels.info.ariaLabel')"
   >
     <div class="reels-info-sidebar__header">
-      <p class="reels-info-sidebar__eyebrow">Reel Details</p>
+      <p class="reels-info-sidebar__eyebrow">{{ t('reels.info.eyebrow') }}</p>
 
       <button
         class="reels-info-sidebar__close"
         type="button"
-        aria-label="Hide reel details"
+        :aria-label="t('reels.info.hideDetails')"
         @click="$emit('close')"
       >
         <svg class="reels-info-sidebar__close-icon" viewBox="0 0 24 24" role="presentation">
@@ -30,7 +30,8 @@
       <RouterLink
         class="reels-info-sidebar__folder-link"
         :to="{ name: 'folder', params: { slug: item.folderSlug } }"
-        aria-label="Open folder"
+        :aria-label="t('reels.info.openFolder')"
+        :title="t('reels.info.openFolder')"
       >
         <Avatar
           class="reels-info-sidebar__avatar"
@@ -54,19 +55,19 @@
 
     <dl class="reels-info-sidebar__stats">
       <div class="reels-info-sidebar__stat">
-        <dt class="reels-info-sidebar__stat-label">Resolution</dt>
+        <dt class="reels-info-sidebar__stat-label">{{ t('reels.info.resolution') }}</dt>
         <dd class="reels-info-sidebar__stat-value">{{ dimensionsLabel }}</dd>
       </div>
       <div class="reels-info-sidebar__stat">
-        <dt class="reels-info-sidebar__stat-label">Length</dt>
+        <dt class="reels-info-sidebar__stat-label">{{ t('reels.info.length') }}</dt>
         <dd class="reels-info-sidebar__stat-value">{{ durationLabel }}</dd>
       </div>
       <div class="reels-info-sidebar__stat">
-        <dt class="reels-info-sidebar__stat-label">Size</dt>
+        <dt class="reels-info-sidebar__stat-label">{{ t('reels.info.size') }}</dt>
         <dd class="reels-info-sidebar__stat-value">{{ fileSizeLabel }}</dd>
       </div>
       <div class="reels-info-sidebar__stat">
-        <dt class="reels-info-sidebar__stat-label">Format</dt>
+        <dt class="reels-info-sidebar__stat-label">{{ t('reels.info.format') }}</dt>
         <dd class="reels-info-sidebar__stat-value">{{ formatLabel }}</dd>
       </div>
     </dl>
@@ -77,7 +78,7 @@
       role="status"
       aria-live="polite"
     >
-      Loading reel details...
+      {{ t('reels.info.loading') }}
     </p>
     <p v-else-if="error" class="reels-info-sidebar__notice reels-info-sidebar__notice--error" role="status">
       {{ error }}
@@ -85,12 +86,12 @@
 
     <dl class="reels-info-sidebar__meta">
       <div class="reels-info-sidebar__meta-item">
-        <dt class="reels-info-sidebar__meta-label">Folder Path</dt>
+        <dt class="reels-info-sidebar__meta-label">{{ t('reels.info.folderPath') }}</dt>
         <dd class="reels-info-sidebar__meta-value">{{ item.folderPath }}</dd>
       </div>
 
       <div v-if="mimeLabel" class="reels-info-sidebar__meta-item">
-        <dt class="reels-info-sidebar__meta-label">MIME Type</dt>
+        <dt class="reels-info-sidebar__meta-label">{{ t('reels.info.mimeType') }}</dt>
         <dd class="reels-info-sidebar__meta-value">{{ mimeLabel }}</dd>
       </div>
     </dl>
@@ -100,6 +101,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
 import { fetchImage } from '../api/gallery';
@@ -121,6 +123,7 @@ defineEmits<{
   close: [];
 }>();
 
+const { t, locale } = useI18n();
 const detail = ref<ImageDetail | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -137,7 +140,7 @@ const caption = computed(() =>
 );
 const formattedDate = computed(() =>
   new Date(detail.value?.takenAt ?? detail.value?.sortTimestamp ?? props.item.takenAt ?? props.item.sortTimestamp).toLocaleDateString(
-    undefined,
+    locale.value,
     {
       month: 'short',
       day: 'numeric',
@@ -146,20 +149,20 @@ const formattedDate = computed(() =>
   )
 );
 const folderBreadcrumb = computed(
-  () => props.folder?.breadcrumb ?? detail.value?.folderBreadcrumb ?? props.item.folderBreadcrumb ?? 'Top-level source folder'
+  () => props.folder?.breadcrumb ?? detail.value?.folderBreadcrumb ?? props.item.folderBreadcrumb ?? t('reels.info.topLevelSourceFolder')
 );
 const dimensionsLabel = computed(() => `${detail.value?.width ?? props.item.width} x ${detail.value?.height ?? props.item.height}`);
-const durationLabel = computed(() => formatMediaDuration(detail.value?.durationMs ?? props.item.durationMs) || 'Unavailable');
+const durationLabel = computed(() => formatMediaDuration(detail.value?.durationMs ?? props.item.durationMs) || t('reels.info.unavailable'));
 const formatLabel = computed(() => {
   if (!detail.value?.mimeType) {
-    return 'Video';
+    return t('reels.info.video');
   }
 
   return detail.value.mimeType.replace(/^video\//, '').toUpperCase();
 });
 const fileSizeLabel = computed(() => {
   if (!detail.value) {
-    return loading.value ? 'Loading...' : 'Unavailable';
+    return loading.value ? t('common.loading') : t('reels.info.unavailable');
   }
 
   return `${(detail.value.fileSize / (1024 * 1024)).toFixed(2)} MB`;
@@ -206,7 +209,7 @@ watch(
         }
 
         detail.value = null;
-        error.value = loadError instanceof Error ? loadError.message : 'Unable to load reel details.';
+        error.value = loadError instanceof Error ? loadError.message : t('reels.info.loadError');
       } finally {
         if (currentToken === requestToken) {
           loading.value = false;

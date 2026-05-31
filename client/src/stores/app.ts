@@ -6,6 +6,7 @@ import {
   fetchScanProgress,
   fetchStats as fetchStatus
 } from '../api/gallery';
+import { DEFAULT_LOCALE, i18n, resolvePreferredLocale, syncDocumentLanguage, type SupportedLocale } from '../locales';
 import type { AppStatus, FeedMode, FolderImageOrder, ReelsFeedMode, ScanProgress } from '../types/api';
 import { useAuthStore } from './auth';
 
@@ -14,6 +15,7 @@ interface AppState {
   loadingStats: boolean;
   error: string | null;
   theme: 'light' | 'dark';
+  locale: SupportedLocale;
   videoMuted: boolean;
   lastOpenedFolderSlug: string | null;
   recentOpenedFolderSlugs: string[];
@@ -24,6 +26,7 @@ interface AppState {
 }
 
 const THEME_STORAGE_KEY = 'foldergram-theme';
+const LOCALE_STORAGE_KEY = 'foldergram-locale';
 const VIDEO_MUTED_STORAGE_KEY = 'foldergram-video-muted';
 const LAST_OPENED_FOLDER_STORAGE_KEY = 'foldergram-last-opened-folder';
 const RECENT_OPENED_FOLDERS_STORAGE_KEY = 'foldergram-recent-opened-folders';
@@ -57,6 +60,7 @@ export const useAppStore = defineStore('app', {
     loadingStats: false,
     error: null,
     theme: 'light',
+    locale: DEFAULT_LOCALE,
     videoMuted: true,
     lastOpenedFolderSlug: null,
     recentOpenedFolderSlugs: [],
@@ -104,6 +108,19 @@ export const useAppStore = defineStore('app', {
       this.setTheme(preferredTheme);
     },
 
+    initializeLocale() {
+      const browserLocales =
+        typeof navigator === 'undefined'
+          ? []
+          : [...(Array.isArray(navigator.languages) ? navigator.languages : []), navigator.language];
+      const preferredLocale = resolvePreferredLocale(
+        typeof window === 'undefined' ? null : window.localStorage.getItem(LOCALE_STORAGE_KEY),
+        ...browserLocales
+      );
+
+      this.setLocale(preferredLocale);
+    },
+
     initializeLastOpenedFolder() {
       const savedSlug = window.localStorage.getItem(LAST_OPENED_FOLDER_STORAGE_KEY);
       this.lastOpenedFolderSlug = savedSlug && savedSlug.length > 0 ? savedSlug : null;
@@ -120,6 +137,18 @@ export const useAppStore = defineStore('app', {
       this.theme = theme;
       document.documentElement.dataset.theme = theme;
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    },
+
+    setLocale(locale: string | SupportedLocale) {
+      const resolvedLocale = resolvePreferredLocale(locale);
+
+      this.locale = resolvedLocale;
+      i18n.global.locale.value = resolvedLocale;
+      syncDocumentLanguage(resolvedLocale);
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(LOCALE_STORAGE_KEY, resolvedLocale);
+      }
     },
 
     toggleTheme() {

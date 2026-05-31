@@ -2,9 +2,9 @@
   <section class="w-[min(100%,72rem)] mx-auto flex flex-col gap-[1.2rem]">
     <header class="flex items-end justify-between gap-4 pb-[0.8rem] max-sm:flex-col max-sm:items-start">
       <div>
-        <span class="eyebrow">Settings</span>
-        <h1 class="mt-[0.15rem] mb-0 text-[clamp(1.55rem,2.4vw,2rem)] font-medium tracking-[-0.04em]">Library Controls</h1>
-        <p class="m-0 text-muted">Manage scans, app defaults, access, and the library index.</p>
+        <span class="eyebrow">{{ t('settings.eyebrow') }}</span>
+        <h1 class="mt-[0.15rem] mb-0 text-[clamp(1.55rem,2.4vw,2rem)] font-medium tracking-[-0.04em]">{{ t('settings.title') }}</h1>
+        <p class="m-0 text-muted">{{ t('settings.description') }}</p>
       </div>
     </header>
 
@@ -15,20 +15,20 @@
     >
       <div class="flex items-start justify-between gap-4">
         <div class="grid gap-[0.35rem]">
-          <span class="eyebrow text-[#9f6a00]">Scan Needs Attention</span>
-          <h2 class="m-0 text-[1.1rem]">The last scan completed with errors</h2>
+          <span class="eyebrow text-[#9f6a00]">{{ t('settings.notices.scanError.eyebrow') }}</span>
+          <h2 class="m-0 text-[1.1rem]">{{ t('settings.notices.scanError.title') }}</h2>
           <p class="m-0 text-muted">{{ scanErrorNoticeMessage }}</p>
           <p v-if="scanErrorNoticeDetail" class="m-0 font-mono text-[0.8rem] leading-[1.5] text-[#7c5800] break-all">
             {{ scanErrorNoticeDetail }}
           </p>
           <p v-if="scanErrorReportPath" class="m-0 font-mono text-[0.78rem] leading-[1.5] text-[#7c5800] break-all">
-            Full report: {{ scanErrorReportPath }}
+            {{ t('settings.notices.scanError.fullReportPrefix') }} {{ scanErrorReportPath }}
           </p>
         </div>
         <button
           class="inline-flex h-9 w-9 items-center justify-center rounded-full border-0 bg-[rgba(159,106,0,0.08)] text-[#9f6a00] cursor-pointer transition-colors duration-180 hover:bg-[rgba(159,106,0,0.14)]"
           type="button"
-          aria-label="Dismiss scan warning"
+          :aria-label="t('settings.notices.scanError.dismissAria')"
           @click="dismissScanErrorNotice"
         >
           <span class="i-fluent-dismiss-20-filled h-5 w-5" aria-hidden="true" />
@@ -36,7 +36,7 @@
       </div>
 
       <div class="flex items-center gap-4 max-sm:flex-col-reverse max-sm:items-stretch">
-        <p class="m-0 text-muted">Run a new library scan to retry failed media and fill in any missing thumbnails or previews.</p>
+        <p class="m-0 text-muted">{{ t('settings.notices.scanError.actionNote') }}</p>
         <button class="btn-primary min-w-[11.5rem]" type="button" :disabled="scanActionDisabled" @click="runManualScan">
           {{ scanButtonLabel }}
         </button>
@@ -54,7 +54,7 @@
       <button
         class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[rgba(159,106,0,0.08)] text-[#9f6a00] cursor-pointer transition-colors duration-180 hover:bg-[rgba(159,106,0,0.14)]"
         type="button"
-        aria-label="Dismiss gallery root warning"
+        :aria-label="t('settings.notices.ignoredRootMedia.dismissAria')"
         @click="dismissIgnoredRootMediaNotice"
       >
         <span class="i-fluent-dismiss-20-filled h-5 w-5" aria-hidden="true" />
@@ -67,25 +67,21 @@
       style="background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 97%, #f7fbff 3%) 0%, color-mix(in srgb, var(--surface) 93%, #e6f3ff 7%) 100%);"
       @click="openPlacesTab"
     >
-      <div class="flex items-start justify-between gap-4">
-        <div class="grid gap-[0.3rem]">
-          <div class="flex flex-wrap items-center gap-2">
-            <h2 class="m-0 text-xl">Places from photo GPS data</h2>
-            <span class="eyebrow inline-flex w-fit self-start text-xs">New Feature</span>
+        <div class="flex items-start justify-between gap-4">
+          <div class="grid gap-[0.3rem]">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="m-0 text-xl">{{ t('settings.places.banner.title') }}</h2>
+              <span class="eyebrow inline-flex w-fit self-start text-xs">{{ t('common.newFeature') }}</span>
+            </div>
+          <p class="m-0 text-[0.95rem] font-medium text-text">{{ t('settings.places.banner.description') }}</p>
+          <p class="m-0 text-muted">{{ t('settings.places.banner.helper') }}</p>
           </div>
-          <p class="m-0 text-[0.95rem] font-medium text-text">
-            Group GPS-tagged photos by offline city and location labels.
-          </p>
-          <p class="m-0 text-muted">
-            Prepare the local GeoNames dataset, then rebuild place assignments for the photos already in your library.
-          </p>
-        </div>
-        <button
-          class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[rgba(24,119,242,0.08)] text-accent-strong cursor-pointer transition-colors duration-180 hover:bg-[rgba(24,119,242,0.14)]"
-          type="button"
-          aria-label="Dismiss places announcement"
-          @click.stop="dismissPlacesOnboardingBanner"
-        >
+          <button
+            class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[rgba(24,119,242,0.08)] text-accent-strong cursor-pointer transition-colors duration-180 hover:bg-[rgba(24,119,242,0.14)]"
+            type="button"
+            :aria-label="t('settings.places.banner.dismissAria')"
+            @click.stop="dismissPlacesOnboardingBanner"
+          >
           <span class="i-fluent-dismiss-20-filled h-5 w-5" aria-hidden="true" />
         </button>
       </div>
@@ -96,23 +92,23 @@
           type="button"
           @click.stop="openPlacesTab"
         >
-          Set up Places
+          {{ t('settings.places.banner.setup') }}
         </button>
         <p class="m-0 text-muted">
-          The download is opt-in, and the Places tab stays available in Settings later.
+          {{ t('settings.places.banner.availableLater') }}
         </p>
       </div>
     </section>
 
     <nav
       class="sticky top-3 z-20 grid w-full grid-cols-5 gap-1.5 rounded-[1.2rem] border border-border bg-[color-mix(in_srgb,var(--bg)_90%,var(--surface)_10%)] p-1.5 shadow-[0_12px_34px_rgba(15,20,25,0.08)] backdrop-blur-[18px] md:hidden"
-      aria-label="Settings sections"
+      :aria-label="t('settings.sections.navigation')"
     >
       <button
         @click="currentCategory = 'library'"
         class="flex min-h-[3.15rem] items-center justify-center rounded-[0.95rem] border-0 bg-transparent p-0 text-muted transition-colors duration-150 cursor-pointer"
         :class="currentCategory === 'library' ? 'bg-surface-alt text-text' : 'hover:bg-surface-hover hover:text-text'"
-        aria-label="Scan and Library"
+        :aria-label="t('settings.sections.library.shortLabel')"
       >
         <span class="h-[1.55rem] w-[1.55rem]" :class="currentCategory === 'library' ? 'i-fluent-folder-sync-20-filled' : 'i-fluent-folder-sync-20-regular'" aria-hidden="true"></span>
       </button>
@@ -120,7 +116,7 @@
         @click="currentCategory = 'general'"
         class="flex min-h-[3.15rem] items-center justify-center rounded-[0.95rem] border-0 bg-transparent p-0 text-muted transition-colors duration-150 cursor-pointer"
         :class="currentCategory === 'general' ? 'bg-surface-alt text-text' : 'hover:bg-surface-hover hover:text-text'"
-        aria-label="General Settings"
+        :aria-label="t('settings.sections.general.label')"
       >
         <span class="h-[1.55rem] w-[1.55rem]" :class="currentCategory === 'general' ? 'i-fluent-settings-20-filled' : 'i-fluent-settings-20-regular'" aria-hidden="true"></span>
       </button>
@@ -128,7 +124,7 @@
         @click="currentCategory = 'places'"
         class="flex min-h-[3.15rem] items-center justify-center rounded-[0.95rem] border-0 bg-transparent p-0 text-muted transition-colors duration-150 cursor-pointer"
         :class="currentCategory === 'places' ? 'bg-surface-alt text-text' : 'hover:bg-surface-hover hover:text-text'"
-        aria-label="Places"
+        :aria-label="t('settings.sections.places.label')"
       >
         <span class="h-[1.55rem] w-[1.55rem]" :class="currentCategory === 'places' ? 'i-fluent-location-20-filled' : 'i-fluent-location-20-regular'" aria-hidden="true"></span>
       </button>
@@ -136,7 +132,7 @@
         @click="currentCategory = 'access'"
         class="flex min-h-[3.15rem] items-center justify-center rounded-[0.95rem] border-0 bg-transparent p-0 text-muted transition-colors duration-150 cursor-pointer"
         :class="currentCategory === 'access' ? 'bg-surface-alt text-text' : 'hover:bg-surface-hover hover:text-text'"
-        aria-label="Security and Access"
+        :aria-label="t('settings.sections.access.shortLabel')"
       >
         <span class="h-[1.55rem] w-[1.55rem]" :class="currentCategory === 'access' ? 'i-fluent-lock-shield-20-filled' : 'i-fluent-lock-shield-20-regular'" aria-hidden="true"></span>
       </button>
@@ -144,7 +140,7 @@
         @click="currentCategory = 'status'"
         class="flex min-h-[3.15rem] items-center justify-center rounded-[0.95rem] border-0 bg-transparent p-0 text-muted transition-colors duration-150 cursor-pointer"
         :class="currentCategory === 'status' ? 'bg-surface-alt text-text' : 'hover:bg-surface-hover hover:text-text'"
-        aria-label="System Status"
+        :aria-label="t('settings.sections.status.label')"
       >
         <span class="h-[1.55rem] w-[1.55rem]" :class="currentCategory === 'status' ? 'i-fluent-data-usage-20-filled' : 'i-fluent-data-usage-20-regular'" aria-hidden="true"></span>
       </button>
@@ -154,7 +150,7 @@
       <!-- Navigation Sidebar -->
       <nav
         class="hidden w-full shrink-0 md:flex md:w-[16rem] md:flex-col md:gap-2 md:sticky md:top-[6.5rem]"
-        aria-label="Settings sections"
+        :aria-label="t('settings.sections.navigation')"
       >
         <button
           @click="currentCategory = 'library'"
@@ -163,8 +159,8 @@
         >
           <span class="mt-[0.1rem] h-[1.25rem] w-[1.25rem] shrink-0" :class="currentCategory === 'library' ? 'i-fluent-folder-sync-20-filled' : 'i-fluent-folder-sync-20-regular'" aria-hidden="true"></span>
           <span class="flex min-w-0 flex-col gap-[0.1rem]">
-            <span>Scan & Library</span>
-            <span class="text-[0.75rem] font-normal text-muted">Index media, rebuild thumbnails, and maintain the library index</span>
+            <span>{{ t('settings.sections.library.label') }}</span>
+            <span class="text-[0.75rem] font-normal text-muted">{{ t('settings.sections.library.description') }}</span>
           </span>
         </button>
         <button
@@ -174,8 +170,8 @@
         >
           <span class="mt-[0.1rem] h-[1.25rem] w-[1.25rem] shrink-0" :class="currentCategory === 'general' ? 'i-fluent-settings-20-filled' : 'i-fluent-settings-20-regular'" aria-hidden="true"></span>
           <span class="flex flex-col gap-[0.1rem] min-w-0">
-            <span class="truncate">General Settings</span>
-            <span class="text-[0.75rem] font-normal text-muted">Stories mode, excluded folders, and feed defaults</span>
+            <span class="truncate">{{ t('settings.sections.general.label') }}</span>
+            <span class="text-[0.75rem] font-normal text-muted">{{ t('settings.sections.general.description') }}</span>
           </span>
         </button>
         <button
@@ -185,8 +181,8 @@
         >
           <span class="mt-[0.1rem] h-[1.25rem] w-[1.25rem] shrink-0" :class="currentCategory === 'places' ? 'i-fluent-location-20-filled' : 'i-fluent-location-20-regular'" aria-hidden="true"></span>
           <span class="flex flex-col gap-[0.1rem] min-w-0">
-            <span>Places</span>
-            <span class="text-[0.75rem] font-normal text-muted">Offline city lookup and place assignment</span>
+            <span>{{ t('settings.sections.places.label') }}</span>
+            <span class="text-[0.75rem] font-normal text-muted">{{ t('settings.sections.places.description') }}</span>
           </span>
         </button>
         <button
@@ -196,8 +192,8 @@
         >
           <span class="mt-[0.1rem] h-[1.25rem] w-[1.25rem] shrink-0" :class="currentCategory === 'access' ? 'i-fluent-lock-shield-20-filled' : 'i-fluent-lock-shield-20-regular'" aria-hidden="true"></span>
           <span class="flex flex-col gap-[0.1rem] min-w-0">
-            <span>Security & Access</span>
-            <span class="text-[0.75rem] font-normal text-muted">Password locks & viewer roles</span>
+            <span>{{ t('settings.sections.access.label') }}</span>
+            <span class="text-[0.75rem] font-normal text-muted">{{ t('settings.sections.access.description') }}</span>
           </span>
         </button>
         <button
@@ -207,8 +203,8 @@
         >
           <span class="mt-[0.1rem] h-[1.25rem] w-[1.25rem] shrink-0" :class="currentCategory === 'status' ? 'i-fluent-data-usage-20-filled' : 'i-fluent-data-usage-20-regular'" aria-hidden="true"></span>
           <span class="flex flex-col gap-[0.1rem] min-w-0">
-            <span>System Status</span>
-            <span class="text-[0.75rem] font-normal text-muted">Storage overview & scan history</span>
+            <span>{{ t('settings.sections.status.label') }}</span>
+            <span class="text-[0.75rem] font-normal text-muted">{{ t('settings.sections.status.description') }}</span>
           </span>
         </button>
       </nav>
@@ -221,14 +217,14 @@
           <section class="card grid gap-[1.15rem] p-8">
             <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
               <div>
-                <h2 class="m-0 text-[1.18rem]">Admin and viewer access</h2>
-                <p class="m-0 mt-[0.35rem] text-muted">Protect admin actions with an admin password, then optionally issue a separate viewer password for browsing-only sessions.</p>
+                <h2 class="m-0 text-[1.18rem]">{{ t('settings.access.section.title') }}</h2>
+                <p class="m-0 mt-[0.35rem] text-muted">{{ t('settings.access.section.description') }}</p>
               </div>
               <span
                 class="inline-flex items-center justify-center min-h-8 px-[0.7rem] py-[0.35rem] rounded-full text-[0.76rem] font-bold whitespace-nowrap"
                 :class="authStore.enabled ? 'text-accent-strong bg-[color-mix(in_srgb,var(--accent-soft)_78%,transparent_22%)]' : 'text-muted bg-surface-alt'"
               >
-                {{ authStore.enabled ? 'Admin Locked' : 'Open Access' }}
+                {{ authStore.enabled ? t('settings.access.section.locked') : t('settings.access.section.open') }}
               </span>
             </div>
 
@@ -243,33 +239,33 @@
             <section v-if="!authStore.enabled" class="grid gap-[1rem]">
               <div class="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
                 <label class="grid min-w-0 gap-[0.45rem]">
-                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Admin password</span>
+                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.adminPassword') }}</span>
                   <input
                     v-model="enablePassword"
                     class="h-12 min-w-0 w-full rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
                     type="password"
                     autocomplete="new-password"
-                    placeholder="Minimum 8 characters"
+                    :placeholder="t('settings.access.placeholders.minimumLength', { count: 8 })"
                     :disabled="authStore.loading"
                   />
                 </label>
                 <label class="grid min-w-0 gap-[0.45rem]">
-                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Confirm password</span>
+                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.confirmPassword') }}</span>
                   <input
                     v-model="enablePasswordConfirmation"
                     class="h-12 min-w-0 w-full rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
                     type="password"
                     autocomplete="new-password"
-                    placeholder="Repeat the password"
+                    :placeholder="t('settings.access.placeholders.repeatPassword')"
                     :disabled="authStore.loading"
                   />
                 </label>
               </div>
 
               <div class="flex flex-col md:flex-row items-center gap-4 max-sm:items-stretch">
-                <p class="m-0 flex-1 text-muted">The admin password is stored as a one-way hash and unlocks this browser with a signed session cookie.</p>
+                <p class="m-0 flex-1 text-muted">{{ t('settings.access.enable.description') }}</p>
                 <button class="btn-primary w-full sm:w-auto sm:min-w-[13rem]" type="button" :disabled="authStore.loading" @click="enableAccessProtection">
-                  {{ authStore.loading ? 'Enabling...' : 'Enable Admin Password' }}
+                  {{ authStore.loading ? t('settings.access.enable.buttonLoading') : t('settings.access.enable.buttonIdle') }}
                 </button>
               </div>
             </section>
@@ -279,8 +275,8 @@
               <div class="grid gap-[0.9rem] rounded-[1.05rem] border border-border p-5">
                 <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
                   <div>
-                    <h3 class="m-0 text-[1rem]">Change admin password</h3>
-                    <p class="m-0 mt-[0.25rem] text-muted">Update the admin password and invalidate older sessions.</p>
+                    <h3 class="m-0 text-[1rem]">{{ t('settings.access.change.title') }}</h3>
+                    <p class="m-0 mt-[0.25rem] text-muted">{{ t('settings.access.change.description') }}</p>
                   </div>
                   <button
                     class="inline-flex min-h-11 items-center justify-center rounded-[0.95rem] border border-[rgba(24,119,242,0.2)] bg-[rgba(24,119,242,0.08)] px-4 text-[0.9rem] font-semibold text-accent-strong transition-colors duration-180 hover:bg-[rgba(24,119,242,0.16)] disabled:cursor-wait disabled:opacity-60 max-sm:w-full"
@@ -289,14 +285,14 @@
                     :disabled="authStore.loading"
                     @click="toggleChangePasswordForm"
                   >
-                    {{ showChangePasswordForm ? 'Hide Form' : 'Change Password' }}
+                    {{ showChangePasswordForm ? t('settings.access.change.hideForm') : t('settings.access.change.showForm') }}
                   </button>
                 </div>
 
                 <template v-if="showChangePasswordForm">
                   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <label class="grid gap-[0.45rem]">
-                      <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Current password</span>
+                      <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.currentPassword') }}</span>
                       <input
                         v-model="currentPassword"
                         class="h-12 rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
@@ -306,7 +302,7 @@
                       />
                     </label>
                     <label class="grid gap-[0.45rem]">
-                      <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">New password</span>
+                      <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.newPassword') }}</span>
                       <input
                         v-model="nextPassword"
                         class="h-12 rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
@@ -316,7 +312,7 @@
                       />
                     </label>
                     <label class="grid gap-[0.45rem]">
-                      <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Confirm new password</span>
+                      <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.confirmNewPassword') }}</span>
                       <input
                         v-model="nextPasswordConfirmation"
                         class="h-12 rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
@@ -328,9 +324,9 @@
                   </div>
 
                   <div class="flex flex-col md:flex-row items-center gap-4 max-sm:items-stretch">
-                    <p class="m-0 flex-1 text-muted">Use at least 8 characters. Changing the password signs out any older sessions.</p>
+                    <p class="m-0 flex-1 text-muted">{{ t('settings.access.change.helper') }}</p>
                     <button class="btn-primary min-w-[13rem]" type="button" :disabled="authStore.loading" @click="changeAccessPassword">
-                      {{ authStore.loading ? 'Updating...' : 'Change Admin Password' }}
+                      {{ authStore.loading ? t('settings.access.change.buttonLoading') : t('settings.access.change.buttonIdle') }}
                     </button>
                   </div>
                 </template>
@@ -340,8 +336,8 @@
               <div class="grid gap-[0.9rem] rounded-[1.05rem] border border-border p-5">
                 <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
                   <div>
-                    <h3 class="m-0 text-[1rem]">Viewer access</h3>
-                    <p class="m-0 mt-[0.25rem] text-muted">Issue a browsing-only password for viewer sessions or open the library for anonymous public viewing.</p>
+                    <h3 class="m-0 text-[1rem]">{{ t('settings.access.viewer.title') }}</h3>
+                    <p class="m-0 mt-[0.25rem] text-muted">{{ t('settings.access.viewer.description') }}</p>
                   </div>
                   <span
                     class="inline-flex items-center justify-center min-h-8 px-[0.7rem] py-[0.35rem] rounded-full text-[0.76rem] font-bold whitespace-nowrap"
@@ -363,46 +359,46 @@
                   <label class="flex items-start gap-3 rounded-[0.9rem] border border-border px-4 py-3 cursor-pointer">
                     <input v-model="viewerAccessMode" class="mt-[0.2rem]" type="radio" value="off" :disabled="authStore.loading" />
                     <span class="grid gap-[0.15rem]">
-                      <span class="text-[0.92rem] font-semibold text-text">Admin only</span>
-                      <span class="text-[0.84rem] text-muted">Only the admin password can unlock the app.</span>
+                      <span class="text-[0.92rem] font-semibold text-text">{{ t('settings.access.viewer.modes.adminOnlyTitle') }}</span>
+                      <span class="text-[0.84rem] text-muted">{{ t('settings.access.viewer.modes.adminOnlyDescription') }}</span>
                     </span>
                   </label>
                   <label class="flex items-start gap-3 rounded-[0.9rem] border border-border px-4 py-3 cursor-pointer">
                     <input v-model="viewerAccessMode" class="mt-[0.2rem]" type="radio" value="password" :disabled="authStore.loading" />
                     <span class="grid gap-[0.15rem]">
-                      <span class="text-[0.92rem] font-semibold text-text">Viewer password</span>
-                      <span class="text-[0.84rem] text-muted">Allow a separate viewer login that can browse and use shared likes without seeing admin controls.</span>
+                      <span class="text-[0.92rem] font-semibold text-text">{{ t('settings.access.viewer.modes.viewerPasswordTitle') }}</span>
+                      <span class="text-[0.84rem] text-muted">{{ t('settings.access.viewer.modes.viewerPasswordDescription') }}</span>
                     </span>
                   </label>
                   <label class="flex items-start gap-3 rounded-[0.9rem] border border-border px-4 py-3 cursor-pointer">
                     <input v-model="viewerAccessMode" class="mt-[0.2rem]" type="radio" value="public" :disabled="authStore.loading" />
                     <span class="grid gap-[0.15rem]">
-                      <span class="text-[0.92rem] font-semibold text-text">Public</span>
-                      <span class="text-[0.84rem] text-muted">Allow anonymous browsing with browser-local favorites while keeping admin unlock available from More.</span>
+                      <span class="text-[0.92rem] font-semibold text-text">{{ t('settings.access.viewer.modes.publicTitle') }}</span>
+                      <span class="text-[0.84rem] text-muted">{{ t('settings.access.viewer.modes.publicDescription') }}</span>
                     </span>
                   </label>
                 </div>
 
                 <div v-if="viewerAccessMode === 'password'" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                   <label class="grid gap-[0.45rem]">
-                    <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Viewer password</span>
+                    <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.viewerPassword') }}</span>
                     <input
                       v-model="viewerPassword"
                       class="h-12 rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
                       type="password"
                       autocomplete="new-password"
-                      :placeholder="viewerAccessEnabled ? 'Enter a new viewer password' : 'Minimum 8 characters'"
+                      :placeholder="viewerAccessEnabled ? t('settings.access.placeholders.enterNewViewerPassword') : t('settings.access.placeholders.minimumLength', { count: 8 })"
                       :disabled="authStore.loading"
                     />
                   </label>
                   <label class="grid gap-[0.45rem]">
-                    <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Confirm viewer password</span>
+                    <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.confirmViewerPassword') }}</span>
                     <input
                       v-model="viewerPasswordConfirmation"
                       class="h-12 rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
                       type="password"
                       autocomplete="new-password"
-                      :placeholder="viewerAccessEnabled ? 'Repeat the new viewer password' : 'Repeat the viewer password'"
+                      :placeholder="viewerAccessEnabled ? t('settings.access.placeholders.repeatNewViewerPassword') : t('settings.access.placeholders.repeatViewerPassword')"
                       :disabled="authStore.loading"
                     />
                   </label>
@@ -426,13 +422,13 @@
           <!-- Danger Zone -->
           <div v-if="authStore.enabled" class="border border-[rgba(214,48,49,0.3)] rounded-[1.05rem] overflow-hidden">
             <div class="bg-[rgba(214,48,49,0.04)] px-6 py-4 border-b border-[rgba(214,48,49,0.1)]">
-              <h3 class="m-0 text-[1rem] text-[#c0392b] font-bold">Danger Zone</h3>
+              <h3 class="m-0 text-[1rem] text-[#c0392b] font-bold">{{ t('settings.access.danger.title') }}</h3>
             </div>
             <div class="p-6 grid gap-[0.9rem] bg-surface">
               <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
                 <div>
-                  <h3 class="m-0 text-[1rem]">Disable admin password</h3>
-                  <p class="m-0 mt-[0.25rem] text-muted">Turn the admin password back off for this Foldergram instance.</p>
+                  <h3 class="m-0 text-[1rem]">{{ t('settings.access.danger.disableTitle') }}</h3>
+                  <p class="m-0 mt-[0.25rem] text-muted">{{ t('settings.access.danger.disableDescription') }}</p>
                 </div>
                 <button
                   class="inline-flex min-h-11 items-center justify-center rounded-[0.95rem] border border-[rgba(214,48,49,0.24)] bg-[rgba(214,48,49,0.08)] px-4 text-[0.9rem] font-semibold text-[#c0392b] transition-colors duration-180 hover:bg-[rgba(214,48,49,0.16)] disabled:cursor-wait disabled:opacity-60 max-sm:w-full"
@@ -441,14 +437,14 @@
                   :disabled="authStore.loading"
                   @click="toggleDisablePasswordForm"
                 >
-                  {{ showDisablePasswordForm ? 'Hide Form' : 'Disable Access' }}
+                  {{ showDisablePasswordForm ? t('settings.access.danger.hideForm') : t('settings.access.danger.showForm') }}
                 </button>
               </div>
 
               <template v-if="showDisablePasswordForm">
                 <div class="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-4 items-end max-lg:grid-cols-1 mt-2">
                   <label class="grid gap-[0.45rem]">
-                    <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Current password</span>
+                    <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.access.fields.currentPassword') }}</span>
                     <input
                       v-model="disablePassword"
                       class="h-12 rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 text-[0.95rem] text-text outline-none transition-[border-color,box-shadow] duration-180 focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
@@ -458,10 +454,10 @@
                     />
                   </label>
                   <button class="btn-primary min-w-[13rem] bg-[#d93025] hover:bg-[#c5281c] border-transparent text-white" type="button" :disabled="authStore.loading" @click="disableAccessProtection">
-                    {{ authStore.loading ? 'Disabling...' : 'Disable Admin Password' }}
+                    {{ authStore.loading ? t('settings.access.danger.buttonLoading') : t('settings.access.danger.buttonIdle') }}
                   </button>
                   <button class="inline-flex min-h-11 items-center justify-center rounded-[0.95rem] border border-border bg-transparent px-4 text-[0.92rem] font-semibold text-text transition-colors duration-180 hover:bg-surface-alt disabled:cursor-wait disabled:opacity-60" type="button" :disabled="authStore.loading" @click="signOut">
-                    Sign Out
+                    {{ t('settings.access.danger.signOut') }}
                   </button>
                 </div>
               </template>
@@ -478,16 +474,14 @@
           >
             <div class="flex items-start justify-between gap-4">
               <div class="grid gap-[0.3rem]">
-                <span class="eyebrow text-[#9f6a00]">Stories Migration</span>
-                <h2 class="m-0 text-[1.1rem]">This library may already use folders named stories</h2>
-                <p class="m-0 text-muted">
-                  Foldergram can now treat <code>stories/</code> as profile stories and highlights by default. Choose whether to keep legacy folder behavior or switch to the new reserved stories mode, then rescan the library.
-                </p>
+                <span class="eyebrow text-[#9f6a00]">{{ t('settings.general.migration.eyebrow') }}</span>
+                <h2 class="m-0 text-[1.1rem]">{{ t('settings.general.migration.title') }}</h2>
+                <p class="m-0 text-muted">{{ t('settings.general.migration.description') }}</p>
               </div>
               <button
                 class="inline-flex h-9 w-9 items-center justify-center rounded-full border-0 bg-[rgba(159,106,0,0.08)] text-[#9f6a00] cursor-pointer transition-colors duration-180 hover:bg-[rgba(159,106,0,0.14)]"
                 type="button"
-                aria-label="Dismiss stories migration notice"
+                :aria-label="t('settings.general.migration.dismissAria')"
                 @click="dismissStoriesMigrationNotice"
               >
                 <span class="i-fluent-dismiss-20-filled h-5 w-5" aria-hidden="true" />
@@ -501,7 +495,7 @@
                 :disabled="savingGeneralSettings || waitingForInitialStatus"
                 @click="chooseStoriesMigrationMode(false)"
               >
-                Use Stories Feature
+                {{ t('settings.general.migration.useFeature') }}
               </button>
               <button
                 class="inline-flex min-h-11 items-center justify-center rounded-[0.95rem] border border-border bg-transparent px-4 text-[0.92rem] font-semibold text-text transition-colors duration-180 hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-60"
@@ -509,7 +503,7 @@
                 :disabled="savingGeneralSettings || waitingForInitialStatus"
                 @click="chooseStoriesMigrationMode(true)"
               >
-                Keep Legacy Behavior
+                {{ t('settings.general.migration.keepLegacy') }}
               </button>
             </div>
             <p class="m-0 text-muted">{{ storiesMigrationActionHelper }}</p>
@@ -523,26 +517,26 @@
             <div class="flex items-start justify-between gap-4">
               <div class="grid gap-[0.3rem]">
                 <div class="flex items-center gap-2">
-                  <h2 class="m-0 text-xl">Stories</h2>
-                  <span class="eyebrow inline-flex w-fit self-start text-xs">New Feature</span>
+                  <h2 class="m-0 text-xl">{{ t('settings.general.announcement.title') }}</h2>
+                  <span class="eyebrow inline-flex w-fit self-start text-xs">{{ t('common.newFeature') }}</span>
                 </div>
-                <p class="m-0 text-[0.95rem] font-medium text-text">Reserved <code>stories/</code> folders can power App Folder stories</p>
+                <p class="m-0 text-[0.95rem] font-medium text-text">{{ t('settings.general.announcement.headline') }}</p>
                 <p class="m-0 text-muted">
-                  Drop direct media into <code>AppFolder/stories</code> for the avatar story set, and use direct child folders for highlight circles. Nested folders stay inside the same highlight capsule.
+                  {{ t('settings.general.announcement.description') }}
                   <button
                     class="ml-1 inline-flex border-0 bg-transparent p-0 text-[0.92em] font-semibold text-accent-strong underline underline-offset-[0.18em] cursor-pointer transition-opacity duration-180 hover:opacity-80"
                     type="button"
                     :aria-expanded="showStoriesAnnouncementStructure"
                     @click="toggleStoriesAnnouncementStructure"
                   >
-                    {{ showStoriesAnnouncementStructure ? 'Hide directory structure' : 'See directory structure' }}
+                    {{ showStoriesAnnouncementStructure ? t('settings.general.announcement.hideStructure') : t('settings.general.announcement.showStructure') }}
                   </button>
                 </p>
               </div>
               <button
                 class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[rgba(24,119,242,0.08)] text-accent-strong cursor-pointer transition-colors duration-180 hover:bg-[rgba(24,119,242,0.14)]"
                 type="button"
-                aria-label="Dismiss stories announcement"
+                :aria-label="t('settings.general.announcement.dismissAria')"
                 @click="dismissStoriesAnnouncement"
               >
                 <span class="i-fluent-dismiss-20-filled h-5 w-5" aria-hidden="true" />
@@ -567,8 +561,8 @@
           <section class="card overflow-visible p-0">
             <div class="border-b border-border px-6 py-5">
               <div>
-                <h2 class="m-0 text-[1.18rem]">General Settings</h2>
-                <p class="m-0 mt-[0.25rem] text-muted">App-wide defaults for stories folders, excluded folders, Home, Reels, and app folders.</p>
+                <h2 class="m-0 text-[1.18rem]">{{ t('settings.general.card.title') }}</h2>
+                <p class="m-0 mt-[0.25rem] text-muted">{{ t('settings.general.card.description') }}</p>
               </div>
             </div>
 
@@ -583,8 +577,36 @@
             <div class="divide-y divide-border">
               <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div class="min-w-0">
-                  <p class="m-0 text-[0.96rem] font-semibold text-text">Home feed sort order</p>
-                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">Choose the first feed mode shown on Home.</p>
+                  <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.language.label') }}</p>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.language.description') }}</p>
+                  <p class="m-0 mt-[0.4rem] text-[0.78rem] text-muted">{{ t('settings.general.language.helper') }}</p>
+                </div>
+
+                <div class="relative w-full md:w-[18rem] md:justify-self-end">
+                  <label class="sr-only" :for="localeSelectId">{{ t('settings.general.language.selectLabel') }}</label>
+                  <select
+                    :id="localeSelectId"
+                    class="h-[3.2rem] w-full appearance-none rounded-[0.9rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_80%,transparent_20%)] px-3 pr-11 text-[0.9rem] font-semibold text-text outline-none transition-[border-color,box-shadow] duration-180 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border)_78%)] hover:bg-surface-hover focus:border-[color-mix(in_srgb,var(--accent)_35%,var(--border)_65%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
+                    :value="appStore.locale"
+                    @change="handleLocaleChange"
+                  >
+                    <option v-for="locale in supportedLocaleOptions" :key="locale.id" :value="locale.id">
+                      {{ locale.label }}
+                    </option>
+                  </select>
+                  <span
+                    class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
+                    aria-hidden="true"
+                  >
+                    <span class="i-fluent-chevron-down-20-regular block h-5 w-5" />
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div class="min-w-0">
+                  <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.homeFeed.label') }}</p>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.homeFeed.description') }}</p>
                 </div>
 
                 <div class="relative w-full md:w-[18rem] md:justify-self-end" @keydown.escape.stop.prevent="closeGeneralSettingsMenu">
@@ -609,7 +631,7 @@
                     v-if="activeGeneralSettingsMenu === 'home'"
                     class="fixed inset-0 z-40 border-0 bg-transparent"
                     type="button"
-                    aria-label="Close home feed sort menu"
+                    :aria-label="t('settings.general.homeFeed.closeMenuAria')"
                     @click="closeGeneralSettingsMenu"
                   />
 
@@ -618,7 +640,7 @@
                     class="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-full overflow-hidden rounded-[1rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] shadow-[0_28px_70px_rgba(0,0,0,0.16)]"
                   >
                     <div class="border-b border-border px-4 py-3">
-                      <p class="m-0 text-[0.83rem] font-semibold text-text">Home feed sort order</p>
+                      <p class="m-0 text-[0.83rem] font-semibold text-text">{{ t('settings.general.homeFeed.label') }}</p>
                     </div>
                     <div class="grid gap-1 p-2">
                       <button
@@ -644,8 +666,8 @@
 
               <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div class="min-w-0">
-                  <p class="m-0 text-[0.96rem] font-semibold text-text">Reels feed sort order</p>
-                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">Choose the default queue style when Reels opens.</p>
+                  <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.reelsFeed.label') }}</p>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.reelsFeed.description') }}</p>
                 </div>
 
                 <div class="relative w-full md:w-[18rem] md:justify-self-end" @keydown.escape.stop.prevent="closeGeneralSettingsMenu">
@@ -670,7 +692,7 @@
                     v-if="activeGeneralSettingsMenu === 'reels'"
                     class="fixed inset-0 z-40 border-0 bg-transparent"
                     type="button"
-                    aria-label="Close reels feed sort menu"
+                    :aria-label="t('settings.general.reelsFeed.closeMenuAria')"
                     @click="closeGeneralSettingsMenu"
                   />
 
@@ -679,7 +701,7 @@
                     class="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-full overflow-hidden rounded-[1rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] shadow-[0_28px_70px_rgba(0,0,0,0.16)]"
                   >
                     <div class="border-b border-border px-4 py-3">
-                      <p class="m-0 text-[0.83rem] font-semibold text-text">Reels feed sort order</p>
+                      <p class="m-0 text-[0.83rem] font-semibold text-text">{{ t('settings.general.reelsFeed.label') }}</p>
                     </div>
                     <div class="grid gap-1 p-2">
                       <button
@@ -705,8 +727,8 @@
 
               <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div class="min-w-0">
-                  <p class="m-0 text-[0.96rem] font-semibold text-text">App folder photo order</p>
-                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">Choose the default order for photos inside app folders.</p>
+                  <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.folderOrder.label') }}</p>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.folderOrder.description') }}</p>
                 </div>
 
                 <div class="relative w-full md:w-[18rem] md:justify-self-end" @keydown.escape.stop.prevent="closeGeneralSettingsMenu">
@@ -731,7 +753,7 @@
                     v-if="activeGeneralSettingsMenu === 'folder'"
                     class="fixed inset-0 z-40 border-0 bg-transparent"
                     type="button"
-                    aria-label="Close app folder photo order menu"
+                    :aria-label="t('settings.general.folderOrder.closeMenuAria')"
                     @click="closeGeneralSettingsMenu"
                   />
 
@@ -740,7 +762,7 @@
                     class="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-full overflow-hidden rounded-[1rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] shadow-[0_28px_70px_rgba(0,0,0,0.16)]"
                   >
                     <div class="border-b border-border px-4 py-3">
-                      <p class="m-0 text-[0.83rem] font-semibold text-text">App folder photo order</p>
+                      <p class="m-0 text-[0.83rem] font-semibold text-text">{{ t('settings.general.folderOrder.label') }}</p>
                     </div>
                     <div class="grid gap-1 p-2">
                       <button
@@ -767,20 +789,20 @@
               <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
-                    <p class="m-0 text-[0.96rem] font-semibold text-text">Treat stories folders as normal app folders</p>
+                    <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.storiesMode.label') }}</p>
                     <span class="inline-flex items-center rounded-full bg-surface-alt px-2 py-[0.2rem] text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted">
-                      Scan required
+                      {{ t('settings.general.storiesMode.scanRequired') }}
                     </span>
                     <div class="group relative inline-flex">
                       <button
                         class="inline-flex h-6 w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 text-muted cursor-help transition-colors duration-150 hover:text-text focus-visible:text-text"
                         type="button"
-                        aria-label="Explain stories folders setting"
+                        :aria-label="t('settings.general.storiesMode.explainAria')"
                       >
                         <span class="i-fluent-info-16-regular h-4 w-4" aria-hidden="true" />
                       </button>
                       <div class="pointer-events-none absolute left-0 top-[calc(100%+0.55rem)] z-30 hidden w-[min(20rem,calc(100vw-2.5rem))] rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] px-3 py-3 text-[0.78rem] leading-[1.5] text-muted shadow-[0_20px_50px_rgba(0,0,0,0.16)] group-hover:block group-focus-within:block">
-                        When this stays off, <code>AppFolder/stories</code> becomes the source for avatar stories and highlight circles. Turn it on only if folders literally named <code>stories</code> should continue behaving like normal folders everywhere in the app.
+                        {{ t('settings.general.storiesMode.explainDescription') }}
                       </div>
                     </div>
                   </div>
@@ -795,7 +817,7 @@
                   :disabled="savingGeneralSettings || waitingForInitialStatus"
                   @click="toggleStoriesModeSetting"
                 >
-                  <span class="sr-only">Toggle stories folders behavior</span>
+                  <span class="sr-only">{{ t('settings.general.storiesMode.toggleLabel') }}</span>
                   <span
                     class="inline-flex h-7 w-12 items-center rounded-full p-[0.15rem] transition-colors duration-180"
                     :class="storiesMode ? 'bg-accent' : 'bg-[color-mix(in_srgb,var(--border)_88%,var(--surface-alt)_12%)]'"
@@ -811,18 +833,16 @@
               <div class="grid gap-4 px-6 py-4">
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
-                    <p class="m-0 text-[0.96rem] font-semibold text-text">Excluded source folders</p>
+                    <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.excludedFolders.label') }}</p>
                     <span class="inline-flex items-center rounded-full bg-surface-alt px-2 py-[0.2rem] text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted">
-                      Scan required
+                      {{ t('settings.general.storiesMode.scanRequired') }}
                     </span>
                   </div>
-                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">
-                    Skip matching folders anywhere by name or by exact relative path under the gallery root. Hidden paths and app-managed storage stay excluded automatically.
-                  </p>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.excludedFolders.description') }}</p>
                 </div>
 
                 <label class="grid gap-[0.45rem]">
-                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Custom rules</span>
+                  <span class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.general.excludedFolders.customRules') }}</span>
                   <textarea
                     v-model="customExcludedFoldersDraft"
                     class="min-h-[10rem] rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_84%,transparent_16%)] px-4 py-3 text-[0.95rem] leading-[1.55] text-text outline-none transition-[border-color,box-shadow] duration-180 placeholder:text-muted focus:border-[color-mix(in_srgb,var(--accent)_48%,var(--border)_52%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
@@ -836,8 +856,8 @@
 
                 <div class="grid gap-3 lg:grid-cols-2">
                   <div class="rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_78%,transparent_22%)] px-4 py-4">
-                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">Read-only env rules</p>
-                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">Change <code>GALLERY_EXCLUDED_FOLDERS</code> in <code>.env</code> or Docker and restart the app to update these.</p>
+                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">{{ t('settings.general.excludedFolders.envRulesLabel') }}</p>
+                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">{{ t('settings.general.excludedFolders.envRulesDescription') }}</p>
                     <div v-if="envExcludedFolders.length > 0" class="mt-3 flex flex-wrap gap-2">
                       <span
                         v-for="rule in envExcludedFolders"
@@ -847,12 +867,12 @@
                         {{ rule }}
                       </span>
                     </div>
-                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">No env-backed folder exclusions are configured.</p>
+                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">{{ t('settings.general.excludedFolders.envRulesEmpty') }}</p>
                   </div>
 
                   <div class="rounded-[0.95rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_78%,transparent_22%)] px-4 py-4">
-                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">Currently active saved rules</p>
-                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">This combines the saved textarea rules with any env-backed entries. New textarea edits appear here after you save them.</p>
+                    <p class="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-muted">{{ t('settings.general.excludedFolders.activeRulesLabel') }}</p>
+                    <p class="m-0 mt-[0.35rem] text-[0.82rem] text-muted">{{ t('settings.general.excludedFolders.activeRulesDescription') }}</p>
                     <div v-if="effectiveExcludedFolders.length > 0" class="mt-3 flex flex-wrap gap-2">
                       <span
                         v-for="rule in effectiveExcludedFolders"
@@ -862,7 +882,7 @@
                         {{ rule }}
                       </span>
                     </div>
-                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">No saved custom or env-backed folder exclusions are active.</p>
+                    <p v-else class="m-0 mt-3 text-[0.84rem] text-muted">{{ t('settings.general.excludedFolders.activeRulesEmpty') }}</p>
                   </div>
                 </div>
               </div>
@@ -899,30 +919,30 @@
           <section class="card grid gap-[1.15rem] p-8">
             <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
               <div>
-                <h2 class="m-0 text-[1.18rem]">Offline places</h2>
-                <p class="m-0 mt-[0.35rem] text-muted">Prepare GeoNames city data, then rebuild place links from existing photo coordinates.</p>
+                <h2 class="m-0 text-[1.18rem]">{{ t('settings.places.section.title') }}</h2>
+                <p class="m-0 mt-[0.35rem] text-muted">{{ t('settings.places.section.description') }}</p>
               </div>
               <span
                 class="inline-flex items-center justify-center min-h-8 px-[0.7rem] py-[0.35rem] rounded-full text-[0.76rem] font-bold whitespace-nowrap"
                 :class="placesStore.status?.prepared ? 'text-accent-strong bg-[color-mix(in_srgb,var(--accent-soft)_78%,transparent_22%)]' : 'text-muted bg-surface-alt'"
               >
-                {{ placesStore.status?.prepared ? 'Prepared' : 'Not Prepared' }}
+                {{ placesStore.status?.prepared ? t('settings.places.section.prepared') : t('settings.places.section.notPrepared') }}
               </span>
             </div>
 
             <dl class="grid grid-cols-2 gap-4 m-0 max-sm:grid-cols-1">
               <div class="rounded-[0.95rem] border border-border bg-surface-alt p-4">
-                <dt class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Dataset</dt>
-                <dd class="m-0 mt-1 text-[0.95rem] font-semibold">{{ placesStore.status?.metadata?.source ?? 'GeoNames cities500' }}</dd>
+                <dt class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.places.section.datasetLabel') }}</dt>
+                <dd class="m-0 mt-1 text-[0.95rem] font-semibold">{{ placesStore.status?.metadata?.source ?? t('settings.places.section.fallbackDataset') }}</dd>
               </div>
               <div class="rounded-[0.95rem] border border-border bg-surface-alt p-4">
-                <dt class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">Rows</dt>
-                <dd class="m-0 mt-1 text-[0.95rem] font-semibold">{{ placesStore.status?.metadata ? formatCount(placesStore.status.metadata.rowCount) : 'Not imported' }}</dd>
+                <dt class="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-muted">{{ t('settings.places.section.rowsLabel') }}</dt>
+                <dd class="m-0 mt-1 text-[0.95rem] font-semibold">{{ placesStore.status?.metadata ? formatCount(placesStore.status.metadata.rowCount) : t('settings.places.section.notImported') }}</dd>
               </div>
             </dl>
 
             <p v-if="placesStore.status?.metadata" class="m-0 text-muted">
-              Imported {{ formatDateTime(placesStore.status.metadata.importedAt) }}.
+              {{ t('settings.places.section.importedAt', { value: formatDateTime(placesStore.status.metadata.importedAt) }) }}
             </p>
             <p v-if="placesStore.statusError" class="m-0 text-[#c0392b]">
               {{ placesStore.statusError }}
@@ -938,7 +958,7 @@
                 :disabled="placesStore.preparing"
                 @click="placesStore.prepareGeodata"
               >
-                {{ placesStore.preparing ? 'Preparing...' : 'Prepare Geodata' }}
+                {{ placesStore.preparing ? t('settings.places.section.preparingButton') : t('settings.places.section.prepareButton') }}
               </button>
               <button
                 class="inline-flex min-h-11 w-full items-center justify-center rounded-[0.95rem] border border-border bg-surface-alt px-4 text-center text-[0.9rem] font-semibold text-text transition-colors duration-180 hover:bg-surface-hover disabled:cursor-wait disabled:opacity-60 sm:w-auto"
@@ -946,7 +966,7 @@
                 :disabled="placesStore.rebuilding || !placesStore.status?.prepared"
                 @click="placesStore.rebuildAssignments"
               >
-                {{ placesStore.rebuilding ? 'Rebuilding...' : 'Rebuild Place Assignments' }}
+                {{ placesStore.rebuilding ? t('settings.places.section.rebuildingButton') : t('settings.places.section.rebuildButton') }}
               </button>
             </div>
           </section>
@@ -957,8 +977,8 @@
           <section class="card grid gap-[1.15rem] p-8">
             <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
               <div>
-                <h2 class="m-0 text-[1.18rem]">Scan Library</h2>
-                <p class="m-0 mt-[0.35rem] text-muted">Run a scan after adding folders or when you want to refresh indexed media.</p>
+                <h2 class="m-0 text-[1.18rem]">{{ t('settings.library.scanCard.title') }}</h2>
+                <p class="m-0 mt-[0.35rem] text-muted">{{ t('settings.library.scanCard.description') }}</p>
               </div>
               <span
                 class="inline-flex items-center justify-center min-h-8 px-[0.7rem] py-[0.35rem] rounded-full text-[0.76rem] font-bold whitespace-nowrap"
@@ -977,7 +997,7 @@
             >
               <div class="flex items-start justify-between gap-3 max-sm:flex-col max-sm:items-start">
                 <div>
-                  <p class="m-0 text-[0.76rem] font-bold tracking-[0.08em] uppercase">Legacy derivative migration pending</p>
+                  <p class="m-0 text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.library.legacyMigration.title') }}</p>
                   <p class="m-0 mt-1 text-[0.9rem] leading-relaxed">{{ legacyDerivativeMigrationMessage }}</p>
                 </div>
                 <span class="inline-flex items-center justify-center min-h-8 px-[0.7rem] py-[0.35rem] rounded-full text-[0.76rem] font-bold whitespace-nowrap text-[#9f6a00] bg-[rgba(210,161,51,0.14)]">
@@ -1004,8 +1024,8 @@
           <section class="card grid gap-[1.15rem] p-8">
              <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
               <div>
-                <h2 class="m-0 text-[1.18rem]">Regenerate Thumbnails</h2>
-                <p class="m-0 mt-[0.35rem] text-muted">Rebuild feed and profile thumbnails plus video posters from indexed media only. Original files are not affected.</p>
+                <h2 class="m-0 text-[1.18rem]">{{ t('settings.library.thumbnailCard.title') }}</h2>
+                <p class="m-0 mt-[0.35rem] text-muted">{{ t('settings.library.thumbnailCard.description') }}</p>
               </div>
             </div>
 
@@ -1022,29 +1042,29 @@
           <!-- Danger Zone -->
           <div class="border border-[rgba(214,48,49,0.3)] rounded-[1.05rem] overflow-hidden" :class="highlightRebuildAction ? 'ring-2 ring-[color-mix(in_srgb,var(--accent)_45%,transparent_55%)]' : ''">
             <div class="bg-[rgba(214,48,49,0.04)] px-6 py-4 border-b border-[rgba(214,48,49,0.1)] flex items-center justify-between">
-              <h3 class="m-0 text-[1rem] text-[#c0392b] font-bold">Danger Zone</h3>
+              <h3 class="m-0 text-[1rem] text-[#c0392b] font-bold">{{ t('settings.library.dangerZone.title') }}</h3>
               <span
                 v-if="appStore.isLibraryRebuildRequired"
                 class="inline-flex items-center justify-center min-h-8 px-[0.7rem] py-[0.35rem] rounded-full text-[0.76rem] font-bold whitespace-nowrap text-[#9f6a00] bg-[rgba(210,161,51,0.14)]"
               >
-                Recommended
+                {{ t('settings.library.dangerZone.recommended') }}
               </span>
             </div>
             <div class="p-6 grid gap-[1.15rem] bg-surface">
               <div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:items-start">
                 <div>
-                  <h3 class="m-0 text-[1rem]">Rebuild Library Index</h3>
-                  <p class="m-0 mt-[0.25rem] text-muted">Reset the library index, reuse matching cached media, and generate only missing derivatives from the current gallery root.</p>
+                  <h3 class="m-0 text-[1rem]">{{ t('settings.library.dangerZone.rebuildTitle') }}</h3>
+                  <p class="m-0 mt-[0.25rem] text-muted">{{ t('settings.library.dangerZone.rebuildDescription') }}</p>
                 </div>
               </div>
 
               <dl class="grid gap-[0.8rem] m-0 mb-2">
                 <div class="px-4 py-[0.85rem] rounded-[0.85rem] border border-border bg-surface-alt">
-                  <dt class="m-0 mb-[0.25rem] text-muted text-[0.72rem] font-bold tracking-[0.08em] uppercase">Current gallery root</dt>
-                  <dd class="m-0 text-[0.92rem] font-semibold break-all">{{ adminStats?.libraryIndex.currentGalleryRoot ?? 'Unavailable' }}</dd>
+                  <dt class="m-0 mb-[0.25rem] text-muted text-[0.72rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.library.dangerZone.currentGalleryRoot') }}</dt>
+                  <dd class="m-0 text-[0.92rem] font-semibold break-all">{{ adminStats?.libraryIndex.currentGalleryRoot ?? t('settings.status.storage.unavailable') }}</dd>
                 </div>
                 <div v-if="adminStats?.libraryIndex.previousGalleryRoot" class="px-4 py-[0.85rem] rounded-[0.85rem] border border-[#d2a133] bg-[rgba(210,161,51,0.04)]">
-                  <dt class="m-0 mb-[0.25rem] text-[#b76e00] text-[0.72rem] font-bold tracking-[0.08em] uppercase">Previous gallery root</dt>
+                  <dt class="m-0 mb-[0.25rem] text-[#b76e00] text-[0.72rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.library.dangerZone.previousGalleryRoot') }}</dt>
                   <dd class="m-0 text-[0.92rem] font-semibold break-all">{{ adminStats.libraryIndex.previousGalleryRoot }}</dd>
                 </div>
               </dl>
@@ -1065,25 +1085,25 @@
           <section class="card grid gap-[1.15rem] p-8">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <h2 class="m-0 text-[1.18rem]">Library Status</h2>
-                <p class="m-0 mt-[0.35rem] text-muted">Current storage and index state.</p>
+                <h2 class="m-0 text-[1.18rem]">{{ t('settings.status.libraryStatus.title') }}</h2>
+                <p class="m-0 mt-[0.35rem] text-muted">{{ t('settings.status.libraryStatus.description') }}</p>
               </div>
             </div>
             <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 m-0 mt-4">
               <div class="flex flex-col gap-1 py-3 border-b border-border">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Storage</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.libraryStatus.storage') }}</dt>
                 <dd class="m-0 text-[1.45rem] font-medium tracking-tight" :class="appStore.isLibraryUnavailable ? 'text-[#c0392b]' : 'text-text'">{{ storageLabel }}</dd>
               </div>
               <div class="flex flex-col gap-1 py-3 border-b border-border">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Folders</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.libraryStatus.folders') }}</dt>
                 <dd class="m-0 text-[1.45rem] font-medium tracking-tight">{{ formatCount(appStore.stats?.folders ?? 0) }}</dd>
               </div>
               <div class="flex flex-col gap-1 py-3 border-b border-border md:border-b-0">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Indexed posts</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.libraryStatus.indexedPosts') }}</dt>
                 <dd class="m-0 text-[1.45rem] font-medium tracking-tight">{{ formatCount(appStore.stats?.indexedImages ?? 0) }}</dd>
               </div>
               <div class="flex flex-col gap-1 py-3 border-b-0">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Indexed videos</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.libraryStatus.indexedVideos') }}</dt>
                 <dd class="m-0 text-[1.45rem] font-medium tracking-tight">{{ formatCount(appStore.stats?.indexedVideos ?? 0) }}</dd>
               </div>
             </dl>
@@ -1092,25 +1112,25 @@
           <section class="card grid gap-[1.15rem] p-8">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <h2 class="m-0 text-[1.18rem]">Last Scan</h2>
-                <p class="m-0 mt-[0.35rem] text-muted">Most recent completed run tracked by the app.</p>
+                <h2 class="m-0 text-[1.18rem]">{{ t('settings.status.lastScan.title') }}</h2>
+                <p class="m-0 mt-[0.35rem] text-muted">{{ t('settings.status.lastScan.description') }}</p>
               </div>
             </div>
             <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 m-0 mt-4">
               <div class="flex flex-col gap-1 py-3 border-b border-border">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Status</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.lastScan.status') }}</dt>
                 <dd class="m-0 text-[1.2rem] font-medium tracking-tight capitalize">{{ lastScanStatus }}</dd>
               </div>
               <div class="flex flex-col gap-1 py-3 border-b border-border">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Finished</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.lastScan.finished') }}</dt>
                 <dd class="m-0 text-[1.2rem] font-medium tracking-tight">{{ lastScanFinishedAt }}</dd>
               </div>
               <div class="flex flex-col gap-1 py-3 border-b border-border md:border-b-0">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Files scanned</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.lastScan.filesScanned') }}</dt>
                 <dd class="m-0 text-[1.45rem] font-medium tracking-tight">{{ formatCount(lastCompletedScan?.scanned_files ?? 0) }}</dd>
               </div>
               <div class="flex flex-col gap-1 py-3 border-b-0">
-                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">Changes</dt>
+                <dt class="m-0 text-muted text-[0.76rem] font-bold tracking-[0.08em] uppercase">{{ t('settings.status.lastScan.changes') }}</dt>
                 <dd class="m-0 text-[1rem] font-medium leading-relaxed whitespace-pre-line">{{ lastScanChangeSummary }}</dd>
               </div>
             </dl>
@@ -1122,20 +1142,20 @@
     <!-- Dialogs -->
     <ConfirmDialog
       v-if="confirmRebuildOpen"
-      title="Rebuild the current library index?"
-      message="This will clear the indexed database tables for folders, posts, likes, and scan history, then rescan the active gallery root. Existing thumbnails and previews from the previous index will be reused when they still match the current files, and only missing or changed derivatives will be generated. Original files in the gallery will not be deleted."
-      confirm-label="Rebuild Library Index"
-      loading-label="Rebuilding..."
+      :title="t('settings.library.dialogs.rebuildTitle')"
+      :message="t('settings.library.dialogs.rebuildMessage')"
+      :confirm-label="t('settings.library.dialogs.rebuildConfirm')"
+      :loading-label="t('settings.library.dialogs.rebuildLoading')"
       :loading="rebuilding"
       @cancel="confirmRebuildOpen = false"
       @confirm="runLibraryRebuild"
     />
     <ConfirmDialog
       v-if="confirmThumbnailRebuildOpen"
-      title="Regenerate thumbnails only?"
-      message="This will remove generated feed and profile thumbnails plus video poster images, then rebuild them from the current indexed library using each item's current thumbnail path. Previews, likes, scan history, and indexed library records will not be changed. Original files in the gallery will not be deleted."
-      confirm-label="Regenerate Thumbnails"
-      loading-label="Regenerating..."
+      :title="t('settings.library.dialogs.thumbnailsTitle')"
+      :message="t('settings.library.dialogs.thumbnailsMessage')"
+      :confirm-label="t('settings.library.dialogs.thumbnailsConfirm')"
+      :loading-label="t('settings.library.dialogs.thumbnailsLoading')"
       :loading="rebuildingThumbnails"
       @cancel="confirmThumbnailRebuildOpen = false"
       @confirm="runThumbnailRebuild"
@@ -1144,6 +1164,7 @@
 </template>
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import ConfirmDialog from '../components/ConfirmDialog.vue';
@@ -1158,6 +1179,7 @@ import {
   updateReelsFeedDefault,
   updateStoriesMode
 } from '../api/gallery';
+import { SUPPORTED_LOCALES, type SupportedLocale } from '../locales';
 import { useAppStore } from '../stores/app';
 import { useAuthStore } from '../stores/auth';
 import { useFeedStore } from '../stores/feed';
@@ -1168,6 +1190,7 @@ import { usePlacesStore } from '../stores/places';
 import { useViewerStore } from '../stores/viewer';
 import type { AppStats, FeedMode, FolderImageOrder, ReelsFeedMode, ViewerAccessMode } from '../types/api';
 
+const { t, locale } = useI18n();
 const appStore = useAppStore();
 const authStore = useAuthStore();
 const feedStore = useFeedStore();
@@ -1208,6 +1231,7 @@ const storiesModeHydrated = ref(false);
 const activeGeneralSettingsMenu = ref<'home' | 'reels' | 'folder' | null>(null);
 const showStoriesAnnouncementStructure = ref(false);
 const generalSettingsSaveArea = ref<HTMLElement | null>(null);
+const localeSelectId = 'settings-language-select';
 const acknowledgedStoriesMigrationChoice = ref(false);
 const viewerAccessMode = ref<ViewerAccessMode>(authStore.accessMode);
 const viewerPassword = ref('');
@@ -1310,15 +1334,15 @@ function wait(milliseconds: number) {
 }
 
 function formatCount(value: number) {
-  return new Intl.NumberFormat().format(value);
+  return new Intl.NumberFormat(locale.value).format(value);
 }
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
-    return 'Never';
+    return t('settings.status.never');
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale.value, {
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(new Date(value));
@@ -1336,6 +1360,11 @@ function clearViewerFeedback() {
 
 function clearGeneralSettingsFeedback() {
   generalSettingsFeedback.value = null;
+}
+
+function handleLocaleChange(event: Event) {
+  const nextLocale = (event.target as HTMLSelectElement).value as SupportedLocale;
+  appStore.setLocale(nextLocale);
 }
 
 async function scrollToGeneralSettingsSaveArea() {
@@ -1407,15 +1436,15 @@ function toggleDisablePasswordForm() {
 
 function validatePasswordConfirmation(password: string, confirmation: string): string | null {
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+    return t('settings.access.validation.minLength', { count: MIN_PASSWORD_LENGTH });
   }
 
   if (password.trim().length === 0) {
-    return 'Password cannot be empty.';
+    return t('settings.access.validation.empty');
   }
 
   if (password !== confirmation) {
-    return 'The password confirmation does not match.';
+    return t('settings.access.validation.mismatch');
   }
 
   return null;
@@ -1441,52 +1470,58 @@ function syncExcludedFoldersFromSaved() {
 const scan = computed(() => appStore.stats?.scan ?? null);
 const lastCompletedScan = computed(() => scan.value?.lastCompletedScan ?? adminStats.value?.lastScan ?? null);
 const activeScanReason = computed(() => scan.value?.scanReason ?? null);
-const homeFeedDefaultOptions: Array<{ id: FeedMode; label: string; description: string }> = [
+const supportedLocaleOptions = computed<Array<{ id: SupportedLocale; label: string }>>(() =>
+  SUPPORTED_LOCALES.map((locale) => ({
+    id: locale,
+    label: t(`settings.general.language.options.${locale}`)
+  }))
+);
+const homeFeedDefaultOptions = computed<Array<{ id: FeedMode; label: string; description: string }>>(() => [
   {
     id: 'random',
-    label: 'Random',
-    description: 'Steady shuffle.'
+    label: t('settings.general.homeFeed.options.random.label'),
+    description: t('settings.general.homeFeed.options.random.description')
   },
   {
     id: 'recent',
-    label: 'Recent',
-    description: 'Newest first.'
+    label: t('settings.general.homeFeed.options.recent.label'),
+    description: t('settings.general.homeFeed.options.recent.description')
   },
   {
     id: 'rediscover',
-    label: 'Rediscover',
-    description: 'Bring older picks back.'
+    label: t('settings.general.homeFeed.options.rediscover.label'),
+    description: t('settings.general.homeFeed.options.rediscover.description')
   }
-];
-const reelsFeedDefaultOptions: Array<{ id: ReelsFeedMode; label: string; description: string }> = [
+]);
+const reelsFeedDefaultOptions = computed<Array<{ id: ReelsFeedMode; label: string; description: string }>>(() => [
   {
     id: 'random',
-    label: 'Random',
-    description: 'Stable session shuffle.'
+    label: t('settings.general.reelsFeed.options.random.label'),
+    description: t('settings.general.reelsFeed.options.random.description')
   },
   {
     id: 'recent',
-    label: 'Recent',
-    description: 'Newest videos first.'
+    label: t('settings.general.reelsFeed.options.recent.label'),
+    description: t('settings.general.reelsFeed.options.recent.description')
   },
   {
     id: 'recommended',
-    label: 'Recommended',
-    description: 'Affinity-ranked mix.'
+    label: t('settings.general.reelsFeed.options.recommended.label'),
+    description: t('settings.general.reelsFeed.options.recommended.description')
   }
-];
-const folderImageOrderOptions: Array<{ id: FolderImageOrder; label: string; description: string }> = [
+]);
+const folderImageOrderOptions = computed<Array<{ id: FolderImageOrder; label: string; description: string }>>(() => [
   {
     id: 'newest',
-    label: 'Newest First',
-    description: 'Recent photos appear first.'
+    label: t('settings.general.folderOrder.options.newest.label'),
+    description: t('settings.general.folderOrder.options.newest.description')
   },
   {
     id: 'oldest',
-    label: 'Oldest First',
-    description: 'Earlier photos appear first.'
+    label: t('settings.general.folderOrder.options.oldest.label'),
+    description: t('settings.general.folderOrder.options.oldest.description')
   }
-];
+]);
 const isLibraryRebuildActive = computed(
   () => rebuilding.value || (appStore.isScanning && activeScanReason.value === 'rebuild')
 );
@@ -1510,22 +1545,22 @@ const legacyDerivativeMigrationPending = computed(
 const legacyDerivativeMigrationCount = computed(() => adminStats.value?.libraryIndex.pendingDerivativeMigrationRows ?? 0);
 const storiesModeRequiresDecision = computed(() => appStore.stats?.storiesMigration.decisionPending === true);
 const savedHomeFeedDefaultModeLabel = computed(
-  () => homeFeedDefaultOptions.find((mode) => mode.id === savedHomeFeedDefaultMode.value)?.label ?? 'Random'
+  () => homeFeedDefaultOptions.value.find((mode) => mode.id === savedHomeFeedDefaultMode.value)?.label ?? t('settings.general.homeFeed.options.random.label')
 );
 const savedReelsFeedDefaultModeLabel = computed(
-  () => reelsFeedDefaultOptions.find((mode) => mode.id === savedReelsFeedDefaultMode.value)?.label ?? 'Random'
+  () => reelsFeedDefaultOptions.value.find((mode) => mode.id === savedReelsFeedDefaultMode.value)?.label ?? t('settings.general.reelsFeed.options.random.label')
 );
 const savedFolderImageOrderDefaultLabel = computed(
-  () => folderImageOrderOptions.find((mode) => mode.id === savedFolderImageOrderDefault.value)?.label ?? 'Newest First'
+  () => folderImageOrderOptions.value.find((mode) => mode.id === savedFolderImageOrderDefault.value)?.label ?? t('settings.general.folderOrder.options.newest.label')
 );
 const selectedHomeFeedDefaultOption = computed(
-  () => homeFeedDefaultOptions.find((mode) => mode.id === homeFeedDefaultMode.value) ?? homeFeedDefaultOptions[0]
+  () => homeFeedDefaultOptions.value.find((mode) => mode.id === homeFeedDefaultMode.value) ?? homeFeedDefaultOptions.value[0]
 );
 const selectedReelsFeedDefaultOption = computed(
-  () => reelsFeedDefaultOptions.find((mode) => mode.id === reelsFeedDefaultMode.value) ?? reelsFeedDefaultOptions[0]
+  () => reelsFeedDefaultOptions.value.find((mode) => mode.id === reelsFeedDefaultMode.value) ?? reelsFeedDefaultOptions.value[0]
 );
 const selectedFolderImageOrderOption = computed(
-  () => folderImageOrderOptions.find((mode) => mode.id === folderImageOrderDefault.value) ?? folderImageOrderOptions[0]
+  () => folderImageOrderOptions.value.find((mode) => mode.id === folderImageOrderDefault.value) ?? folderImageOrderOptions.value[0]
 );
 const homeFeedDefaultDirty = computed(
   () => feedDefaultsHydrated.value && homeFeedDefaultMode.value !== savedHomeFeedDefaultMode.value
@@ -1561,75 +1596,75 @@ const generalSettingsSaveDisabled = computed(
 );
 const generalSettingsButtonLabel = computed(() => {
   if (savingGeneralSettings.value) {
-    return 'Saving...';
+    return t('common.saving');
   }
 
-  return generalSettingsDirty.value ? 'Save changes' : 'Saved';
+  return generalSettingsDirty.value ? t('common.saveChanges') : t('common.saved');
 });
 const generalSettingsButtonStyle = computed(() =>
   generalSettingsSaveDisabled.value ? { cursor: savingGeneralSettings.value ? 'wait' : 'not-allowed' } : undefined
 );
 const generalSettingsActionNote = computed(() => {
   if (waitingForInitialStatus.value) {
-    return 'Loading the current app preferences...';
+    return t('settings.general.actionNote.loading');
   }
 
   if (excludedFoldersDirty.value && (storiesModeDirty.value || storiesModeRequiresDecision.value || feedDefaultsDirty.value)) {
-    return 'Save the folder exclusion rules with the other app-wide changes. Run a library scan afterward so stories and excluded folders reindex correctly.';
+    return t('settings.general.actionNote.excludedAndOther');
   }
 
   if (excludedFoldersDirty.value) {
-    return 'This saves the custom excluded folders only. Run a library scan afterward so those folders disappear from the index.';
+    return t('settings.general.actionNote.excludedOnly');
   }
 
   if (storiesModeDirty.value && feedDefaultsDirty.value) {
-    return 'Save the new stories rule and the updated browsing defaults together.';
+    return t('settings.general.actionNote.storiesAndDefaults');
   }
 
   if (storiesModeDirty.value || storiesModeRequiresDecision.value) {
-    return 'This saves the stories folders rule only. Run a library scan afterward to reindex with the new behavior.';
+    return t('settings.general.actionNote.storiesOnly');
   }
 
   if ([homeFeedDefaultDirty.value, reelsFeedDefaultDirty.value, folderImageOrderDirty.value].filter(Boolean).length > 1) {
-    return 'Save these browsing defaults together. Home visitors can still switch modes on the homepage; Reels and app folders use app defaults.';
+    return t('settings.general.actionNote.multipleDefaults');
   }
 
   if (homeFeedDefaultDirty.value) {
-    return 'This updates the first feed mode shown on Home for this app. Visitors can still switch modes from the homepage.';
+    return t('settings.general.actionNote.homeOnly');
   }
 
   if (reelsFeedDefaultDirty.value) {
-    return 'This updates the queue style used when Reels opens for this app. Visitors cannot switch modes from the reels page.';
+    return t('settings.general.actionNote.reelsOnly');
   }
 
   if (folderImageOrderDirty.value) {
-    return 'This updates the default photo order used by app folder grids.';
+    return t('settings.general.actionNote.folderOnly');
   }
 
-  return 'These are the current app-wide defaults for Home, Reels, app folders, stories folders, and excluded folders.';
+  return t('settings.general.actionNote.idle');
 });
 const generalSettingsRescanNotice = computed(() => {
   if (excludedFoldersDirty.value && (storiesModeDirty.value || storiesModeRequiresDecision.value)) {
-    return 'Save these changes, then run a library scan before expecting stories folders and excluded folders to update.';
+    return t('settings.general.rescanNotice.excludedAndStories');
   }
 
   if (excludedFoldersDirty.value) {
-    return 'Save this change, then run a library scan before excluded folders disappear from the index.';
+    return t('settings.general.rescanNotice.excludedOnly');
   }
 
-  return 'Save this change, then run a library scan before expecting stories folders, avatar stories, or highlights to update.';
+  return t('settings.general.rescanNotice.storiesOnly');
 });
 const storiesModeLabelDescription = computed(() =>
   storiesMode.value
-    ? 'Legacy mode is enabled. stories folders remain ordinary app folders everywhere.'
-    : 'Reserved stories mode is enabled. AppFolder/stories powers avatar stories and highlight circles.'
+    ? t('settings.general.storiesMode.enabledDescription')
+    : t('settings.general.storiesMode.disabledDescription')
 );
 const storiesMigrationActionHelper = computed(() => {
   if (savingGeneralSettings.value) {
-    return 'Wait for the current settings update to finish first.';
+    return t('settings.general.migration.helperSaving');
   }
 
-  return 'Choose a mode here, then save it below. Run a library scan afterward so the indexed folder structure matches.';
+  return t('settings.general.migration.helper');
 });
 const showStoriesMigrationNotice = computed(
   () =>
@@ -1701,29 +1736,29 @@ const statusTone = computed(() => {
 });
 const statusLabel = computed(() => {
   if (appStore.isLibraryUnavailable) {
-    return 'Storage unavailable';
+    return t('settings.library.statusLabel.storageUnavailable');
   }
 
   if (scanProgressActive.value) {
-    return 'Scan in progress';
+    return t('settings.library.statusLabel.scanInProgress');
   }
 
   if (isRebuildOperationActive.value) {
-    return 'Rebuild active';
+    return t('settings.library.statusLabel.rebuildActive');
   }
 
-  return 'Ready';
+  return t('settings.library.statusLabel.ready');
 });
 const scanButtonLabel = computed(() => {
   if (scanProgressActive.value) {
-    return 'Scanning library...';
+    return t('settings.library.scanButton.active');
   }
 
-  return 'Run Scan Library';
+  return t('settings.library.scanButton.idle');
 });
 const scanActionNote = computed(() => {
   if (waitingForInitialStatus.value) {
-    return 'Loading current library status...';
+    return t('settings.library.scanActionNote.loading');
   }
 
   if (appStore.isLibraryUnavailable) {
@@ -1731,40 +1766,40 @@ const scanActionNote = computed(() => {
   }
 
   if (appStore.isLibraryRebuildRequired) {
-    return 'Rebuild the library index first because the gallery location changed.';
+    return t('settings.library.scanActionNote.rebuildRequired');
   }
 
   if (isRebuildOperationActive.value) {
-    return 'Another library task is running. Live progress appears in the sticky status bar.';
+    return t('settings.library.scanActionNote.otherTaskActive');
   }
 
   if (scanProgressActive.value) {
-    return 'Live progress appears in the sticky status bar.';
+    return t('settings.library.scanActionNote.progress');
   }
 
   if (legacyDerivativeMigrationPending.value) {
-    return 'Run Scan Library to move legacy mirrored thumbnails and previews into the asset-key storage layout.';
+    return t('settings.library.scanActionNote.legacyMigration');
   }
 
-  return 'Scans check for added, updated, or missing media.';
+  return t('settings.library.scanActionNote.idle');
 });
 const rebuildButtonLabel = computed(() => {
   if (isLibraryRebuildActive.value) {
-    return 'Rebuilding now...';
+    return t('settings.library.rebuildButton.active');
   }
 
-  return 'Rebuild Library Index';
+  return t('settings.library.rebuildButton.idle');
 });
 const thumbnailRebuildButtonLabel = computed(() => {
   if (isThumbnailRebuildActive.value) {
-    return 'Regenerating now...';
+    return t('settings.library.thumbnailButton.active');
   }
 
-  return 'Regenerate Thumbnails';
+  return t('settings.library.thumbnailButton.idle');
 });
 const rebuildActionNote = computed(() => {
   if (waitingForInitialStatus.value) {
-    return 'Loading current library status...';
+    return t('settings.library.rebuildActionNote.loading');
   }
 
   if (appStore.isLibraryUnavailable) {
@@ -1772,26 +1807,26 @@ const rebuildActionNote = computed(() => {
   }
 
   if (isLibraryRebuildActive.value) {
-    return 'Live progress appears in the sticky status bar.';
+    return t('settings.library.rebuildActionNote.progress');
   }
 
   if (isThumbnailRebuildActive.value) {
-    return 'Wait for thumbnail regeneration to finish first.';
+    return t('settings.library.rebuildActionNote.thumbnailActive');
   }
 
   if (appStore.isScanning) {
-    return 'Wait for the current scan to finish first.';
+    return t('settings.library.rebuildActionNote.scanActive');
   }
 
   if (appStore.isLibraryRebuildRequired) {
-    return 'Recommended because the gallery location changed.';
+    return t('settings.library.rebuildActionNote.rebuildRequired');
   }
 
-  return 'Use this to reset the index and reuse matching derivatives from the previous library index.';
+  return t('settings.library.rebuildActionNote.idle');
 });
 const thumbnailRebuildActionNote = computed(() => {
   if (waitingForInitialStatus.value) {
-    return 'Loading current library status...';
+    return t('settings.library.thumbnailActionNote.loading');
   }
 
   if (appStore.isLibraryUnavailable) {
@@ -1799,48 +1834,48 @@ const thumbnailRebuildActionNote = computed(() => {
   }
 
   if (appStore.isLibraryRebuildRequired) {
-    return 'Unavailable until the library index is rebuilt for the new gallery location.';
+    return t('settings.library.thumbnailActionNote.rebuildRequired');
   }
 
   if (isThumbnailRebuildActive.value) {
-    return 'Live progress appears in the sticky status bar.';
+    return t('settings.library.thumbnailActionNote.progress');
   }
 
   if (isLibraryRebuildActive.value) {
-    return 'Wait for the full rebuild to finish first.';
+    return t('settings.library.thumbnailActionNote.rebuildActive');
   }
 
   if (appStore.isScanning) {
-    return 'Wait for the current scan to finish first.';
+    return t('settings.library.thumbnailActionNote.scanActive');
   }
 
   if (legacyDerivativeMigrationPending.value) {
-    return 'This keeps the current thumbnail paths and does not migrate legacy mirrored derivatives. Run Scan Library instead to move them into asset-key storage.';
+    return t('settings.library.thumbnailActionNote.legacyMigration');
   }
 
-  return 'Use this for a faster thumbnail-only refresh.';
+  return t('settings.library.thumbnailActionNote.idle');
 });
 const authProtectionDescription = computed(() =>
   authStore.enabled
-    ? 'Admin protection is active for this browser session. Use the controls below to rotate the admin password, configure viewer access, sign out, or turn protection off again.'
-    : 'Protection is currently off. Anyone who can reach this app on your network can browse the library with full local access until you enable an admin password.'
+    ? t('settings.access.authProtection.enabled')
+    : t('settings.access.authProtection.disabled')
 );
 const viewerAccessActive = computed(() => authStore.enabled && authStore.accessMode !== 'off');
 const viewerAccessEnabled = computed(() => authStore.enabled && authStore.accessMode === 'password');
 const viewerAccessStatusLabel = computed(() => {
   if (!authStore.enabled) {
-    return 'Admin Password Off';
+    return t('settings.access.viewer.status.adminPasswordOff');
   }
 
   if (authStore.accessMode === 'password') {
-    return 'Viewer Password On';
+    return t('settings.access.viewer.status.viewerPasswordOn');
   }
 
   if (authStore.accessMode === 'public') {
-    return 'Public Viewer On';
+    return t('settings.access.viewer.status.publicViewerOn');
   }
 
-  return 'Admin Only';
+  return t('settings.access.viewer.status.adminOnly');
 });
 const viewerAccessStatusTone = computed(() => {
   if (!authStore.enabled) {
@@ -1859,77 +1894,96 @@ const viewerAccessStatusTone = computed(() => {
 });
 const viewerAccessSummaryTitle = computed(() => {
   if (!authStore.enabled) {
-    return 'Enable the admin password first';
+    return t('settings.access.viewer.summary.enableAdminFirst');
   }
 
   if (authStore.accessMode === 'password') {
-    return 'Viewer password access is enabled';
+    return t('settings.access.viewer.summary.viewerPasswordEnabled');
   }
 
   if (authStore.accessMode === 'public') {
-    return 'Public viewer access is enabled';
+    return t('settings.access.viewer.summary.publicEnabled');
   }
 
-  return 'Viewer access is currently off';
+  return t('settings.access.viewer.summary.off');
 });
 const viewerAccessSummary = computed(() => {
   if (!authStore.enabled) {
-    return 'Viewer access settings become available after the admin password is enabled.';
+    return t('settings.access.viewer.summaryCopy.enableAdminFirst');
   }
 
   if (authStore.accessMode === 'password') {
-    return 'Viewers can sign in with the separate viewer password, use shared likes, and browse without admin controls. To replace that password, enter a new one below. The current viewer password is not required.';
+    return t('settings.access.viewer.summaryCopy.viewerPasswordEnabled');
   }
 
   if (authStore.accessMode === 'public') {
-    return 'Anyone who can reach this Foldergram can browse without logging in. Favorites stay in the current browser only, and admins can elevate from More with the admin password.';
+    return t('settings.access.viewer.summaryCopy.publicEnabled');
   }
 
-  return 'Only the admin password can unlock the app right now. Turn on viewer password mode below if you want a browsing-only login.';
+  return t('settings.access.viewer.summaryCopy.off');
 });
 const viewerAccessDescription = computed(() => {
   if (viewerAccessMode.value === 'password') {
     return viewerAccessEnabled.value
-      ? 'Enter a new viewer password below to rotate it. You do not need the current viewer password.'
-      : 'Viewer logins get shared likes but cannot reach Settings, Trash, or any destructive action.';
+      ? t('settings.access.viewer.helper.viewerPasswordRotate')
+      : t('settings.access.viewer.helper.viewerPasswordNew');
   }
 
   if (viewerAccessMode.value === 'public') {
-    return 'Anonymous visitors can browse immediately, use browser-local favorites, and unlock admin access from More when needed.';
+    return t('settings.access.viewer.helper.public');
   }
 
   return authStore.accessMode === 'password'
-    ? 'Saving this will turn off viewer logins and return the app to admin-only access.'
+    ? t('settings.access.viewer.helper.disableFromPassword')
     : authStore.accessMode === 'public'
-      ? 'Saving this will disable public browsing and return the app to admin-only access.'
-    : 'Viewer access is currently off, so only the admin password can unlock the app.';
+      ? t('settings.access.viewer.helper.disableFromPublic')
+    : t('settings.access.viewer.helper.off');
 });
 const viewerAccessButtonLabel = computed(() => {
   if (viewerAccessMode.value === 'password') {
-    return viewerAccessEnabled.value ? 'Update Viewer Password' : 'Enable Viewer Access';
+    return viewerAccessEnabled.value
+      ? t('settings.access.viewer.buttons.updateViewerPassword')
+      : t('settings.access.viewer.buttons.enableViewerAccess');
   }
 
   if (viewerAccessMode.value === 'public') {
-    return authStore.accessMode === 'public' ? 'Save Public Access' : 'Enable Public Access';
+    return authStore.accessMode === 'public'
+      ? t('settings.access.viewer.buttons.savePublicAccess')
+      : t('settings.access.viewer.buttons.enablePublicAccess');
   }
 
-  return authStore.accessMode === 'password' || authStore.accessMode === 'public' ? 'Disable Viewer Access' : 'Save Viewer Access';
+  return authStore.accessMode === 'password' || authStore.accessMode === 'public'
+    ? t('settings.access.viewer.buttons.disableViewerAccess')
+    : t('settings.access.viewer.buttons.saveViewerAccess');
 });
-const storageLabel = computed(() => (appStore.isLibraryUnavailable ? 'Unavailable' : 'Available'));
+const storageLabel = computed(() =>
+  appStore.isLibraryUnavailable ? t('settings.status.storage.unavailable') : t('settings.status.storage.available')
+);
 const lastScanStatus = computed(() => {
   if (!lastCompletedScan.value) {
-    return 'No completed scans yet';
+    return t('settings.status.lastScan.statusValues.none');
   }
 
-  return lastCompletedScan.value.status.replaceAll('_', ' ');
+  switch (lastCompletedScan.value.status) {
+    case 'completed':
+      return t('settings.status.lastScan.statusValues.completed');
+    case 'completed_with_errors':
+      return t('settings.status.lastScan.statusValues.completedWithErrors');
+    case 'failed':
+      return t('settings.status.lastScan.statusValues.failed');
+    case 'running':
+      return t('settings.status.lastScan.statusValues.running');
+    default:
+      return lastCompletedScan.value.status.replaceAll('_', ' ');
+  }
 });
 const lastScanFinishedAt = computed(() => formatDateTime(lastCompletedScan.value?.finished_at));
 const lastScanChangeSummary = computed(() => {
   if (!lastCompletedScan.value) {
-    return '0 new\n0 updated\n0 removed';
+    return `${formatCount(0)} ${t('settings.status.lastScan.changeValues.new')}\n${formatCount(0)} ${t('settings.status.lastScan.changeValues.updated')}\n${formatCount(0)} ${t('settings.status.lastScan.changeValues.removed')}`;
   }
 
-  return `${lastCompletedScan.value.new_files} new\n${lastCompletedScan.value.updated_files} updated\n${lastCompletedScan.value.removed_files} removed`;
+  return `${formatCount(lastCompletedScan.value.new_files)} ${t('settings.status.lastScan.changeValues.new')}\n${formatCount(lastCompletedScan.value.updated_files)} ${t('settings.status.lastScan.changeValues.updated')}\n${formatCount(lastCompletedScan.value.removed_files)} ${t('settings.status.lastScan.changeValues.removed')}`;
 });
 const showScanErrorNotice = computed(() => {
   if (appStore.isLibraryUnavailable || appStore.isScanning) {
@@ -1976,18 +2030,18 @@ const showIgnoredRootMediaNotice = computed(() => {
 const scanErrorNoticeMessage = computed(() => {
   const errorText = lastCompletedScan.value?.error_text?.trim() ?? '';
   if (errorText.length === 0) {
-    return 'Some media failed during the last run. Scan the library again to retry any missed files and derivative generation.';
+    return t('settings.notices.scanError.messages.genericNoDetails');
   }
 
   if (/spawn ffprobe ENOENT/i.test(errorText) || /spawn ffmpeg ENOENT/i.test(errorText)) {
-    return 'Video processing tools are missing from the server environment. Install FFmpeg so scans can read video metadata and generate video derivatives.';
+    return t('settings.notices.scanError.messages.ffmpegMissing');
   }
 
   if (scanErrorReportPath.value) {
-    return 'Some media failed during the last run. Review the sample error and full report path below, then scan the library again to retry failed media and derivative generation.';
+    return t('settings.notices.scanError.messages.withReport');
   }
 
-  return 'Some media failed during the last run. Review the sample error below, then scan the library again to retry any missed files and derivative generation.';
+  return t('settings.notices.scanError.messages.withSample');
 });
 const scanErrorReportPath = computed(() => {
   const errorText = lastCompletedScan.value?.error_text?.trim() ?? '';
@@ -2010,16 +2064,18 @@ const scanErrorNoticeDetail = computed(() => {
     return firstLine;
   }
 
-  return `${firstLine} (+${remainingCount} more)`;
+  return t('settings.notices.scanError.detailMore', { line: firstLine, count: formatCount(remainingCount) });
 });
 const ignoredRootMediaNoticeMessage = computed(() => {
-  const supportedFileLabel = ignoredRootMediaCount.value === 1 ? 'supported file is' : 'supported files are';
-  return `${formatCount(ignoredRootMediaCount.value)} ${supportedFileLabel} being ignored in the gallery root. Move them into a folder inside your gallery root to create App Folders. Files placed directly in the gallery root are ignored.`;
+  return ignoredRootMediaCount.value === 1
+    ? t('settings.notices.ignoredRootMedia.messageOne', { count: formatCount(ignoredRootMediaCount.value) })
+    : t('settings.notices.ignoredRootMedia.messageOther', { count: formatCount(ignoredRootMediaCount.value) });
 });
 const legacyDerivativeMigrationMessage = computed(() => {
   const count = legacyDerivativeMigrationCount.value;
-  const recordLabel = count === 1 ? 'indexed media record still uses' : 'indexed media records still use';
-  return `${formatCount(count)} ${recordLabel} the old mirrored thumbnail and preview paths. Run Scan Library to move them into asset-key storage.`;
+  return count === 1
+    ? t('settings.library.legacyMigration.messageOne', { count: formatCount(count) })
+    : t('settings.library.legacyMigration.messageOther', { count: formatCount(count) });
 });
 
 function dismissScanErrorNotice() {
@@ -2148,9 +2204,9 @@ async function enableAccessProtection() {
     await authStore.enablePassword(enablePassword.value);
     enablePassword.value = '';
     enablePasswordConfirmation.value = '';
-    setAuthSuccess('The admin password is now enabled for this Foldergram instance.');
+    setAuthSuccess(t('settings.access.enable.success'));
   } catch (error) {
-    setAuthError(error instanceof Error ? error.message : 'Unable to enable the admin password.');
+    setAuthError(error instanceof Error ? error.message : t('settings.access.enable.error'));
   }
 }
 
@@ -2162,7 +2218,7 @@ async function changeAccessPassword() {
   clearAuthFeedback();
   clearViewerFeedback();
   if (currentPassword.value.length === 0) {
-    setAuthError('Enter the current password to change it.');
+    setAuthError(t('settings.access.change.missingCurrent'));
     return;
   }
 
@@ -2176,9 +2232,9 @@ async function changeAccessPassword() {
     await authStore.changePassword(currentPassword.value, nextPassword.value);
     resetChangePasswordFields();
     showChangePasswordForm.value = false;
-    setAuthSuccess('The admin password was updated and existing sessions were invalidated.');
+    setAuthSuccess(t('settings.access.change.success'));
   } catch (error) {
-    setAuthError(error instanceof Error ? error.message : 'Unable to change the admin password.');
+    setAuthError(error instanceof Error ? error.message : t('settings.access.change.error'));
   }
 }
 
@@ -2190,7 +2246,7 @@ async function disableAccessProtection() {
   clearAuthFeedback();
   clearViewerFeedback();
   if (disablePassword.value.length === 0) {
-    setAuthError('Enter the current password to disable protection.');
+    setAuthError(t('settings.access.danger.missingCurrent'));
     return;
   }
 
@@ -2203,9 +2259,9 @@ async function disableAccessProtection() {
     viewerAccessMode.value = 'off';
     viewerPassword.value = '';
     viewerPasswordConfirmation.value = '';
-    setAuthSuccess('The admin password has been disabled.');
+    setAuthSuccess(t('settings.access.danger.success'));
   } catch (error) {
-    setAuthError(error instanceof Error ? error.message : 'Unable to disable the admin password.');
+    setAuthError(error instanceof Error ? error.message : t('settings.access.danger.error'));
   }
 }
 
@@ -2234,13 +2290,13 @@ async function saveViewerAccess() {
     viewerPasswordConfirmation.value = '';
     setViewerSuccess(
       viewerAccessMode.value === 'password'
-        ? 'Viewer password access is enabled. The viewer password was saved.'
+        ? t('settings.access.viewer.success.password')
         : viewerAccessMode.value === 'public'
-          ? 'Public viewer access is enabled. Anonymous visitors can now browse with browser-local favorites.'
-        : 'Viewer access has been turned off. Only admin logins are allowed now.'
+          ? t('settings.access.viewer.success.public')
+        : t('settings.access.viewer.success.off')
     );
   } catch (error) {
-    setViewerError(error instanceof Error ? error.message : 'Unable to update viewer access.');
+    setViewerError(error instanceof Error ? error.message : t('settings.access.viewer.error'));
   }
 }
 
@@ -2254,7 +2310,7 @@ async function signOut() {
   try {
     await authStore.logout();
   } catch (error) {
-    setAuthError(error instanceof Error ? error.message : 'Unable to sign out.');
+    setAuthError(error instanceof Error ? error.message : t('settings.access.danger.signOutError'));
   }
 }
 
@@ -2335,7 +2391,7 @@ async function saveGeneralSettings() {
     try {
       nextExcludedFolders = parseExcludedFolderRulesDraft(customExcludedFoldersDraft.value);
     } catch (error) {
-      setGeneralSettingsFeedback('error', error instanceof Error ? error.message : 'Unable to validate the excluded folder rules.');
+      setGeneralSettingsFeedback('error', error instanceof Error ? error.message : t('settings.general.errors.validateExcludedFolders'));
       return;
     }
   }
@@ -2347,7 +2403,7 @@ async function saveGeneralSettings() {
   try {
     if (shouldSaveExcludedFolders) {
       const payload = await updateExcludedFolders(nextExcludedFolders);
-      savedParts.push('excluded folders');
+      savedParts.push(t('settings.general.feedback.parts.excludedFolders'));
       customExcludedFoldersDraft.value = formatExcludedFolderRules(payload.customExcludedFolders);
 
       if (adminStats.value) {
@@ -2364,7 +2420,7 @@ async function saveGeneralSettings() {
 
     if (shouldSaveStories) {
       const payload = await updateStoriesMode(storiesMode.value);
-      savedParts.push('stories folder handling');
+      savedParts.push(t('settings.general.feedback.parts.storiesFolderHandling'));
       storiesMode.value = payload.treatStoriesAsFolders;
 
       if (appStore.stats) {
@@ -2375,7 +2431,7 @@ async function saveGeneralSettings() {
 
     if (shouldSaveHome) {
       const payload = await updateHomeFeedDefault(homeFeedDefaultMode.value);
-      savedParts.push('Home feed default');
+      savedParts.push(t('settings.general.feedback.parts.homeFeedDefault'));
       if (appStore.stats) {
         appStore.stats.preferences.defaultHomeFeedMode = payload.defaultMode;
       }
@@ -2384,7 +2440,7 @@ async function saveGeneralSettings() {
 
     if (shouldSaveReels) {
       const payload = await updateReelsFeedDefault(reelsFeedDefaultMode.value);
-      savedParts.push('Reels feed default');
+      savedParts.push(t('settings.general.feedback.parts.reelsFeedDefault'));
       if (appStore.stats) {
         appStore.stats.preferences.defaultReelsFeedMode = payload.defaultMode;
       }
@@ -2393,7 +2449,7 @@ async function saveGeneralSettings() {
 
     if (shouldSaveFolderOrder) {
       const payload = await updateFolderImageOrderDefault(folderImageOrderDefault.value);
-      savedParts.push('app folder order');
+      savedParts.push(t('settings.general.feedback.parts.appFolderOrder'));
       if (appStore.stats) {
         appStore.stats.preferences.defaultFolderImageOrder = payload.defaultOrder;
       }
@@ -2407,31 +2463,31 @@ async function saveGeneralSettings() {
     }
 
     if ((shouldSaveStories || shouldSaveExcludedFolders) && (shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder)) {
-      setGeneralSettingsFeedback('success', 'Settings were saved. Run a library scan to apply the folder rule changes.');
+      setGeneralSettingsFeedback('success', t('settings.general.feedback.settingsAndFolderRulesSaved'));
     } else if (shouldSaveExcludedFolders && shouldSaveStories) {
-      setGeneralSettingsFeedback('success', 'Folder exclusion rules and stories folder behavior were saved. Run a library scan to apply them.');
+      setGeneralSettingsFeedback('success', t('settings.general.feedback.folderRulesAndStoriesSaved'));
     } else if (shouldSaveExcludedFolders) {
-      setGeneralSettingsFeedback('success', 'Excluded folders were saved. Run a library scan to apply them.');
+      setGeneralSettingsFeedback('success', t('settings.general.feedback.excludedFoldersSaved'));
     } else if (shouldSaveStories && (shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder)) {
-      setGeneralSettingsFeedback('success', 'Settings were saved. Run a library scan to apply the stories folder change.');
+      setGeneralSettingsFeedback('success', t('settings.general.feedback.settingsAndStoriesSaved'));
     } else if (shouldSaveStories) {
-      setGeneralSettingsFeedback('success', 'Stories folder behavior was saved. Run a library scan to apply it.');
+      setGeneralSettingsFeedback('success', t('settings.general.feedback.storiesSaved'));
     } else if ([shouldSaveHome, shouldSaveReels, shouldSaveFolderOrder].filter(Boolean).length > 1) {
-      setGeneralSettingsFeedback('success', 'App-wide browsing defaults were updated.');
+      setGeneralSettingsFeedback('success', t('settings.general.feedback.defaultsSaved'));
     } else if (shouldSaveHome) {
       setGeneralSettingsFeedback(
         'success',
-        `The homepage now opens with ${selectedHomeFeedDefaultOption.value.label}.`
+        t('settings.general.feedback.homeSaved', { label: selectedHomeFeedDefaultOption.value.label })
       );
     } else if (shouldSaveReels) {
       setGeneralSettingsFeedback(
         'success',
-        `Reels now opens with ${selectedReelsFeedDefaultOption.value.label}.`
+        t('settings.general.feedback.reelsSaved', { label: selectedReelsFeedDefaultOption.value.label })
       );
     } else if (shouldSaveFolderOrder) {
       setGeneralSettingsFeedback(
         'success',
-        `App folders now open with ${selectedFolderImageOrderOption.value.label}.`
+        t('settings.general.feedback.folderOrderSaved', { label: selectedFolderImageOrderOption.value.label })
       );
     }
   } catch (error) {
@@ -2440,11 +2496,11 @@ async function saveGeneralSettings() {
       await loadAdminStats().catch(() => {});
     }
 
-    const message = error instanceof Error ? error.message : 'Unable to update the general settings.';
+    const message = error instanceof Error ? error.message : t('settings.general.errors.update');
     if (savedParts.length > 0) {
       setGeneralSettingsFeedback(
         'error',
-        `Some settings were saved (${savedParts.join(', ')}), but the update did not finish: ${message}`
+        t('settings.general.errors.partialUpdate', { parts: savedParts.join(', '), message })
       );
     } else {
       setGeneralSettingsFeedback('error', message);
@@ -2494,7 +2550,7 @@ async function runManualScan() {
     await loadAdminStats().catch(() => {});
     await Promise.all([foldersStore.fetchFolders(true), feedStore.loadInitial(true)]);
   } catch (error) {
-    scanError.value = error instanceof Error ? error.message : 'Unable to start a library scan.';
+    scanError.value = error instanceof Error ? error.message : t('settings.library.errors.startScan');
   } finally {
     requestingScan.value = false;
   }
@@ -2528,7 +2584,7 @@ async function runLibraryRebuild() {
       momentsStore.fetchMoments(true)
     ]);
   } catch (error) {
-    rebuildError.value = error instanceof Error ? error.message : 'Unable to rebuild the current library index.';
+    rebuildError.value = error instanceof Error ? error.message : t('settings.library.errors.rebuild');
     await appStore.fetchStats({ background: true });
     await loadAdminStats().catch(() => {});
   } finally {
@@ -2558,7 +2614,7 @@ async function runThumbnailRebuild() {
       momentsStore.fetchMoments(true)
     ]);
   } catch (error) {
-    thumbnailRebuildError.value = error instanceof Error ? error.message : 'Unable to regenerate thumbnails.';
+    thumbnailRebuildError.value = error instanceof Error ? error.message : t('settings.library.errors.regenerate');
     await appStore.fetchStats({ background: true });
     await loadAdminStats().catch(() => {});
   } finally {

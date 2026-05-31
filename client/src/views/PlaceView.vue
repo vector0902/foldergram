@@ -3,7 +3,7 @@
     <ErrorState
       v-if="placesStore.placeError"
       class="mx-auto w-[min(100%,56rem)]"
-      title="Could not load place"
+      :title="t('placePage.errors.load')"
       :message="placesStore.placeError"
     />
     <template v-else-if="placesStore.currentPlace">
@@ -24,7 +24,7 @@
                   {{ placesStore.currentPlace.name }}
                 </h1>
                 <span class="inline-flex items-center rounded-lg border border-border bg-surface-hover px-3 py-[0.45rem] text-[0.76rem] font-semibold text-muted">
-                  Offline place
+                  {{ t('placePage.badge') }}
                 </span>
               </div>
 
@@ -33,13 +33,13 @@
               </p>
 
               <div class="flex flex-wrap items-center gap-x-[1.6rem] gap-y-[0.75rem] text-[0.95rem] leading-none max-sm:justify-center">
-                <span><strong class="mr-[0.35rem] font-semibold text-text">{{ formattedPostCount }}</strong>{{ postCountLabel }}</span>
-                <span v-if="coordinateLine"><strong class="mr-[0.35rem] font-semibold text-text">{{ coordinateLine }}</strong>coordinates</span>
-                <span><strong class="mr-[0.35rem] font-semibold text-text">{{ placeKindLabel }}</strong>{{ placeKindDetailLabel }}</span>
+                <span><strong class="mr-[0.35rem] font-semibold text-text">{{ formattedPostCount }}</strong>{{ ` ${postCountLabel}` }}</span>
+                <span v-if="coordinateLine"><strong class="mr-[0.35rem] font-semibold text-text">{{ coordinateLine }}</strong>{{ ` ${t('placePage.coordinatesLabel')}` }}</span>
+                <span><strong class="mr-[0.35rem] font-semibold text-text">{{ placeKindLabel }}</strong>{{ ` ${placeKindDetailLabel}` }}</span>
               </div>
 
               <div class="grid max-w-[34rem] gap-[0.28rem] max-sm:max-w-none">
-                <span class="text-[0.74rem] font-bold text-muted uppercase">Source</span>
+                <span class="text-[0.74rem] font-bold text-muted uppercase">{{ t('placePage.sourceLabel') }}</span>
                 <p class="m-0 text-[0.95rem] leading-[1.45] text-text">
                   {{ heroNote }}
                 </p>
@@ -47,7 +47,7 @@
 
               <div v-if="placesStore.currentPlace.isApproximate" class="flex max-sm:justify-center">
                 <span class="inline-flex items-center rounded-lg border border-accent bg-accent-soft px-3 py-[0.45rem] text-[0.8rem] font-semibold text-accent-strong">
-                  Approximate city match
+                  {{ t('placePage.approximateBadge') }}
                 </span>
               </div>
             </div>
@@ -57,8 +57,8 @@
         <EmptyState
           v-if="!placesStore.loadingPlace && placesStore.currentImages.length === 0"
           class="mx-auto w-[min(100%,56rem)]"
-          title="No posts for this place"
-          description="Place assignments can be rebuilt from Settings after offline place data is prepared."
+          :title="t('placePage.emptyTitle')"
+          :description="t('placePage.emptyDescription')"
         />
         <template v-else>
           <FolderGrid :items="placesStore.currentImages" variant="square" />
@@ -77,6 +77,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, watch } from "vue"
+  import { useI18n } from "vue-i18n"
 
   import EmptyState from "../components/EmptyState.vue"
   import ErrorState from "../components/ErrorState.vue"
@@ -89,6 +90,7 @@
   }>()
 
   const placesStore = usePlacesStore()
+  const { t, locale } = useI18n()
 
   const metadataLine = computed(() => {
     const place = placesStore.currentPlace
@@ -98,7 +100,7 @@
 
     return [place.cityName, place.admin1Name, place.countryName ?? place.countryCode]
       .filter((part, index, parts) => part && parts.indexOf(part) === index)
-      .join(", ") || "Offline city-level place"
+      .join(", ") || t("placePage.metadataFallback")
   })
 
   const heroNote = computed(() => {
@@ -112,8 +114,8 @@
     }
 
     return place.isApproximate
-      ? "Grouped from stored photo GPS coordinates and matched to the nearest city for offline browsing."
-      : "Resolved from stored photo GPS coordinates and kept available offline."
+      ? t("placePage.heroApproximate")
+      : t("placePage.heroExact")
   })
 
   const coordinateLine = computed(() => {
@@ -126,32 +128,32 @@
   })
 
   const formattedPostCount = computed(() =>
-    new Intl.NumberFormat().format(placesStore.currentPlace?.postCount ?? 0),
+    new Intl.NumberFormat(locale.value).format(placesStore.currentPlace?.postCount ?? 0),
   )
 
   const postCountLabel = computed(() =>
-    placesStore.currentPlace?.postCount === 1 ? "post" : "posts",
+    placesStore.currentPlace?.postCount === 1 ? t("placePage.postCountOne") : t("placePage.postCountOther"),
   )
 
   const placeKindLabel = computed(() => {
     const place = placesStore.currentPlace
     if (!place) {
-      return "Offline"
+      return t("placePage.kind.offline")
     }
 
     if (place.kind === "manual") {
-      return "Manual"
+      return t("placePage.kind.manual")
     }
 
     if (place.kind === "approximate_spot" || place.isApproximate) {
-      return "Nearest city"
+      return t("placePage.kind.nearestCity")
     }
 
-    return "City"
+    return t("placePage.kind.city")
   })
 
   const placeKindDetailLabel = computed(() =>
-    placesStore.currentPlace?.kind === "manual" ? "place" : "match",
+    placesStore.currentPlace?.kind === "manual" ? t("placePage.kind.place") : t("placePage.kind.match"),
   )
 
   async function loadPlace() {

@@ -20,7 +20,8 @@
       <button
         class="reel-action-rail__button"
         type="button"
-        :aria-label="infoOpen ? 'Hide reel details' : 'Show reel details'"
+        :aria-label="infoOpen ? t('reels.rail.hideDetails') : t('reels.rail.showDetails')"
+        :title="infoOpen ? t('reels.rail.hideDetails') : t('reels.rail.showDetails')"
         :aria-pressed="infoOpen"
         @click="$emit('toggle-info')"
       >
@@ -40,8 +41,8 @@
       class="reel-action-rail__button"
       :href="downloadOriginalMediaUrl"
       download
-      aria-label="Download original file"
-      title="Download original file"
+      :aria-label="t('reels.rail.downloadOriginal')"
+      :title="t('reels.rail.downloadOriginal')"
     >
       <span class="reel-action-rail__icon i-fluent-arrow-download-20-regular" aria-hidden="true" />
     </a>
@@ -49,7 +50,8 @@
     <RouterLink
       class="reel-action-rail__button"
       :to="{ name: 'folder', params: { slug: item.folderSlug } }"
-      aria-label="Open folder"
+      :aria-label="t('reels.rail.openFolder')"
+      :title="t('reels.rail.openFolder')"
     >
       <span class="reel-action-rail__icon i-fluent-folder-16-regular" aria-hidden="true" />
     </RouterLink>
@@ -58,6 +60,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
 import { useAuthStore } from '../stores/auth';
@@ -76,6 +79,7 @@ defineEmits<{
 
 const authStore = useAuthStore();
 const likesStore = useLikesStore();
+const { t } = useI18n();
 const isLiked = computed(() => likesStore.isLiked(props.item.id));
 const downloadOriginalMediaUrl = computed(() => getOriginalMediaDownloadUrl(props.item.id));
 
