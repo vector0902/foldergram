@@ -41,6 +41,7 @@ function createStoriesPayload(): FolderStoriesPayload {
         title: 'Beach Club',
         subtitle: 'Beach Club story set',
         dateContext: 'Latest Mar 28, 2026',
+        latestActivityTimestamp: new Date('2026-03-28T12:00:00.000Z').getTime(),
         imageCount: 1,
         presentation: 'avatar',
         coverImage

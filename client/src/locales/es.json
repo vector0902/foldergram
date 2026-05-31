@@ -14,7 +14,13 @@
     "saved": "Guardado",
     "saving": "Guardando...",
     "youAreCaughtUp": "Ya viste todo",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "railViewer": {
+      "itemCountOne": "{count} elemento",
+      "itemCountOther": "{count} elementos",
+      "latestDate": "Último {date}",
+      "noRecentActivity": "Sin actividad reciente"
+    }
   },
   "app": {
     "authLoading": {

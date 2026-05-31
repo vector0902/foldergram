@@ -237,6 +237,10 @@ The current date-driven capsules are:
 - This Week
 - Last Year Around Now
 
+These date-driven capsule payloads also include structured calendar parts so
+the client can localize their labels from the server-selected dates instead of
+rebuilding the windows in the browser.
+
 ### Highlights
 
 When date coverage is too sparse, Foldergram falls back to curated sets:

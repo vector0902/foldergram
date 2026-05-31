@@ -63,10 +63,34 @@ interface FeedCapsuleDefinition {
   title: string;
   subtitle: string;
   dateContext: string;
+  momentDate?: MomentDateMetadata;
   minimumImageCount: number;
   count: () => number;
   list: (page: number, limit: number) => FeedImage[];
 }
+
+interface CalendarDateParts {
+  year: number;
+  month: number;
+  day: number;
+}
+
+type MomentDateMetadata =
+  | {
+      type: 'on-this-day';
+      date: CalendarDateParts;
+    }
+  | {
+      type: 'this-week-previous-years';
+      startDate: CalendarDateParts;
+      endDate: CalendarDateParts;
+    }
+  | {
+      type: 'from-last-year';
+      referenceDate: CalendarDateParts;
+      startDate: CalendarDateParts;
+      endDate: CalendarDateParts;
+    };
 
 interface FeedRailDefinition {
   kind: FeedRailKind;
@@ -698,6 +722,14 @@ function createDailySeed(now = new Date()): number {
   return Number(`${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`);
 }
 
+function toCalendarDateParts(date: Date): CalendarDateParts {
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate()
+  };
+}
+
 function getHighlightFeedOverlapImageIds(): Set<number> {
   const recentFeedItems = imageRepository.listRecentCandidates(0, HIGHLIGHT_FEED_OVERLAP_WINDOW);
 
@@ -753,6 +785,10 @@ function buildMomentRailDefinition(now = new Date()): FeedRailDefinition {
         title: 'On This Day',
         subtitle: `${formatMonthDay(now)} across previous years`,
         dateContext: formatMonthDay(now),
+        momentDate: {
+          type: 'on-this-day',
+          date: toCalendarDateParts(now)
+        },
         minimumImageCount: 1,
         count: () => imageRepository.countByMonthDayKeys(onThisDayKeys, currentYear),
         list: (page, limit) => imageRepository.listByMonthDayKeys(onThisDayKeys, currentYear, page, limit)
@@ -762,6 +798,11 @@ function buildMomentRailDefinition(now = new Date()): FeedRailDefinition {
         title: 'This Week',
         subtitle: `${formatShortRange(thisWeekStart, thisWeekEnd)} from previous years`,
         dateContext: formatShortRange(thisWeekStart, thisWeekEnd),
+        momentDate: {
+          type: 'this-week-previous-years',
+          startDate: toCalendarDateParts(thisWeekStart),
+          endDate: toCalendarDateParts(thisWeekEnd)
+        },
         minimumImageCount: 2,
         count: () => imageRepository.countByMonthDayKeys(weekKeys, currentYear),
         list: (page, limit) => imageRepository.listByMonthDayKeys(weekKeys, currentYear, page, limit)
@@ -771,6 +812,12 @@ function buildMomentRailDefinition(now = new Date()): FeedRailDefinition {
         title: 'Last Year Around Now',
         subtitle: `A revisit to ${formatMonthYear(lastYearReference)}`,
         dateContext: formatShortRange(lastYearStart, lastYearEnd),
+        momentDate: {
+          type: 'from-last-year',
+          referenceDate: toCalendarDateParts(lastYearReference),
+          startDate: toCalendarDateParts(lastYearStart),
+          endDate: toCalendarDateParts(lastYearEnd)
+        },
         minimumImageCount: 1,
         count: () => imageRepository.countByEffectiveTimeRange(lastYearStart.getTime(), lastYearEnd.getTime()),
         list: (page, limit) => imageRepository.listByEffectiveTimeRange(lastYearStart.getTime(), lastYearEnd.getTime(), page, limit)
@@ -876,6 +923,7 @@ function materializeRailDefinition(definition: FeedRailDefinition) {
           title: capsule.title,
           subtitle: capsule.subtitle,
           dateContext: capsule.dateContext,
+          momentDate: capsule.momentDate,
           imageCount,
           coverImage: mapFeedImage(coverImage, derivativeVersion)
         };

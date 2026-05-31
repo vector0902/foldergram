@@ -140,9 +140,35 @@ export interface RailCapsule {
   imageCount: number;
   coverImage: FeedItem;
   presentation?: StoryCapsulePresentation;
+  latestActivityTimestamp?: number | null;
 }
 
-export type MomentCapsule = RailCapsule;
+export interface CalendarDateParts {
+  year: number;
+  month: number;
+  day: number;
+}
+
+export type MomentDateMetadata =
+  | {
+      type: 'on-this-day';
+      date: CalendarDateParts;
+    }
+  | {
+      type: 'this-week-previous-years';
+      startDate: CalendarDateParts;
+      endDate: CalendarDateParts;
+    }
+  | {
+      type: 'from-last-year';
+      referenceDate: CalendarDateParts;
+      startDate: CalendarDateParts;
+      endDate: CalendarDateParts;
+    };
+
+export interface MomentCapsule extends RailCapsule {
+  momentDate?: MomentDateMetadata;
+}
 
 export interface MomentsPayload {
   railKind: FeedRailKind;
@@ -157,7 +183,7 @@ export interface MomentFeedPayload extends PaginatedFeed {
   railTitle: string;
   railDescription: string;
   railSingularLabel: string;
-  moment: RailCapsule;
+  moment: MomentCapsule;
 }
 
 export interface FolderStoriesPayload {

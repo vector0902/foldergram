@@ -2,11 +2,8 @@ import { defineStore } from 'pinia';
 
 import { fetchMomentFeed, fetchMoments } from '../api/gallery';
 import { i18n } from '../locales';
-import type { FeedItem, FeedRailKind, MomentCapsule } from '../types/api';
+import type { CalendarDateParts, FeedItem, FeedRailKind, MomentCapsule } from '../types/api';
 import { updateCaptionInItems } from '../utils/caption';
-
-const THIS_WEEK_RADIUS_DAYS = 7;
-const LAST_YEAR_RADIUS_DAYS = 45;
 
 interface MomentsState {
   railKind: FeedRailKind;
@@ -56,21 +53,63 @@ function getCurrentLocale() {
   return i18n.global.locale.value;
 }
 
-function formatLocalizedMonthDay(date: Date) {
+function createDateFromParts(date: CalendarDateParts): Date | null {
+  if (
+    !Number.isInteger(date.year)
+    || !Number.isInteger(date.month)
+    || !Number.isInteger(date.day)
+    || date.month < 1
+    || date.month > 12
+    || date.day < 1
+    || date.day > 31
+  ) {
+    return null;
+  }
+
+  const parsedDate = new Date(date.year, date.month - 1, date.day);
+  if (
+    Number.isNaN(parsedDate.getTime())
+    || parsedDate.getFullYear() !== date.year
+    || parsedDate.getMonth() !== date.month - 1
+    || parsedDate.getDate() !== date.day
+  ) {
+    return null;
+  }
+
+  return parsedDate;
+}
+
+function formatLocalizedMonthDay(date: CalendarDateParts): string | null {
+  const localizedDate = createDateFromParts(date);
+  if (!localizedDate) {
+    return null;
+  }
+
   return new Intl.DateTimeFormat(getCurrentLocale(), {
     month: 'long',
     day: 'numeric'
-  }).format(date);
+  }).format(localizedDate);
 }
 
-function formatLocalizedMonthYear(date: Date) {
+function formatLocalizedMonthYear(date: CalendarDateParts): string | null {
+  const localizedDate = createDateFromParts(date);
+  if (!localizedDate) {
+    return null;
+  }
+
   return new Intl.DateTimeFormat(getCurrentLocale(), {
     month: 'long',
     year: 'numeric'
-  }).format(date);
+  }).format(localizedDate);
 }
 
-function formatLocalizedDateRange(startDate: Date, endDate: Date) {
+function formatLocalizedDateRange(startDate: CalendarDateParts, endDate: CalendarDateParts): string | null {
+  const localizedStartDate = createDateFromParts(startDate);
+  const localizedEndDate = createDateFromParts(endDate);
+  if (!localizedStartDate || !localizedEndDate) {
+    return null;
+  }
+
   const formatter = new Intl.DateTimeFormat(getCurrentLocale(), {
     month: 'short',
     day: 'numeric',
@@ -78,10 +117,10 @@ function formatLocalizedDateRange(startDate: Date, endDate: Date) {
   });
 
   if (typeof formatter.formatRange === 'function') {
-    return formatter.formatRange(startDate, endDate);
+    return formatter.formatRange(localizedStartDate, localizedEndDate);
   }
 
-  return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
+  return `${formatter.format(localizedStartDate)} - ${formatter.format(localizedEndDate)}`;
 }
 
 function localizeCapsule(capsule: MomentCapsule, railKind: FeedRailKind): MomentCapsule {
@@ -89,7 +128,14 @@ function localizeCapsule(capsule: MomentCapsule, railKind: FeedRailKind): Moment
 
   switch (capsule.id) {
     case 'on-this-day': {
-      const date = formatLocalizedMonthDay(new Date());
+      if (capsule.momentDate?.type !== 'on-this-day') {
+        return capsule;
+      }
+
+      const date = formatLocalizedMonthDay(capsule.momentDate.date);
+      if (!date) {
+        return capsule;
+      }
 
       return {
         ...capsule,
@@ -99,10 +145,15 @@ function localizeCapsule(capsule: MomentCapsule, railKind: FeedRailKind): Moment
       };
     }
     case 'this-week-previous-years': {
-      const now = new Date();
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - THIS_WEEK_RADIUS_DAYS);
-      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + THIS_WEEK_RADIUS_DAYS);
+      if (capsule.momentDate?.type !== 'this-week-previous-years') {
+        return capsule;
+      }
+
+      const { startDate, endDate } = capsule.momentDate;
       const range = formatLocalizedDateRange(startDate, endDate);
+      if (!range) {
+        return capsule;
+      }
 
       return {
         ...capsule,
@@ -112,24 +163,24 @@ function localizeCapsule(capsule: MomentCapsule, railKind: FeedRailKind): Moment
       };
     }
     case 'from-last-year': {
-      const referenceDate = new Date();
-      referenceDate.setFullYear(referenceDate.getFullYear() - 1);
+      if (capsule.momentDate?.type !== 'from-last-year') {
+        return capsule;
+      }
 
-      const startDate = new Date(referenceDate);
-      startDate.setDate(startDate.getDate() - LAST_YEAR_RADIUS_DAYS);
-      startDate.setHours(0, 0, 0, 0);
-
-      const endDate = new Date(referenceDate);
-      endDate.setDate(endDate.getDate() + LAST_YEAR_RADIUS_DAYS);
-      endDate.setHours(23, 59, 59, 999);
+      const { referenceDate, startDate, endDate } = capsule.momentDate;
+      const monthYear = formatLocalizedMonthYear(referenceDate);
+      const range = formatLocalizedDateRange(startDate, endDate);
+      if (!monthYear || !range) {
+        return capsule;
+      }
 
       return {
         ...capsule,
         title: i18n.global.t('moments.capsules.fromLastYear.title'),
         subtitle: i18n.global.t('moments.capsules.fromLastYear.subtitle', {
-          monthYear: formatLocalizedMonthYear(referenceDate)
+          monthYear
         }),
-        dateContext: formatLocalizedDateRange(startDate, endDate)
+        dateContext: range
       };
     }
     case 'highlight-recent-batches': {

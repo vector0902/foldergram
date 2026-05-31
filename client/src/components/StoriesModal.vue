@@ -39,7 +39,7 @@
             <div class="story-side-card__shade" />
             <div class="story-side-card__meta">
               <strong class="block truncate text-[0.92rem]">{{ previousCapsule.title }}</strong>
-              <span class="block truncate text-[0.78rem] text-white/68">{{ previousCapsule.imageCount }} items</span>
+              <span class="block truncate text-[0.78rem] text-white/68">{{ formatRailItemCount(previousCapsule.imageCount) }}</span>
             </div>
           </article>
         </button>
@@ -245,7 +245,7 @@
             <div class="story-side-card__shade" />
             <div class="story-side-card__meta">
               <strong class="block truncate text-[0.9rem]">{{ capsule.title }}</strong>
-              <span class="block truncate text-[0.76rem] text-white/68">{{ capsule.imageCount }} items</span>
+              <span class="block truncate text-[0.76rem] text-white/68">{{ formatRailItemCount(capsule.imageCount) }}</span>
             </div>
           </article>
         </button>
@@ -258,6 +258,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { useHorizontalSwipe } from '../composables/useHorizontalSwipe';
+import { i18n } from '../locales';
 import type { FeedItem, RailCapsule, RailViewerStoreContract } from '../types/api';
 import { useAppStore } from '../stores/app';
 import { getOriginalMediaDownloadUrl } from '../utils/original-media';
@@ -278,6 +279,34 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: [];
 }>();
+
+function getCurrentLocale() {
+  return i18n.global.locale.value;
+}
+
+function formatRailItemCount(count: number) {
+  return count === 1
+    ? i18n.global.t('common.railViewer.itemCountOne', { count })
+    : i18n.global.t('common.railViewer.itemCountOther', { count });
+}
+
+function formatCapsuleDateContext(capsule: RailCapsule) {
+  if (capsule.latestActivityTimestamp === null) {
+    return i18n.global.t('common.railViewer.noRecentActivity');
+  }
+
+  if (typeof capsule.latestActivityTimestamp === 'number' && Number.isFinite(capsule.latestActivityTimestamp) && capsule.latestActivityTimestamp > 0) {
+    const date = new Intl.DateTimeFormat(getCurrentLocale(), {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(new Date(capsule.latestActivityTimestamp));
+
+    return i18n.global.t('common.railViewer.latestDate', { date });
+  }
+
+  return capsule.dateContext;
+}
 
 const appStore = useAppStore();
 const activeCapsuleId = ref(props.initialId);
@@ -334,7 +363,7 @@ const activeCapsuleMeta = computed(() => {
     return '';
   }
 
-  return `${activeCapsule.value.imageCount} items · ${activeCapsule.value.dateContext}`;
+  return `${formatRailItemCount(activeCapsule.value.imageCount)} · ${formatCapsuleDateContext(activeCapsule.value)}`;
 });
 const currentError = computed(() => props.store.currentError ?? null);
 const footerMeta = computed(() => {
@@ -342,11 +371,11 @@ const footerMeta = computed(() => {
     return '';
   }
 
-  return new Date(displayImage.value.takenAt ?? displayImage.value.sortTimestamp).toLocaleDateString(undefined, {
+  return new Intl.DateTimeFormat(getCurrentLocale(), {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
-  });
+  }).format(new Date(displayImage.value.takenAt ?? displayImage.value.sortTimestamp));
 });
 const canGoPreviousImage = computed(() => !transitionPending.value && activeImages.value.length > 0 && activeImageIndex.value > 0);
 const canGoNextImage = computed(

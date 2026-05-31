@@ -142,10 +142,13 @@ describe.sequential('stories feature', () => {
     expect(stories?.highlights).toHaveLength(1);
     expect(stories?.items[0]?.presentation).toBe('avatar');
     expect(stories?.highlights[0]?.presentation).toBe('highlight');
+    expect(stories?.items.every((capsule) => typeof capsule.latestActivityTimestamp === 'number')).toBe(true);
+    expect(typeof stories?.highlights[0]?.latestActivityTimestamp).toBe('number');
 
     const avatarFeed = galleryService.getFolderStoryFeed(folder.slug, stories!.avatarStoryId!, 1, 20);
     expect(avatarFeed).not.toBeNull();
     expect(avatarFeed?.story.presentation).toBe('avatar');
+    expect(typeof avatarFeed?.story.latestActivityTimestamp).toBe('number');
     expect(avatarFeed?.items.map((item) => item.mediaType)).toEqual(['video', 'image']);
     expect(avatarFeed?.items.every((item) => item.folderSlug === folder.slug)).toBe(true);
     expect(avatarFeed?.items.every((item) => item.folderPath === folder.folderPath)).toBe(true);
@@ -153,6 +156,7 @@ describe.sequential('stories feature', () => {
     const highlightFeed = galleryService.getFolderStoryFeed(folder.slug, stories!.highlights[0]!.id, 1, 20);
     expect(highlightFeed).not.toBeNull();
     expect(highlightFeed?.story.presentation).toBe('highlight');
+    expect(typeof highlightFeed?.story.latestActivityTimestamp).toBe('number');
     expect(highlightFeed?.total).toBe(2);
     expect(highlightFeed?.items.every((item) => item.folderSlug === folder.slug)).toBe(true);
 

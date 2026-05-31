@@ -26,14 +26,21 @@ function createFeedItem(id: number): FeedItem {
   };
 }
 
-function createCapsule(id: string, title: string, subtitle: string, dateContext: string): MomentCapsule {
+function createCapsule(
+  id: string,
+  title: string,
+  subtitle: string,
+  dateContext: string,
+  momentDate?: MomentCapsule['momentDate']
+): MomentCapsule {
   return {
     id,
     title,
     subtitle,
     dateContext,
     imageCount: 2,
-    coverImage: createFeedItem(1)
+    coverImage: createFeedItem(1),
+    ...(momentDate ? { momentDate } : {})
   };
 }
 
@@ -91,42 +98,91 @@ describe('useMomentsStore localization', () => {
   });
 
   it('localizes date-based moment capsules without leaving English subtitle or date copy behind', () => {
+    vi.setSystemTime(new Date('2026-05-31T12:00:00.000Z'));
+
     const store = useMomentsStore();
 
     store.$patch({
       railKind: 'moments',
       items: [
-        createCapsule('on-this-day', 'On This Day', 'May 29 across previous years', 'May 29'),
-        createCapsule('this-week-previous-years', 'This Week', 'May 22-36, 2026 from previous years', 'May 22-36, 2026'),
-        createCapsule('from-last-year', 'Last Year Around Now', 'A revisit to May 2025', 'Apr 14, 2025 to Jul 13, 2025')
+        createCapsule('on-this-day', 'On This Day', 'May 29 across previous years', 'May 29', {
+          type: 'on-this-day',
+          date: {
+            year: 2026,
+            month: 5,
+            day: 29
+          }
+        }),
+        createCapsule('this-week-previous-years', 'This Week', 'May 22-Jun 5, 2026 from previous years', 'May 22-Jun 5, 2026', {
+          type: 'this-week-previous-years',
+          startDate: {
+            year: 2026,
+            month: 5,
+            day: 22
+          },
+          endDate: {
+            year: 2026,
+            month: 6,
+            day: 5
+          }
+        }),
+        createCapsule('from-last-year', 'Last Year Around Now', 'A revisit to May 2025', 'Apr 14, 2025 to Jul 13, 2025', {
+          type: 'from-last-year',
+          referenceDate: {
+            year: 2025,
+            month: 5,
+            day: 29
+          },
+          startDate: {
+            year: 2025,
+            month: 4,
+            day: 14
+          },
+          endDate: {
+            year: 2025,
+            month: 7,
+            day: 13
+          }
+        })
       ],
-      currentMoment: createCapsule('from-last-year', 'Last Year Around Now', 'A revisit to May 2025', 'Apr 14, 2025 to Jul 13, 2025')
+      currentMoment: createCapsule(
+        'from-last-year',
+        'Last Year Around Now',
+        'A revisit to May 2025',
+        'Apr 14, 2025 to Jul 13, 2025',
+        {
+          type: 'from-last-year',
+          referenceDate: {
+            year: 2025,
+            month: 5,
+            day: 29
+          },
+          startDate: {
+            year: 2025,
+            month: 4,
+            day: 14
+          },
+          endDate: {
+            year: 2025,
+            month: 7,
+            day: 13
+          }
+        }
+      )
     });
 
     i18n.global.locale.value = 'zh';
 
-    const now = new Date('2026-05-29T12:00:00.000Z');
-    const referenceDate = new Date(now);
-    referenceDate.setFullYear(referenceDate.getFullYear() - 1);
-    const thisWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    const thisWeekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
-    const lastYearStart = new Date(referenceDate);
-    lastYearStart.setDate(lastYearStart.getDate() - 45);
-    lastYearStart.setHours(0, 0, 0, 0);
-    const lastYearEnd = new Date(referenceDate);
-    lastYearEnd.setDate(lastYearEnd.getDate() + 45);
-    lastYearEnd.setHours(23, 59, 59, 999);
-
     const expectedMonthDay = new Intl.DateTimeFormat('zh', {
       month: 'long',
       day: 'numeric'
-    }).format(now);
-    const expectedThisWeekRange = formatRange('zh', thisWeekStart, thisWeekEnd);
+    }).format(new Date(2026, 4, 29));
+    const expectedThisWeekRange = formatRange('zh', new Date(2026, 4, 22), new Date(2026, 5, 5));
     const expectedLastYearMonth = new Intl.DateTimeFormat('zh', {
       month: 'long',
       year: 'numeric'
-    }).format(referenceDate);
-    const expectedLastYearRange = formatRange('zh', lastYearStart, lastYearEnd);
+    }).format(new Date(2025, 4, 29));
+    const expectedLastYearRange = formatRange('zh', new Date(2025, 3, 14), new Date(2025, 6, 13));
 
     expect(store.localizedItems[0]).toMatchObject({
       title: '历史上的今天',
@@ -142,6 +198,82 @@ describe('useMomentsStore localization', () => {
       title: '去年此时',
       subtitle: `重温 ${expectedLastYearMonth}`,
       dateContext: expectedLastYearRange
+    });
+  });
+
+  it('preserves the server-selected capsule copy when momentDate is missing instead of recomputing from the client clock', () => {
+    vi.setSystemTime(new Date('2026-05-31T12:00:00.000Z'));
+
+    const store = useMomentsStore();
+
+    store.$patch({
+      railKind: 'moments',
+      items: [createCapsule('on-this-day', 'On This Day', 'May 29 across previous years', 'May 29')],
+      currentMoment: createCapsule('from-last-year', 'Last Year Around Now', 'A revisit to May 2025', 'Apr 14, 2025 to Jul 13, 2025')
+    });
+
+    i18n.global.locale.value = 'zh';
+
+    expect(store.localizedItems[0]).toMatchObject({
+      title: 'On This Day',
+      subtitle: 'May 29 across previous years',
+      dateContext: 'May 29'
+    });
+    expect(store.currentCapsule).toMatchObject({
+      title: 'Last Year Around Now',
+      subtitle: 'A revisit to May 2025',
+      dateContext: 'Apr 14, 2025 to Jul 13, 2025'
+    });
+  });
+
+  it('ignores malformed momentDate payloads without throwing during localization', () => {
+    const store = useMomentsStore();
+
+    store.$patch({
+      railKind: 'moments',
+      items: [
+        createCapsule('from-last-year', 'Last Year Around Now', 'A revisit to May 2025', 'Apr 14, 2025 to Jul 13, 2025', {
+          type: 'from-last-year',
+          referenceDate: {
+            year: 2025,
+            month: 13,
+            day: 29
+          },
+          startDate: {
+            year: 2025,
+            month: 4,
+            day: 14
+          },
+          endDate: {
+            year: 2025,
+            month: 7,
+            day: 13
+          }
+        })
+      ],
+      currentMoment: createCapsule('on-this-day', 'On This Day', 'May 29 across previous years', 'May 29', {
+        type: 'on-this-day',
+        date: {
+          year: 2026,
+          month: 2,
+          day: 31
+        }
+      })
+    });
+
+    i18n.global.locale.value = 'zh';
+
+    expect(() => store.localizedItems[0]).not.toThrow();
+    expect(() => store.currentCapsule).not.toThrow();
+    expect(store.localizedItems[0]).toMatchObject({
+      title: 'Last Year Around Now',
+      subtitle: 'A revisit to May 2025',
+      dateContext: 'Apr 14, 2025 to Jul 13, 2025'
+    });
+    expect(store.currentCapsule).toMatchObject({
+      title: 'On This Day',
+      subtitle: 'May 29 across previous years',
+      dateContext: 'May 29'
     });
   });
 });
