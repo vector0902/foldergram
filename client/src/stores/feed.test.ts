@@ -25,6 +25,17 @@ function createFeedItem(id: number): FeedItem {
   };
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+
+  return { promise, resolve, reject };
+}
+
 describe('feed store', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -76,6 +87,75 @@ describe('feed store', () => {
     await feedStore.loadInitial();
 
     expect(fetchFeedSpy).toHaveBeenCalledWith(1, 18, 'recent', undefined);
+    expect(feedStore.loadedMode).toBe('recent');
+    expect(feedStore.items.map((item) => item.id)).toEqual([21]);
+  });
+
+  it('reloads with the updated mode when the mode changes during an in-flight request', async () => {
+    const randomRequest = createDeferred<{
+      mode: 'random';
+      items: FeedItem[];
+      page: number;
+      limit: number;
+      total: number;
+      hasMore: boolean;
+    }>();
+    const recentRequest = createDeferred<{
+      mode: 'recent';
+      items: FeedItem[];
+      page: number;
+      limit: number;
+      total: number;
+      hasMore: boolean;
+    }>();
+    const fetchFeedSpy = vi.spyOn(galleryApi, 'fetchFeed').mockImplementation((_page, _limit, mode) => {
+      if (mode === 'random') {
+        return randomRequest.promise;
+      }
+
+      if (mode === 'recent') {
+        return recentRequest.promise;
+      }
+
+      throw new Error(`Unexpected mode ${mode}`);
+    });
+
+    const feedStore = useFeedStore();
+    const initialLoadPromise = feedStore.loadInitial();
+
+    feedStore.initializeMode('recent');
+    const pendingRecentLoadPromise = feedStore.loadInitial();
+
+    expect(fetchFeedSpy).toHaveBeenCalledTimes(1);
+    expect(fetchFeedSpy).toHaveBeenNthCalledWith(1, 1, 18, 'random', expect.any(Number));
+
+    randomRequest.resolve({
+      mode: 'random',
+      items: [createFeedItem(5)],
+      page: 1,
+      limit: 18,
+      total: 1,
+      hasMore: false
+    });
+
+    await vi.waitFor(() => {
+      expect(fetchFeedSpy).toHaveBeenCalledTimes(2);
+    });
+
+    expect(fetchFeedSpy).toHaveBeenNthCalledWith(2, 1, 18, 'recent', undefined);
+
+    recentRequest.resolve({
+      mode: 'recent',
+      items: [createFeedItem(21)],
+      page: 1,
+      limit: 18,
+      total: 1,
+      hasMore: false
+    });
+
+    await Promise.all([initialLoadPromise, pendingRecentLoadPromise]);
+
+    expect(feedStore.mode).toBe('recent');
     expect(feedStore.loadedMode).toBe('recent');
     expect(feedStore.items.map((item) => item.id)).toEqual([21]);
   });
