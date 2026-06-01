@@ -99,6 +99,15 @@ export function getPathBreadcrumb(relativePath: string): string | null {
   return segments.slice(0, -1).join(' / ');
 }
 
+export function getParentRelativePath(relativePath: string): string | null {
+  const segments = splitPathSegments(relativePath);
+  if (segments.length <= 1) {
+    return null;
+  }
+
+  return segments.slice(0, -1).join('/');
+}
+
 export function getFolderDisplayInfo(relativePath: string): { name: string; breadcrumb: string | null } {
   return {
     name: getLeafPathName(relativePath),

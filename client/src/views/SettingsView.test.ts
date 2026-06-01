@@ -60,6 +60,7 @@ function createAppStatus(
       defaultHomeFeedMode,
       defaultReelsFeedMode,
       defaultFolderImageOrder,
+      nestedFolderTitleFormat: 'folder',
       treatStoriesAsFolders: false
     },
     storiesMigration: {
@@ -478,6 +479,48 @@ describe('SettingsView', () => {
     expect(updateExcludedFoldersSpy).not.toHaveBeenCalled();
     expect(appStore.stats?.preferences.defaultFolderImageOrder).toBe('oldest');
     expect(wrapper.text()).toContain('App folders now open with Oldest First.');
+  });
+
+  it('saves the nested folder title format from the general settings card', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus()
+    });
+
+    vi.spyOn(appStore, 'fetchStats').mockResolvedValue();
+    const updateNestedFolderTitleFormatSpy = vi
+      .spyOn(galleryApi, 'updateNestedFolderTitleFormat')
+      .mockResolvedValue({
+        titleFormat: 'parent-plus-folder'
+      });
+
+    const wrapper = mountSettingsView();
+
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    const [, , , nestedTitleButton] = wrapper.findAll('button[aria-expanded]');
+    expect(nestedTitleButton).toBeDefined();
+
+    await nestedTitleButton!.trigger('click');
+    await flushPromises();
+    const parentPlusFolderOption = wrapper.findAll('button').find((button) => button.text().includes('Parent + folder name'));
+    expect(parentPlusFolderOption).toBeDefined();
+    await parentPlusFolderOption!.trigger('click');
+    await flushPromises();
+
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save changes');
+
+    expect(saveButton).toBeDefined();
+
+    await saveButton!.trigger('click');
+    await flushPromises();
+
+    expect(updateNestedFolderTitleFormatSpy).toHaveBeenCalledWith('parent-plus-folder');
+    expect(appStore.stats?.preferences.nestedFolderTitleFormat).toBe('parent-plus-folder');
+    expect(wrapper.text()).toContain('Nested app folders now use Parent + folder name.');
   });
 
   it('saves custom excluded folder rules from the settings textarea', async () => {

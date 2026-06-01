@@ -158,7 +158,7 @@
       },
       "card": {
         "title": "常规设置",
-        "description": "适用于语言、stories 文件夹、排除文件夹、首页、短片和应用文件夹的全局默认项。"
+        "description": "适用于语言、嵌套文件夹标题、stories 文件夹、排除文件夹、首页、短片和应用文件夹的全局默认项。"
       },
       "language": {
         "label": "应用语言",
@@ -225,6 +225,21 @@
           }
         }
       },
+      "nestedFolderTitle": {
+        "label": "嵌套文件夹标题格式",
+        "description": "选择整个应用中嵌套应用文件夹的显示名称方式。此项只影响展示。",
+        "closeMenuAria": "关闭嵌套文件夹标题格式菜单",
+        "options": {
+          "folder": {
+            "label": "仅文件夹名称",
+            "description": "只显示当前文件夹名称。"
+          },
+          "parentPlusFolder": {
+            "label": "父级 + 文件夹名称",
+            "description": "为嵌套文件夹加上其直接父级前缀。"
+          }
+        }
+      },
       "storiesMode": {
         "label": "将 stories 文件夹视为普通应用文件夹",
         "scanRequired": "需要扫描",
@@ -251,12 +266,13 @@
         "excludedOnly": "这只会保存自定义排除文件夹。随后运行一次图库扫描，以便这些文件夹从索引中消失。",
         "storiesAndDefaults": "将新的 stories 规则与更新后的全局默认项一起保存。",
         "storiesOnly": "这只会保存 stories 文件夹规则。随后运行一次图库扫描，以新行为重新建立索引。",
-        "multipleDefaults": "一起保存这些全局默认项。语言会立即在当前浏览器中生效；首页访问者仍可在主页上切换模式；短片和应用文件夹使用应用默认项。",
+        "multipleDefaults": "一起保存这些全局默认项。语言会立即在当前浏览器中生效；首页访问者仍可在主页上切换模式；短片、应用文件夹和嵌套文件夹标题使用应用默认项。",
         "languageOnly": "这会立即更改当前浏览器中的语言。如需让所选语言也成为整个应用的默认语言，请再保存一次。",
         "homeOnly": "这会更新此应用首页打开时显示的首个动态流模式。访问者仍可从主页切换模式。",
         "reelsOnly": "这会更新此应用打开短片时使用的队列样式。访问者无法从短片页面切换模式。",
         "folderOnly": "这会更新应用文件夹网格使用的默认照片顺序。",
-        "idle": "这些是当前适用于语言、首页、短片、应用文件夹、stories 文件夹和排除文件夹的全局默认项。"
+        "nestedFolderTitleOnly": "这会更新整个应用中嵌套应用文件夹的标签显示方式。",
+        "idle": "这些是当前适用于语言、首页、短片、应用文件夹、嵌套文件夹标题、stories 文件夹和排除文件夹的全局默认项。"
       },
       "rescanNotice": {
         "excludedAndStories": "保存这些更改后，请先运行一次图库扫描，再期待 stories 文件夹和排除文件夹更新。",
@@ -274,13 +290,15 @@
         "homeSaved": "首页现在会以 {label} 打开。",
         "reelsSaved": "短片现在会以 {label} 打开。",
         "folderOrderSaved": "应用文件夹现在会以 {label} 打开。",
+        "nestedFolderTitleSaved": "嵌套应用文件夹现在使用 {label}。",
         "parts": {
           "appLanguage": "应用语言",
           "excludedFolders": "排除文件夹",
           "storiesFolderHandling": "stories 文件夹行为",
           "homeFeedDefault": "首页动态默认项",
           "reelsFeedDefault": "短片默认项",
-          "appFolderOrder": "应用文件夹顺序"
+          "appFolderOrder": "应用文件夹顺序",
+          "nestedFolderTitles": "嵌套文件夹标题"
         }
       },
       "errors": {

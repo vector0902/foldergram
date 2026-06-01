@@ -77,6 +77,9 @@ const reelsFeedDefaultBodySchema = z.object({
 const folderImageOrderDefaultBodySchema = z.object({
   defaultOrder: z.enum(['newest', 'oldest'])
 });
+const nestedFolderTitleFormatBodySchema = z.object({
+  titleFormat: z.enum(['folder', 'parent-plus-folder'])
+});
 const storiesModeBodySchema = z.object({
   treatStoriesAsFolders: z.boolean()
 });
@@ -175,6 +178,7 @@ export const settingsRequestBodySchemas = {
   appLocale: appLocaleBodySchema,
   reelsFeedDefault: reelsFeedDefaultBodySchema,
   folderImageOrderDefault: folderImageOrderDefaultBodySchema,
+  nestedFolderTitleFormat: nestedFolderTitleFormatBodySchema,
   storiesMode: storiesModeBodySchema,
   excludedFolders: excludedFoldersBodySchema
 };
@@ -416,6 +420,15 @@ router.put(
   (request, response) => {
     const body = folderImageOrderDefaultBodySchema.parse(request.body);
     response.json(galleryService.setDefaultFolderImageOrder(body.defaultOrder));
+  }
+);
+
+router.put(
+  '/admin/settings/nested-folder-title-format',
+  requireCapability('canAccessSettings', 'Admin access is required.'),
+  (request, response) => {
+    const body = nestedFolderTitleFormatBodySchema.parse(request.body);
+    response.json(galleryService.setNestedFolderTitleFormat(body.titleFormat));
   }
 );
 

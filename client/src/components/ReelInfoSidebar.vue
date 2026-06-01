@@ -35,12 +35,12 @@
       >
         <Avatar
           class="reels-info-sidebar__avatar"
-          :name="folder?.name ?? item.folderName"
+          :name="displayFolderTitle"
           :src="folder?.avatarUrl ?? null"
         />
         <div class="min-w-0">
           <p class="reels-info-sidebar__folder-name">
-            {{ folder?.name ?? item.folderName }}
+            {{ displayFolderTitle }}
           </p>
           <p class="reels-info-sidebar__folder-breadcrumb">
             {{ folderBreadcrumb }}
@@ -105,8 +105,10 @@ import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
 import { fetchImage } from '../api/gallery';
+import { useAppStore } from '../stores/app';
 import type { FeedItem, FolderSummary, ImageDetail } from '../types/api';
 import { resolveDisplayCaption } from '../utils/caption';
+import { formatFolderTitle } from '../utils/folder-titles';
 import { formatMediaDuration } from '../utils/media';
 import Avatar from './Avatar.vue';
 
@@ -124,6 +126,7 @@ defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
+const appStore = useAppStore();
 const detail = ref<ImageDetail | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -151,6 +154,7 @@ const formattedDate = computed(() =>
 const folderBreadcrumb = computed(
   () => props.folder?.breadcrumb ?? detail.value?.folderBreadcrumb ?? props.item.folderBreadcrumb ?? t('reels.info.topLevelSourceFolder')
 );
+const displayFolderTitle = computed(() => formatFolderTitle(props.folder ?? props.item, appStore.nestedFolderTitleFormat));
 const dimensionsLabel = computed(() => `${detail.value?.width ?? props.item.width} x ${detail.value?.height ?? props.item.height}`);
 const durationLabel = computed(() => formatMediaDuration(detail.value?.durationMs ?? props.item.durationMs) || t('reels.info.unavailable'));
 const formatLabel = computed(() => {

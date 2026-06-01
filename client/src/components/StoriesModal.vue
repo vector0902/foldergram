@@ -199,7 +199,7 @@
               </button>
             </div>
             <div class="grid gap-[0.18rem]">
-              <strong class="text-[0.92rem]">{{ activeCapsule?.title ?? displayImage?.folderName }}</strong>
+              <strong class="text-[0.92rem]">{{ activeCapsule?.title ?? displayFolderTitle }}</strong>
               <p class="m-0 text-[0.8rem] text-white/70">{{ footerMeta }}</p>
             </div>
           </footer>
@@ -261,6 +261,7 @@ import { useHorizontalSwipe } from '../composables/useHorizontalSwipe';
 import { i18n } from '../locales';
 import type { FeedItem, RailCapsule, RailViewerStoreContract } from '../types/api';
 import { useAppStore } from '../stores/app';
+import { formatFolderTitle } from '../utils/folder-titles';
 import { getOriginalMediaDownloadUrl } from '../utils/original-media';
 import Avatar from './Avatar.vue';
 import ResilientImage from './ResilientImage.vue';
@@ -335,6 +336,9 @@ const activeImages = computed(() =>
   props.store.currentCapsule?.id === activeCapsuleId.value ? props.store.currentImages : []
 );
 const displayImage = computed<FeedItem | null>(() => activeImages.value[activeImageIndex.value] ?? activeCapsule.value?.coverImage ?? null);
+const displayFolderTitle = computed(() =>
+  displayImage.value ? formatFolderTitle(displayImage.value, appStore.nestedFolderTitleFormat) : ''
+);
 const downloadOriginalMediaUrl = computed(() =>
   displayImage.value ? getOriginalMediaDownloadUrl(displayImage.value.id) : null
 );

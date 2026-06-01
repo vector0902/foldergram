@@ -12,7 +12,7 @@
         >
           <div class="rounded-full p-[0.1rem] shadow-[0_10px_22px_rgba(246,106,61,0.16)]" style="background: var(--story-ring);">
             <div class="rounded-full bg-bg p-[0.1rem]">
-              <Avatar class="w-8 h-8" :name="item.folderName" :src="avatarUrl" />
+              <Avatar class="w-8 h-8" :name="displayFolderTitle" :src="avatarUrl" />
             </div>
           </div>
         </button>
@@ -23,12 +23,12 @@
           :aria-label="folderAvatarLabel"
           :title="folderAvatarLabel"
         >
-          <Avatar class="w-8 h-8" :name="item.folderName" :src="avatarUrl" />
+          <Avatar class="w-8 h-8" :name="displayFolderTitle" :src="avatarUrl" />
         </RouterLink>
         <div class="min-w-0">
           <RouterLink class="block min-w-0 text-inherit no-underline" :to="{ name: 'folder', params: { slug: item.folderSlug } }">
             <h3 class="m-0 text-[0.88rem] font-semibold truncate">
-              {{ item.folderName }}
+              {{ displayFolderTitle }}
             </h3>
           </RouterLink>
           <RouterLink
@@ -290,7 +290,7 @@
       </div>
 
       <p class="m-0 text-[0.88rem]">
-        <strong class="mr-[0.35rem]">{{ item.folderName }}</strong>
+        <strong class="mr-[0.35rem]">{{ displayFolderTitle }}</strong>
         {{ caption }}
       </p>
       <p class="m-0 text-muted text-[0.72rem] uppercase tracking-[0.05em]">
@@ -434,6 +434,7 @@ import { useLikesStore } from '../stores/likes';
 import { useMomentsStore } from '../stores/moments';
 import type { FeedItem } from '../types/api';
 import { resolveDisplayCaption } from '../utils/caption';
+import { formatFolderTitle } from '../utils/folder-titles';
 import { formatMediaDuration, formatVideoTimestamp } from '../utils/media';
 import { resolveFeedAspectRatio } from '../utils/media-layout';
 import { getOriginalMediaDownloadUrl, getOriginalMediaUrl } from '../utils/original-media';
@@ -517,8 +518,9 @@ const imageRoute = computed(() => ({
 const isHomeContext = computed(() => props.context === 'home');
 const showHomeStoryAvatar = computed(() => isHomeContext.value && props.hasAvatarStory);
 const shouldOpenPostInModal = computed(() => props.context !== 'home');
-const folderStoriesLabel = computed(() => t('post.feedCard.openStories', { name: props.item.folderName }));
-const folderAvatarLabel = computed(() => t('post.feedCard.openFolderAvatar', { name: props.item.folderName }));
+const displayFolderTitle = computed(() => formatFolderTitle(props.item, appStore.nestedFolderTitleFormat));
+const folderStoriesLabel = computed(() => t('post.feedCard.openStories', { name: displayFolderTitle.value }));
+const folderAvatarLabel = computed(() => t('post.feedCard.openFolderAvatar', { name: displayFolderTitle.value }));
 const likeActionLabel = computed(() => likesStore.toggleAriaLabel(likesStore.isLiked(props.item.id)));
 const openMediaLabel = computed(() =>
   props.item.mediaType === 'video' ? t('post.feedCard.openReel') : t('post.feedCard.openPost')

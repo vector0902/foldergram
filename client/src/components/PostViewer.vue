@@ -312,12 +312,12 @@
           >
             <Avatar
               class="h-[2.65rem] w-[2.65rem]"
-              :name="image.folderName"
+              :name="displayFolderTitle"
               :src="folderAvatar"
             />
             <div class="viewer__sidebar-folder-meta min-w-0">
               <h2 class="viewer__sidebar-title m-0 text-[0.9rem] font-semibold truncate">
-                {{ image.folderName }}
+                {{ displayFolderTitle }}
               </h2>
               <p class="viewer__sidebar-breadcrumb m-0 text-muted truncate">
                 {{ folderBreadcrumbLabel }}
@@ -333,7 +333,7 @@
         <div class="viewer__sidebar-summary grid gap-[0.3rem] px-5 pt-[1.1rem]">
           <div class="flex items-start gap-[0.35rem]">
             <p class="viewer__sidebar-caption m-0 text-text">
-              <strong class="mr-[0.35rem]">{{ image.folderName }}</strong>
+              <strong class="mr-[0.35rem]">{{ displayFolderTitle }}</strong>
               {{ caption }}
             </p>
             <button
@@ -593,6 +593,7 @@
   import { useLikesStore } from "../stores/likes"
   import { useFoldersStore } from "../stores/folders"
   import { resolveDisplayCaption } from "../utils/caption"
+  import { formatFolderTitle } from "../utils/folder-titles"
   import { getOriginalMediaDownloadUrl, getOriginalMediaUrl } from "../utils/original-media"
   import Avatar from "./Avatar.vue"
   import CollectionBookmark from "./CollectionBookmark.vue"
@@ -748,6 +749,9 @@
 
   const folderAvatar = computed(() => props.folder?.avatarUrl ?? null)
   const caption = computed(() => (props.image ? resolveDisplayCaption(props.image) : ""))
+  const displayFolderTitle = computed(() =>
+    props.image ? formatFolderTitle(props.folder ?? props.image, appStore.nestedFolderTitleFormat) : "",
+  )
   const folderBreadcrumbLabel = computed(() =>
     props.folder?.breadcrumb ?? props.image?.folderBreadcrumb ?? t('folder.shared.topLevelSourceFolder'),
   )

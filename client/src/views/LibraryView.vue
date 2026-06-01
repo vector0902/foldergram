@@ -140,13 +140,13 @@
           >
             <Avatar
               class="w-10 h-10 shrink-0"
-              :name="folder.name"
+              :name="formatDisplayFolderTitle(folder)"
               :src="folder.avatarUrl"
             />
 
             <div class="flex-1 min-w-0">
               <p class="m-0 text-[0.9rem] font-semibold leading-[1.25] break-words sm:truncate">
-                {{ folder.name }}
+                {{ formatDisplayFolderTitle(folder) }}
               </p>
               <p class="m-0 text-muted text-[0.76rem] truncate">
                 {{ folder.breadcrumb ?? t('libraryPage.topLevelSourceFolder') }}
@@ -342,6 +342,7 @@
   import { useFoldersStore } from "../stores/folders"
   import { useMomentsStore } from "../stores/moments"
   import type { FolderSummary } from "../types/api"
+  import { formatFolderTitle } from "../utils/folder-titles"
 
   type LibrarySort =
     | "recent-desc"
@@ -461,9 +462,14 @@
     return [
       folder.slug,
       folder.name,
+      formatDisplayFolderTitle(folder),
       folder.breadcrumb ?? "",
       folder.folderPath,
     ].some(value => value.toLowerCase().includes(query))
+  }
+
+  function formatDisplayFolderTitle(folder: FolderSummary) {
+    return formatFolderTitle(folder, appStore.nestedFolderTitleFormat)
   }
 
   function sortFolders(left: FolderSummary, right: FolderSummary) {

@@ -93,6 +93,20 @@ Instead:
 - the default is `Newest First`
 - this setting changes app-folder grids and previous/next navigation inside the post viewer when browsing within a folder
 
+## Nested folder title format
+
+Nested folder title format is **not** configured in `.env`.
+
+Instead:
+
+- Foldergram stores the current nested-folder title preference in SQLite `app_settings`
+- `Settings -> General Settings` exposes `Nested folder title format`
+- available options are `Folder name only` and `Parent + folder name`
+- the default is `Folder name only`
+- this setting changes presentation only for nested app-folder titles
+- renamed parent folders use their saved app title as the prefix when available
+- it does not change scans, slugs, folder paths, or saved folder metadata
+
 ## Places setup
 
 Offline places support is **not** configured in `.env`.
@@ -124,7 +138,7 @@ Behavior:
 The Settings sidebar is split into:
 
 - `Scan & Library` for manual scans, thumbnail rebuilds, and library-index rebuilds
-- `General Settings` for Home/Reels defaults, default folder order, stories-folders mode, excluded folders, and any save-and-rescan notices tied to those app-wide rules
+- `General Settings` for Home/Reels defaults, default folder order, nested folder title format, stories-folders mode, excluded folders, and any save-and-rescan notices tied to those app-wide rules
 - `Places` for offline GeoNames preparation status and place-assignment rebuilds
 - `Security & Access` for admin, viewer, and public-mode controls
 - `System Status` for storage, index, and last-scan details

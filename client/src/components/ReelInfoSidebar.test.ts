@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -66,6 +67,7 @@ describe('ReelInfoSidebar', () => {
   const fetchImageMock = vi.mocked(fetchImage);
 
   beforeEach(() => {
+    setActivePinia(createPinia());
     fetchImageMock.mockReset();
   });
 

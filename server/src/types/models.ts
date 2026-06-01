@@ -1,5 +1,6 @@
 export type MediaType = 'image' | 'video';
 export type FolderImageOrder = 'newest' | 'oldest';
+export type NestedFolderTitleFormat = 'folder' | 'parent-plus-folder';
 export type TakenAtSource = 'exif' | 'mtime' | 'first_seen' | 'sort_timestamp';
 export type PlaybackStrategy = 'preview' | 'original';
 export type FolderAvatarSource = 'auto' | 'manual' | 'cover';
@@ -166,6 +167,7 @@ export interface FeedImage {
   folderId: number;
   folderSlug: string;
   folderName: string;
+  folderParentName?: string | null;
   folderPath: string;
   folderBreadcrumb?: string | null;
   filename: string;

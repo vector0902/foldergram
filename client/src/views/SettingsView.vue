@@ -800,6 +800,67 @@
 
               <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div class="min-w-0">
+                  <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.nestedFolderTitle.label') }}</p>
+                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.nestedFolderTitle.description') }}</p>
+                </div>
+
+                <div class="relative w-full md:w-[18rem] md:justify-self-end" @keydown.escape.stop.prevent="closeGeneralSettingsMenu">
+                  <button
+                    class="inline-flex w-full items-center justify-between gap-3 rounded-[0.9rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_80%,transparent_20%)] px-3 py-[0.85rem] text-left transition-[border-color,box-shadow] duration-180 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border)_78%)] hover:bg-surface-hover focus-visible:border-[color-mix(in_srgb,var(--accent)_35%,var(--border)_65%)] focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
+                    type="button"
+                    :aria-expanded="activeGeneralSettingsMenu === 'nestedTitle'"
+                    :disabled="savingGeneralSettings || waitingForInitialStatus"
+                    @click="toggleGeneralSettingsMenu('nestedTitle')"
+                  >
+                    <span class="min-w-0 truncate text-[0.9rem] font-semibold text-text">
+                      {{ selectedNestedFolderTitleOption.label }}
+                    </span>
+                    <span
+                      class="i-fluent-chevron-down-20-regular h-5 w-5 shrink-0 text-muted transition-transform duration-180"
+                      :class="activeGeneralSettingsMenu === 'nestedTitle' ? 'rotate-180 text-text' : ''"
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  <button
+                    v-if="activeGeneralSettingsMenu === 'nestedTitle'"
+                    class="fixed inset-0 z-40 border-0 bg-transparent"
+                    type="button"
+                    :aria-label="t('settings.general.nestedFolderTitle.closeMenuAria')"
+                    @click="closeGeneralSettingsMenu"
+                  />
+
+                  <div
+                    v-if="activeGeneralSettingsMenu === 'nestedTitle'"
+                    class="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-full overflow-hidden rounded-[1rem] border border-border bg-[color-mix(in_srgb,var(--surface)_97%,var(--bg)_3%)] shadow-[0_28px_70px_rgba(0,0,0,0.16)]"
+                  >
+                    <div class="border-b border-border px-4 py-3">
+                      <p class="m-0 text-[0.83rem] font-semibold text-text">{{ t('settings.general.nestedFolderTitle.label') }}</p>
+                    </div>
+                    <div class="grid gap-1 p-2">
+                      <button
+                        v-for="option in nestedFolderTitleOptions"
+                        :key="option.id"
+                        class="flex items-start gap-3 rounded-[0.85rem] border-0 px-3 py-3 text-left cursor-pointer transition-colors duration-150 hover:bg-surface-hover"
+                        :class="nestedFolderTitleFormat === option.id ? 'bg-[color-mix(in_srgb,var(--accent-soft)_72%,transparent_28%)]' : 'bg-transparent'"
+                        type="button"
+                        @click="selectNestedFolderTitleFormat(option.id)"
+                      >
+                        <span class="mt-[0.05rem] inline-flex h-5 w-5 items-center justify-center shrink-0 text-accent-strong">
+                          <span v-if="nestedFolderTitleFormat === option.id" class="i-fluent-checkmark-20-filled h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span class="grid min-w-0 gap-[0.08rem]">
+                          <span class="text-[0.9rem] font-semibold text-text">{{ option.label }}</span>
+                          <span class="text-[0.78rem] text-muted">{{ option.description }}</span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
                     <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.storiesMode.label') }}</p>
                     <span class="inline-flex items-center rounded-full bg-surface-alt px-2 py-[0.2rem] text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted">
@@ -1189,6 +1250,7 @@ import {
   updateExcludedFolders,
   updateFolderImageOrderDefault,
   updateHomeFeedDefault,
+  updateNestedFolderTitleFormat,
   updateReelsFeedDefault,
   updateStoriesMode
 } from '../api/gallery';
@@ -1201,7 +1263,7 @@ import { useLikesStore } from '../stores/likes';
 import { useMomentsStore } from '../stores/moments';
 import { usePlacesStore } from '../stores/places';
 import { useViewerStore } from '../stores/viewer';
-import type { AppStats, FeedMode, FolderImageOrder, ReelsFeedMode, ViewerAccessMode } from '../types/api';
+import type { AppStats, FeedMode, FolderImageOrder, NestedFolderTitleFormat, ReelsFeedMode, ViewerAccessMode } from '../types/api';
 
 const { t, locale } = useI18n();
 const appStore = useAppStore();
@@ -1238,12 +1300,13 @@ const disablePassword = ref('');
 const homeFeedDefaultMode = ref<FeedMode>('random');
 const reelsFeedDefaultMode = ref<ReelsFeedMode>('random');
 const folderImageOrderDefault = ref<FolderImageOrder>('newest');
+const nestedFolderTitleFormat = ref<NestedFolderTitleFormat>('folder');
 const savedLocaleSelection = ref<SupportedLocale | null>(appStore.savedDefaultLocale);
 const localeSelectionHydrated = ref(false);
 const storiesMode = ref(false);
 const feedDefaultsHydrated = ref(false);
 const storiesModeHydrated = ref(false);
-const activeGeneralSettingsMenu = ref<'home' | 'reels' | 'folder' | null>(null);
+const activeGeneralSettingsMenu = ref<'home' | 'reels' | 'folder' | 'nestedTitle' | null>(null);
 const showStoriesAnnouncementStructure = ref(false);
 const generalSettingsSaveArea = ref<HTMLElement | null>(null);
 const localeSelectId = 'settings-language-select';
@@ -1471,6 +1534,7 @@ function syncFeedDefaultsFromSaved() {
   homeFeedDefaultMode.value = appStore.defaultHomeFeedMode;
   reelsFeedDefaultMode.value = appStore.defaultReelsFeedMode;
   folderImageOrderDefault.value = appStore.defaultFolderImageOrder;
+  nestedFolderTitleFormat.value = appStore.nestedFolderTitleFormat;
   feedDefaultsHydrated.value = true;
 }
 
@@ -1544,6 +1608,18 @@ const folderImageOrderOptions = computed<Array<{ id: FolderImageOrder; label: st
     description: t('settings.general.folderOrder.options.oldest.description')
   }
 ]);
+const nestedFolderTitleOptions = computed<Array<{ id: NestedFolderTitleFormat; label: string; description: string }>>(() => [
+  {
+    id: 'folder',
+    label: t('settings.general.nestedFolderTitle.options.folder.label'),
+    description: t('settings.general.nestedFolderTitle.options.folder.description')
+  },
+  {
+    id: 'parent-plus-folder',
+    label: t('settings.general.nestedFolderTitle.options.parentPlusFolder.label'),
+    description: t('settings.general.nestedFolderTitle.options.parentPlusFolder.description')
+  }
+]);
 const isLibraryRebuildActive = computed(
   () => rebuilding.value || (appStore.isScanning && activeScanReason.value === 'rebuild')
 );
@@ -1557,6 +1633,7 @@ const waitingForInitialStatus = computed(() => !appStore.stats || appStore.loadi
 const savedHomeFeedDefaultMode = computed(() => appStore.defaultHomeFeedMode);
 const savedReelsFeedDefaultMode = computed(() => appStore.defaultReelsFeedMode);
 const savedFolderImageOrderDefault = computed(() => appStore.defaultFolderImageOrder);
+const savedNestedFolderTitleFormat = computed(() => appStore.nestedFolderTitleFormat);
 const savedStoriesMode = computed(() => appStore.treatStoriesAsFolders);
 const savedCustomExcludedFolders = computed(() => adminStats.value?.excludedFolders.customExcludedFolders ?? []);
 const envExcludedFolders = computed(() => adminStats.value?.excludedFolders.envExcludedFolders ?? []);
@@ -1592,6 +1669,9 @@ const selectedReelsFeedDefaultOption = computed(
 const selectedFolderImageOrderOption = computed(
   () => folderImageOrderOptions.value.find((mode) => mode.id === folderImageOrderDefault.value) ?? folderImageOrderOptions.value[0]
 );
+const selectedNestedFolderTitleOption = computed(
+  () => nestedFolderTitleOptions.value.find((option) => option.id === nestedFolderTitleFormat.value) ?? nestedFolderTitleOptions.value[0]
+);
 const localeDirty = computed(
   () => localeSelectionHydrated.value && (savedLocaleSelection.value === null || appStore.locale !== savedLocaleSelection.value)
 );
@@ -1604,10 +1684,22 @@ const reelsFeedDefaultDirty = computed(
 const folderImageOrderDirty = computed(
   () => feedDefaultsHydrated.value && folderImageOrderDefault.value !== savedFolderImageOrderDefault.value
 );
-const defaultSettingsDirtyCount = computed(
-  () => [localeDirty.value, homeFeedDefaultDirty.value, reelsFeedDefaultDirty.value, folderImageOrderDirty.value].filter(Boolean).length
+const nestedFolderTitleDirty = computed(
+  () => feedDefaultsHydrated.value && nestedFolderTitleFormat.value !== savedNestedFolderTitleFormat.value
 );
-const feedDefaultsDirty = computed(() => homeFeedDefaultDirty.value || reelsFeedDefaultDirty.value || folderImageOrderDirty.value);
+const defaultSettingsDirtyCount = computed(
+  () =>
+    [
+      localeDirty.value,
+      homeFeedDefaultDirty.value,
+      reelsFeedDefaultDirty.value,
+      folderImageOrderDirty.value,
+      nestedFolderTitleDirty.value
+    ].filter(Boolean).length
+);
+const feedDefaultsDirty = computed(
+  () => homeFeedDefaultDirty.value || reelsFeedDefaultDirty.value || folderImageOrderDirty.value || nestedFolderTitleDirty.value
+);
 const storiesModeDirty = computed(() => storiesModeHydrated.value && storiesMode.value !== savedStoriesMode.value);
 const excludedFoldersDirty = computed(() => {
   if (!excludedFoldersHydrated.value) {
@@ -1682,6 +1774,10 @@ const generalSettingsActionNote = computed(() => {
 
   if (folderImageOrderDirty.value) {
     return t('settings.general.actionNote.folderOnly');
+  }
+
+  if (nestedFolderTitleDirty.value) {
+    return t('settings.general.actionNote.nestedFolderTitleOnly');
   }
 
   return t('settings.general.actionNote.idle');
@@ -2361,7 +2457,7 @@ function closeGeneralSettingsMenu() {
   activeGeneralSettingsMenu.value = null;
 }
 
-function toggleGeneralSettingsMenu(menu: 'home' | 'reels' | 'folder') {
+function toggleGeneralSettingsMenu(menu: 'home' | 'reels' | 'folder' | 'nestedTitle') {
   clearGeneralSettingsFeedback();
   activeGeneralSettingsMenu.value = activeGeneralSettingsMenu.value === menu ? null : menu;
 }
@@ -2417,6 +2513,12 @@ function selectFolderImageOrderDefault(order: FolderImageOrder) {
   closeGeneralSettingsMenu();
 }
 
+function selectNestedFolderTitleFormat(value: NestedFolderTitleFormat) {
+  clearGeneralSettingsFeedback();
+  nestedFolderTitleFormat.value = value;
+  closeGeneralSettingsMenu();
+}
+
 async function saveGeneralSettings() {
   if (generalSettingsSaveDisabled.value) {
     return;
@@ -2428,8 +2530,16 @@ async function saveGeneralSettings() {
   const shouldSaveHome = homeFeedDefaultDirty.value;
   const shouldSaveReels = reelsFeedDefaultDirty.value;
   const shouldSaveFolderOrder = folderImageOrderDirty.value;
-  const shouldSaveAnyDefault = shouldSaveLocale || shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder;
-  const savedDefaultCount = [shouldSaveLocale, shouldSaveHome, shouldSaveReels, shouldSaveFolderOrder].filter(Boolean).length;
+  const shouldSaveNestedFolderTitle = nestedFolderTitleDirty.value;
+  const shouldSaveAnyDefault =
+    shouldSaveLocale || shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder || shouldSaveNestedFolderTitle;
+  const savedDefaultCount = [
+    shouldSaveLocale,
+    shouldSaveHome,
+    shouldSaveReels,
+    shouldSaveFolderOrder,
+    shouldSaveNestedFolderTitle
+  ].filter(Boolean).length;
   const savedParts: string[] = [];
   let nextExcludedFolders: string[] = [];
 
@@ -2513,6 +2623,15 @@ async function saveGeneralSettings() {
       folderImageOrderDefault.value = payload.defaultOrder;
     }
 
+    if (shouldSaveNestedFolderTitle) {
+      const payload = await updateNestedFolderTitleFormat(nestedFolderTitleFormat.value);
+      savedParts.push(t('settings.general.feedback.parts.nestedFolderTitles'));
+      if (appStore.stats) {
+        appStore.stats.preferences.nestedFolderTitleFormat = payload.titleFormat;
+      }
+      nestedFolderTitleFormat.value = payload.titleFormat;
+    }
+
     await appStore.fetchStats({ background: true });
 
     if (shouldSaveStories || shouldSaveExcludedFolders) {
@@ -2550,6 +2669,11 @@ async function saveGeneralSettings() {
       setGeneralSettingsFeedback(
         'success',
         t('settings.general.feedback.folderOrderSaved', { label: selectedFolderImageOrderOption.value.label })
+      );
+    } else if (shouldSaveNestedFolderTitle) {
+      setGeneralSettingsFeedback(
+        'success',
+        t('settings.general.feedback.nestedFolderTitleSaved', { label: selectedNestedFolderTitleOption.value.label })
       );
     }
   } catch (error) {

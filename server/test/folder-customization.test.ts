@@ -269,6 +269,69 @@ describe.sequential('folder customization', () => {
       expect(folderSummary?.avatarUrl).toBe('/thumbnails/t/clip1.webp');
     });
 
+    it('exposes customized parent folder display names for nested folders', () => {
+      const parentFolder = folderRepository.upsert({ slug: 'italy', name: 'Italy', folderPath: 'Italy' });
+      const childFolder = folderRepository.upsert({ slug: 'italy-2022', name: '2022', folderPath: 'Italy/2022' });
+
+      imageRepository.upsert({
+        folderId: parentFolder.id,
+        filename: 'rome.jpg',
+        relativePath: 'Italy/rome.jpg',
+        absolutePath: '/dummy/Italy/rome.jpg',
+        fileSize: 120,
+        mtimeMs: 1_000,
+        width: 100,
+        height: 100,
+        mediaType: getMediaTypeFromExtension('.jpg'),
+        mimeType: getMimeTypeFromExtension('.jpg'),
+        fingerprint: createFingerprint('Italy/rome.jpg', 120, 1_000),
+        sortTimestamp: 1_000,
+        takenAt: 1_000,
+        takenAtSource: 'mtime',
+        extension: '.jpg',
+        firstSeenAt: new Date().toISOString(),
+        thumbnailPath: 't/rome.webp',
+        previewPath: 'p/rome.webp',
+        playbackStrategy: 'preview',
+        durationMs: null,
+        exifJson: null
+      });
+
+      const childImage = imageRepository.upsert({
+        folderId: childFolder.id,
+        filename: 'venice.jpg',
+        relativePath: 'Italy/2022/venice.jpg',
+        absolutePath: '/dummy/Italy/2022/venice.jpg',
+        fileSize: 240,
+        mtimeMs: 2_000,
+        width: 100,
+        height: 100,
+        mediaType: getMediaTypeFromExtension('.jpg'),
+        mimeType: getMimeTypeFromExtension('.jpg'),
+        fingerprint: createFingerprint('Italy/2022/venice.jpg', 240, 2_000),
+        sortTimestamp: 2_000,
+        takenAt: 2_000,
+        takenAtSource: 'mtime',
+        extension: '.jpg',
+        firstSeenAt: new Date().toISOString(),
+        thumbnailPath: 't/venice.webp',
+        previewPath: 'p/venice.webp',
+        playbackStrategy: 'preview',
+        durationMs: null,
+        exifJson: null
+      });
+
+      expect(galleryService.updateFolderMetadata('italy', 'Italia', null)?.name).toBe('Italia');
+
+      const childSummary = galleryService.getFolderBySlug('italy-2022');
+      const childFeedItem = galleryService.getFeed(1, 10, 'recent').items.find((item) => item.folderSlug === 'italy-2022');
+      const childDetail = galleryService.getImageDetail(childImage.id);
+
+      expect(childSummary?.parentFolderName).toBe('Italia');
+      expect(childFeedItem?.folderParentName).toBe('Italia');
+      expect(childDetail?.folderParentName).toBe('Italia');
+    });
+
     it('returns null when setting cover for non-existent items', () => {
       expect(galleryService.setFolderAvatar('non-existent', 123)).toBeNull();
       

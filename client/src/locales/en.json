@@ -158,7 +158,7 @@
       },
       "card": {
         "title": "General Settings",
-        "description": "App-wide defaults for language, stories folders, excluded folders, Home, Reels, and app folders."
+        "description": "App-wide defaults for language, nested folder titles, stories folders, excluded folders, Home, Reels, and app folders."
       },
       "language": {
         "label": "App language",
@@ -225,6 +225,21 @@
           }
         }
       },
+      "nestedFolderTitle": {
+        "label": "Nested folder title format",
+        "description": "Choose how nested app folders are labeled throughout the app. This changes presentation only.",
+        "closeMenuAria": "Close nested folder title format menu",
+        "options": {
+          "folder": {
+            "label": "Folder name only",
+            "description": "Show only the current folder name."
+          },
+          "parentPlusFolder": {
+            "label": "Parent + folder name",
+            "description": "Prefix nested folders with their immediate parent."
+          }
+        }
+      },
       "storiesMode": {
         "label": "Treat stories folders as normal app folders",
         "scanRequired": "Scan required",
@@ -251,12 +266,13 @@
         "excludedOnly": "This saves the custom excluded folders only. Run a library scan afterward so those folders disappear from the index.",
         "storiesAndDefaults": "Save the new stories rule and the updated app defaults together.",
         "storiesOnly": "This saves the stories folders rule only. Run a library scan afterward to reindex with the new behavior.",
-        "multipleDefaults": "Save these app defaults together. Language applies immediately in this browser; Home visitors can still switch modes on the homepage; Reels and app folders use app defaults.",
+        "multipleDefaults": "Save these app defaults together. Language applies immediately in this browser; Home visitors can still switch modes on the homepage; Reels, app folders, and nested folder titles use app defaults.",
         "languageOnly": "This changes the language immediately in this browser. Save it too if you want the selected language to become the app-wide default.",
         "homeOnly": "This updates the first feed mode shown on Home for this app. Visitors can still switch modes from the homepage.",
         "reelsOnly": "This updates the queue style used when Reels opens for this app. Visitors cannot switch modes from the reels page.",
         "folderOnly": "This updates the default photo order used by app folder grids.",
-        "idle": "These are the current app-wide defaults for language, Home, Reels, app folders, stories folders, and excluded folders."
+        "nestedFolderTitleOnly": "This updates how nested app folders are labeled throughout the app.",
+        "idle": "These are the current app-wide defaults for language, Home, Reels, app folders, nested folder titles, stories folders, and excluded folders."
       },
       "rescanNotice": {
         "excludedAndStories": "Save these changes, then run a library scan before expecting stories folders and excluded folders to update.",
@@ -274,13 +290,15 @@
         "homeSaved": "The homepage now opens with {label}.",
         "reelsSaved": "Reels now opens with {label}.",
         "folderOrderSaved": "App folders now open with {label}.",
+        "nestedFolderTitleSaved": "Nested app folders now use {label}.",
         "parts": {
           "appLanguage": "app language",
           "excludedFolders": "excluded folders",
           "storiesFolderHandling": "stories folder handling",
           "homeFeedDefault": "Home feed default",
           "reelsFeedDefault": "Reels feed default",
-          "appFolderOrder": "app folder order"
+          "appFolderOrder": "app folder order",
+          "nestedFolderTitles": "nested folder titles"
         }
       },
       "errors": {
