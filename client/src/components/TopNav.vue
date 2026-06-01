@@ -197,7 +197,7 @@
             </button>
 
             <button
-              v-if="authStore.authenticated"
+              v-if="authStore.canSignOut"
               class="mobile-nav__menu-item"
               type="button"
               :disabled="authStore.loading"

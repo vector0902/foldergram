@@ -99,4 +99,108 @@ describe('auth store locale status', () => {
     expect(authStore.defaultLocale).toBe('zh');
     expect(authStore.requiresLogin).toBe(true);
   });
+
+  it('does not allow sign out when password protection is disabled', () => {
+    const authStore = useAuthStore();
+    authStore.$patch({
+      enabled: false,
+      authenticated: true,
+      role: 'admin',
+      accessMode: 'off',
+      likesMode: 'shared',
+      defaultLocale: null,
+      capabilities: {
+        canManageLibrary: true,
+        canDeleteMedia: true,
+        canAccessSettings: true,
+        canUseSharedLikes: true,
+        canUseLocalFavorites: false,
+        canUseSharedCollections: true,
+        canUseLocalCollections: false
+      }
+    });
+
+    expect(authStore.canSignOut).toBe(false);
+  });
+
+  it('allows sign out for authenticated admin and viewer sessions', () => {
+    const authStore = useAuthStore();
+
+    authStore.$patch({
+      enabled: true,
+      authenticated: true,
+      role: 'admin',
+      accessMode: 'off',
+      likesMode: 'shared',
+      defaultLocale: null,
+      capabilities: {
+        canManageLibrary: true,
+        canDeleteMedia: true,
+        canAccessSettings: true,
+        canUseSharedLikes: true,
+        canUseLocalFavorites: false,
+        canUseSharedCollections: true,
+        canUseLocalCollections: false
+      }
+    });
+
+    expect(authStore.canSignOut).toBe(true);
+
+    authStore.$patch({
+      role: 'viewer',
+      accessMode: 'password',
+      capabilities: {
+        canManageLibrary: false,
+        canDeleteMedia: false,
+        canAccessSettings: false,
+        canUseSharedLikes: true,
+        canUseLocalFavorites: false,
+        canUseSharedCollections: true,
+        canUseLocalCollections: false
+      }
+    });
+
+    expect(authStore.canSignOut).toBe(true);
+  });
+
+  it('only allows sign out in public mode after an authenticated admin unlock', () => {
+    const authStore = useAuthStore();
+
+    authStore.$patch({
+      enabled: true,
+      authenticated: false,
+      role: 'anonymous',
+      accessMode: 'public',
+      likesMode: 'local',
+      defaultLocale: null,
+      capabilities: {
+        canManageLibrary: false,
+        canDeleteMedia: false,
+        canAccessSettings: false,
+        canUseSharedLikes: false,
+        canUseLocalFavorites: true,
+        canUseSharedCollections: false,
+        canUseLocalCollections: true
+      }
+    });
+
+    expect(authStore.canSignOut).toBe(false);
+
+    authStore.$patch({
+      authenticated: true,
+      role: 'admin',
+      likesMode: 'shared',
+      capabilities: {
+        canManageLibrary: true,
+        canDeleteMedia: true,
+        canAccessSettings: true,
+        canUseSharedLikes: true,
+        canUseLocalFavorites: false,
+        canUseSharedCollections: true,
+        canUseLocalCollections: false
+      }
+    });
+
+    expect(authStore.canSignOut).toBe(true);
+  });
 });

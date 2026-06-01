@@ -105,6 +105,7 @@ export const useAuthStore = defineStore('auth', {
     accessGranted: (state) => !state.enabled || state.authenticated || state.accessMode === 'public',
     requiresLogin: (state) => state.enabled && state.accessMode !== 'public' && !state.authenticated,
     isAdmin: (state) => state.capabilities.canAccessSettings,
+    canSignOut: (state) => state.enabled && state.authenticated,
     canManageLibrary: (state) => state.capabilities.canManageLibrary,
     canDeleteMedia: (state) => state.capabilities.canDeleteMedia,
     canAccessSettings: (state) => state.capabilities.canAccessSettings,

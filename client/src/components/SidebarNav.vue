@@ -373,7 +373,7 @@
           </button>
 
           <button
-            v-if="authStore.authenticated"
+            v-if="authStore.canSignOut"
             class="flex items-center gap-[0.95rem] w-full px-[1.2rem] py-[1rem] border-0 bg-transparent text-[0.98rem] text-text cursor-pointer text-left transition-colors duration-150 hover:bg-surface-hover disabled:opacity-60 disabled:cursor-wait"
             type="button"
             :disabled="authStore.loading"
