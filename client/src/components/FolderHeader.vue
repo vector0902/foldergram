@@ -10,7 +10,7 @@
       >
         <div class="rounded-full p-[0.22rem] shadow-[0_16px_34px_rgba(246,106,61,0.12)] transition-transform duration-[180ms] hover:scale-[1.02]" style="background: var(--story-ring);">
           <div class="rounded-full bg-bg p-[0.22rem]">
-            <Avatar class="w-[9.35rem] h-[9.35rem] max-md:w-[7.75rem] max-md:h-[7.75rem]" :name="folder.name" :src="folder.avatarUrl" />
+            <Avatar class="w-[9.35rem] h-[9.35rem] max-md:w-[7.75rem] max-md:h-[7.75rem]" :name="displayFolderTitle" :src="folder.avatarUrl" />
           </div>
         </div>
       </button>
@@ -23,20 +23,20 @@
         >
           <div class="rounded-full p-[0.22rem] shadow-[0_12px_24px_rgba(99,115,129,0.12)] transition-transform duration-[180ms] hover:scale-[1.02]" style="background: rgba(43, 48, 54, 0.8);">
             <div class="rounded-full bg-bg p-[0.22rem]">
-              <Avatar class="w-[9.35rem] h-[9.35rem] max-md:w-[7.75rem] max-md:h-[7.75rem]" :name="folder.name" :src="folder.avatarUrl" />
+              <Avatar class="w-[9.35rem] h-[9.35rem] max-md:w-[7.75rem] max-md:h-[7.75rem]" :name="displayFolderTitle" :src="folder.avatarUrl" />
             </div>
           </div>
         </a>
       </RouterLink>
       <div v-else class="rounded-full p-[0.22rem] shadow-[0_12px_24px_rgba(99,115,129,0.12)]" style="background: rgba(43, 48, 54, 0.8);">
         <div class="rounded-full bg-bg p-[0.22rem]">
-          <Avatar class="w-[9.35rem] h-[9.35rem] max-md:w-[7.75rem] max-md:h-[7.75rem]" :name="folder.name" :src="folder.avatarUrl" />
+          <Avatar class="w-[9.35rem] h-[9.35rem] max-md:w-[7.75rem] max-md:h-[7.75rem]" :name="displayFolderTitle" :src="folder.avatarUrl" />
         </div>
       </div>
     </div>
     <div class="grid gap-[1rem] pt-[0.35rem]">
       <div class="flex items-center gap-[0.75rem] flex-wrap max-sm:justify-center">
-        <h1 class="m-0 text-[clamp(1.6rem,2.4vw,2rem)] font-medium leading-none tracking-[-0.04em]">{{ folder.name }}</h1>
+        <h1 class="m-0 text-[clamp(1.6rem,2.4vw,2rem)] font-medium leading-none tracking-[-0.04em]">{{ displayFolderTitle }}</h1>
         <button
           v-if="authStore.canManageLibrary"
           type="button"
@@ -106,6 +106,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { RouterLink, useRoute } from 'vue-router';
 import type { FolderSummary } from '../types/api';
+import { formatFolderTitle } from '../utils/folder-titles';
 import Avatar from './Avatar.vue';
 import FolderProfileModal from './FolderProfileModal.vue';
 import { useAppStore } from '../stores/app';
@@ -138,6 +139,7 @@ const descriptionId = `folder-description-${Math.random().toString(36).slice(2, 
 let descriptionResizeObserver: ResizeObserver | null = null;
 let syncingDescriptionOverflow = false;
 
+const displayFolderTitle = computed(() => formatFolderTitle(props.folder, appStore.nestedFolderTitleFormat));
 const formattedUpdatedDate = computed(() =>
   props.folder.latestImageMtimeMs
     ? new Date(props.folder.latestImageMtimeMs).toLocaleDateString(locale.value, {

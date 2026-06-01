@@ -3,6 +3,7 @@ import type { SupportedLocale } from '../locales';
 export type FeedMode = 'recent' | 'rediscover' | 'random';
 export type ReelsFeedMode = 'recommended' | 'recent' | 'random';
 export type FolderImageOrder = 'newest' | 'oldest';
+export type NestedFolderTitleFormat = 'folder' | 'parent-plus-folder';
 export type FeedRailKind = 'moments' | 'highlights';
 export type StoryCapsulePresentation = 'avatar' | 'highlight';
 export type ScanOperation =
@@ -34,6 +35,10 @@ export interface FolderImageOrderDefaultSetting {
   defaultOrder: FolderImageOrder;
 }
 
+export interface NestedFolderTitleFormatSetting {
+  titleFormat: NestedFolderTitleFormat;
+}
+
 export interface StoriesModeSetting {
   treatStoriesAsFolders: boolean;
 }
@@ -53,6 +58,7 @@ export interface FeedItem {
   folderId: number;
   folderSlug: string;
   folderName: string;
+  folderParentName?: string | null;
   folderPath: string;
   folderBreadcrumb: string | null;
   filename: string;
@@ -96,6 +102,7 @@ export interface FolderSummary {
   slug: string;
   name: string;
   description: string | null;
+  parentFolderName?: string | null;
   folderPath: string;
   breadcrumb: string | null;
   imageCount: number;
@@ -422,6 +429,7 @@ export interface AppStatus {
     defaultHomeFeedMode: FeedMode;
     defaultReelsFeedMode: ReelsFeedMode;
     defaultFolderImageOrder?: FolderImageOrder;
+    nestedFolderTitleFormat?: NestedFolderTitleFormat;
     treatStoriesAsFolders: boolean;
   };
   storiesMigration: {

@@ -280,7 +280,7 @@
             @click="navigate"
           >
             <Avatar
-              :name="folder.name"
+              :name="formatFeaturedFolderTitle(folder)"
               :src="folder.avatarUrl"
               class="h-[1.75rem] w-[1.75rem]"
             />
@@ -292,7 +292,7 @@
                   max-width 0.22s ease;
               "
             >
-              <strong class="truncate text-[0.82rem]">{{ folder.name }}</strong>
+              <strong class="truncate text-[0.82rem]">{{ formatFeaturedFolderTitle(folder) }}</strong>
               <small class="truncate text-[0.68rem] text-muted">{{
                 folder.breadcrumb ?? t('nav.folderPosts', { count: folder.imageCount })
               }}</small>
@@ -425,6 +425,7 @@
   import { useLikesStore } from "../stores/likes"
   import { useFoldersStore } from "../stores/folders"
   import { usePlacesStore } from "../stores/places"
+  import { formatFolderTitle } from "../utils/folder-titles"
   import { buildLikedCountByFolder } from "../utils/home-recommendations"
   import { selectSidebarFolders } from "../utils/sidebar-folders"
   import Avatar from "./Avatar.vue"
@@ -456,6 +457,9 @@
   const showPlacesNav = computed(() =>
     placesStore.items.length > 0 && placesStore.listError === null,
   )
+  function formatFeaturedFolderTitle(folder: (typeof featuredFolders.value)[number]) {
+    return formatFolderTitle(folder, appStore.nestedFolderTitleFormat)
+  }
   const isPlacesRoute = computed(() =>
     route.name === "places" || route.name === "place",
   )

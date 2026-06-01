@@ -153,6 +153,24 @@ describe.sequential('auth route validation', () => {
     });
   });
 
+  it('accepts parent-plus-folder as a valid nested folder title format', () => {
+    expect(
+      settingsRequestBodySchemas.nestedFolderTitleFormat.parse({
+        titleFormat: 'parent-plus-folder'
+      })
+    ).toEqual({
+      titleFormat: 'parent-plus-folder'
+    });
+  });
+
+  it('rejects invalid nested folder title formats', () => {
+    expect(() =>
+      settingsRequestBodySchemas.nestedFolderTitleFormat.parse({
+        titleFormat: 'full-path'
+      })
+    ).toThrowError();
+  });
+
   it('accepts long story ids up to the folder-slug route limit', () => {
     expect(
       routeParamSchemas.storyId.parse({

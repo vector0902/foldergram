@@ -14,6 +14,7 @@ import type {
   HomeFeedDefaultSetting,
   UpdateCollectionResult,
   UpdateExcludedFoldersSettingResult,
+  NestedFolderTitleFormatSetting,
   ReelsFeedDefaultSetting,
   StoriesModeSetting,
   ViewerAccessMode,
@@ -22,6 +23,7 @@ import type {
   FeedMode,
   FolderImageOrder,
   FolderImageOrderDefaultSetting,
+  NestedFolderTitleFormat,
   ImageCaptionMutationResult,
   ImageDetail,
   ImageCollectionsPayload,
@@ -461,6 +463,14 @@ export function updateFolderImageOrderDefault(defaultOrder: FolderImageOrder) {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ defaultOrder })
+  });
+}
+
+export function updateNestedFolderTitleFormat(titleFormat: NestedFolderTitleFormat) {
+  return requestJson<NestedFolderTitleFormatSetting>('/api/admin/settings/nested-folder-title-format', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ titleFormat })
   });
 }
 

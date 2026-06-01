@@ -66,12 +66,12 @@
             >
               <Avatar
                 class="reel-player-card__avatar"
-                :name="folder?.name ?? item.folderName"
+                :name="displayFolderTitle"
                 :src="folder?.avatarUrl ?? null"
               />
               <div class="reel-player-card__text">
                 <strong class="reel-player-card__folder-name">
-                  {{ folder?.name ?? item.folderName }}
+                  {{ displayFolderTitle }}
                 </strong>
                 <p class="reel-player-card__folder-description">
                   {{ folderDescription }}
@@ -121,6 +121,7 @@ import type { MediaPlayerElement } from 'vidstack/elements';
 
 import { useAppStore } from '../stores/app';
 import type { FeedItem, FolderSummary } from '../types/api';
+import { formatFolderTitle } from '../utils/folder-titles';
 import { getOriginalMediaUrl } from '../utils/original-media';
 import Avatar from './Avatar.vue';
 
@@ -141,6 +142,7 @@ const videoSource = computed<PlayerSrc>(() => ({
   type: 'video/mp4'
 }));
 const showPausedIndicator = computed(() => props.active && isPaused.value);
+const displayFolderTitle = computed(() => formatFolderTitle(props.folder ?? props.item, appStore.nestedFolderTitleFormat));
 const folderDescription = computed(() => {
   const normalizedFolderPath = props.item.folderPath.replace(/\\/g, '/');
   const folderSegments = normalizedFolderPath.split('/').filter(Boolean);

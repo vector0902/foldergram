@@ -227,9 +227,9 @@
       :aria-label="t('home.sidebar.ariaLabel')"
     >
       <div class="flex items-center gap-[0.8rem]">
-        <Avatar class="w-11 h-11" :name="homeSummaryFolder.name" :src="homeSummaryFolder.avatarUrl" />
+        <Avatar class="w-11 h-11" :name="formatDisplayFolderTitle(homeSummaryFolder)" :src="homeSummaryFolder.avatarUrl" />
         <div class="flex-1 min-w-0">
-          <strong class="block text-text text-[0.87rem] font-bold">{{ homeSummaryFolder.name }}</strong>
+          <strong class="block text-text text-[0.87rem] font-bold">{{ formatDisplayFolderTitle(homeSummaryFolder) }}</strong>
           <p class="m-0 mt-[0.12rem] text-[0.79rem] truncate">{{ homeSummaryFolder.breadcrumb ?? t('folder.shared.topLevelSourceFolder') }}</p>
         </div>
         <RouterLink class="ml-auto text-accent-strong text-[0.76rem] font-bold" :to="{ name: 'folder', params: { slug: homeSummaryFolder.slug } }">{{ t('home.sidebar.openFolder') }}</RouterLink>
@@ -247,9 +247,9 @@
           class="flex items-center gap-[0.8rem]"
           :to="{ name: 'folder', params: { slug: folder.slug } }"
         >
-          <Avatar class="w-11 h-11" :name="folder.name" :src="folder.avatarUrl" />
+          <Avatar class="w-11 h-11" :name="formatDisplayFolderTitle(folder)" :src="folder.avatarUrl" />
           <div class="flex-1 min-w-0">
-            <strong class="block text-text text-[0.87rem] font-bold">{{ folder.name }}</strong>
+            <strong class="block text-text text-[0.87rem] font-bold">{{ formatDisplayFolderTitle(folder) }}</strong>
             <p class="m-0 mt-[0.12rem] text-[0.79rem] truncate">{{ folder.breadcrumb ?? t('folder.shared.topLevelSourceFolder') }}</p>
           </div>
           <span class="ml-auto text-accent-strong text-[0.76rem] font-bold">{{ t('home.sidebar.openFolder') }}</span>
@@ -291,6 +291,7 @@ import { useLikesStore } from '../stores/likes';
 import { useFoldersStore } from '../stores/folders';
 import { useMomentsStore } from '../stores/moments';
 import type { FeedMode } from '../types/api';
+import { formatFolderTitle } from '../utils/folder-titles';
 import { buildLikedCountByFolder, selectHomeRecommendations } from '../utils/home-recommendations';
 import { getInitialScanStats, getScanActionLine, getScanPhaseLabel, getScanSummary } from '../utils/scan-progress';
 
@@ -316,6 +317,10 @@ const isCompactHomeLayout = ref(false);
 const requestingHomeScan = ref(false);
 const homeScanError = ref<string | null>(null);
 const feedStoryError = ref<string | null>(null);
+
+function formatDisplayFolderTitle(folder: NonNullable<typeof homeSummaryFolder.value> | (typeof recommendedFolders.value)[number]) {
+  return formatFolderTitle(folder, appStore.nestedFolderTitleFormat);
+}
 
 const HOME_RIGHT_RAIL_BREAKPOINT = 960;
 let homeLayoutResizeObserver: ResizeObserver | null = null;

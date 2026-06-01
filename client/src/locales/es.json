@@ -158,7 +158,7 @@
       },
       "card": {
         "title": "Ajustes generales",
-        "description": "Valores predeterminados de toda la app para idioma, carpetas stories, carpetas excluidas, Inicio, Reels y carpetas de la app."
+        "description": "Valores predeterminados de toda la app para idioma, títulos de carpetas anidadas, carpetas stories, carpetas excluidas, Inicio, Reels y carpetas de la app."
       },
       "language": {
         "label": "Idioma de la aplicación",
@@ -225,6 +225,21 @@
           }
         }
       },
+      "nestedFolderTitle": {
+        "label": "Formato del título de carpetas anidadas",
+        "description": "Elige cómo se nombran las carpetas anidadas de la app en toda la aplicación. Solo cambia la presentación.",
+        "closeMenuAria": "Cerrar menú del formato de título de carpetas anidadas",
+        "options": {
+          "folder": {
+            "label": "Solo nombre de la carpeta",
+            "description": "Muestra solo el nombre de la carpeta actual."
+          },
+          "parentPlusFolder": {
+            "label": "Padre + nombre de la carpeta",
+            "description": "Añade el padre inmediato como prefijo de las carpetas anidadas."
+          }
+        }
+      },
       "storiesMode": {
         "label": "Tratar las carpetas stories como carpetas normales de la app",
         "scanRequired": "Requiere escaneo",
@@ -251,12 +266,13 @@
         "excludedOnly": "Esto solo guarda las carpetas excluidas personalizadas. Después ejecuta un escaneo de la biblioteca para que esas carpetas desaparezcan del índice.",
         "storiesAndDefaults": "Guarda juntos la nueva regla de stories y los valores globales actualizados.",
         "storiesOnly": "Esto solo guarda la regla de carpetas stories. Después ejecuta un escaneo de la biblioteca para reindexar con el nuevo comportamiento.",
-        "multipleDefaults": "Guarda juntos estos valores globales. El idioma se aplica de inmediato en este navegador; los visitantes de Inicio aún pueden cambiar de modo en la página principal; Reels y las carpetas de la app usan los valores predeterminados de la app.",
+        "multipleDefaults": "Guarda juntos estos valores globales. El idioma se aplica de inmediato en este navegador; los visitantes de Inicio aún pueden cambiar de modo en la página principal; Reels, las carpetas de la app y los títulos de carpetas anidadas usan los valores predeterminados de la app.",
         "languageOnly": "Esto cambia el idioma de inmediato en este navegador. Guárdalo también si quieres que el idioma seleccionado se convierta en el predeterminado de toda la app.",
         "homeOnly": "Esto actualiza el primer modo de feed que se muestra en Inicio para esta app. Los visitantes aún pueden cambiar de modo desde la página principal.",
         "reelsOnly": "Esto actualiza el estilo de cola usado cuando se abre Reels para esta app. Los visitantes no pueden cambiar de modo desde la página de Reels.",
         "folderOnly": "Esto actualiza el orden de fotos predeterminado usado por las cuadrículas de carpetas de la app.",
-        "idle": "Estos son los valores actuales de toda la app para idioma, Inicio, Reels, carpetas de la app, carpetas stories y carpetas excluidas."
+        "nestedFolderTitleOnly": "Esto actualiza cómo se etiquetan las carpetas anidadas de la app en toda la aplicación.",
+        "idle": "Estos son los valores actuales de toda la app para idioma, Inicio, Reels, carpetas de la app, títulos de carpetas anidadas, carpetas stories y carpetas excluidas."
       },
       "rescanNotice": {
         "excludedAndStories": "Guarda estos cambios y luego ejecuta un escaneo de la biblioteca antes de esperar que se actualicen las carpetas stories y las carpetas excluidas.",
@@ -274,13 +290,15 @@
         "homeSaved": "La página de Inicio ahora se abre con {label}.",
         "reelsSaved": "Reels ahora se abre con {label}.",
         "folderOrderSaved": "Las carpetas de la app ahora se abren con {label}.",
+        "nestedFolderTitleSaved": "Las carpetas anidadas de la app ahora usan {label}.",
         "parts": {
           "appLanguage": "idioma de la app",
           "excludedFolders": "carpetas excluidas",
           "storiesFolderHandling": "comportamiento de las carpetas stories",
           "homeFeedDefault": "predeterminado del feed de Inicio",
           "reelsFeedDefault": "predeterminado de Reels",
-          "appFolderOrder": "orden de las carpetas de la app"
+          "appFolderOrder": "orden de las carpetas de la app",
+          "nestedFolderTitles": "títulos de carpetas anidadas"
         }
       },
       "errors": {

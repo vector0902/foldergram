@@ -9,6 +9,7 @@ import {
   HOME_FEED_DEFAULT_MODE_SETTING_KEY,
   LAST_SUCCESSFUL_GALLERY_ROOT_SETTING_KEY,
   LIBRARY_REBUILD_REQUIRED_SETTING_KEY,
+  NESTED_FOLDER_TITLE_FORMAT_SETTING_KEY,
   PREVIOUS_GALLERY_ROOT_SETTING_KEY,
   REELS_FEED_DEFAULT_MODE_SETTING_KEY,
   STORIES_MIGRATION_DECISION_SETTING_KEY,
@@ -31,6 +32,7 @@ import type {
   CollectionSummaryRecord,
   FeedImage,
   FolderImageOrder,
+  NestedFolderTitleFormat,
   FolderRecord,
   FolderSummaryRecord,
   ImageDetail,
@@ -47,9 +49,10 @@ import {
 import { deserializeImageExifData } from '../utils/exif-utils.js';
 import { buildMonthDayKey, countFeedBursts, diversifyFeedCandidates, groupFeedBursts, listMonthDayKeysAroundDate } from '../utils/feed-utils.js';
 import { shouldPreferMomentRail, type FeedRailKind } from '../utils/feed-rail-utils.js';
+import { parseNestedFolderTitleFormatSetting, serializeNestedFolderTitleFormatSetting } from '../utils/folder-title-format.js';
 import { countSupportedRootMediaFiles } from '../utils/gallery-root-utils.js';
 import { resolveOriginalPath } from '../utils/media-paths.js';
-import { getPathBreadcrumb } from '../utils/path-utils.js';
+import { getLeafPathName, getParentRelativePath, getPathBreadcrumb } from '../utils/path-utils.js';
 import { buildReelQueue, shuffleReelCandidates, type ReelAffinitySignals } from '../utils/reels-utils.js';
 import { parseTreatStoriesAsFoldersSetting, serializeTreatStoriesAsFoldersSetting } from '../utils/stories-utils.js';
 import { scannerService } from './scanner-service.js';
@@ -205,6 +208,10 @@ function parseFolderImageOrder(value: string | null): FolderImageOrder {
 
 function getDefaultFolderImageOrder(): FolderImageOrder {
   return parseFolderImageOrder(appSettingsRepository.get(FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY));
+}
+
+function getNestedFolderTitleFormat(): NestedFolderTitleFormat {
+  return parseNestedFolderTitleFormatSetting(appSettingsRepository.get(NESTED_FOLDER_TITLE_FORMAT_SETTING_KEY));
 }
 
 function getTreatStoriesAsFolders(): boolean {
@@ -443,12 +450,27 @@ function isSameOrDescendantFolderPath(rootFolderPath: string, candidateFolderPat
   return candidateFolderPath === rootFolderPath || candidateFolderPath.startsWith(`${rootFolderPath}/`);
 }
 
+function getParentFolderDisplayName(folderPath: string): string | null {
+  const parentFolderPath = getParentRelativePath(folderPath);
+  if (!parentFolderPath) {
+    return null;
+  }
+
+  const parentFolder = folderRepository.getByFolderPath(parentFolderPath);
+  if (parentFolder?.name.trim()) {
+    return parentFolder.name.trim();
+  }
+
+  return getLeafPathName(parentFolderPath);
+}
+
 function mapFeedImage(image: IndexedFeedImage, derivativeVersion = getDerivativeAssetVersion()): FeedImage {
   const { playbackStrategy, placeId, placeSlug, placeName, placeKind, placeIsApproximate, isSaved, ...rest } = image;
   return {
     ...rest,
     isAnimated: Boolean(rest.isAnimated),
     isSaved: Boolean(isSaved),
+    folderParentName: getParentFolderDisplayName(rest.folderPath),
     folderBreadcrumb: getPathBreadcrumb(rest.folderPath),
     thumbnailUrl: toPublicMediaUrl('/thumbnails', rest.thumbnailUrl, derivativeVersion),
     previewUrl: buildPreviewUrl({
@@ -468,6 +490,7 @@ function mapImageDetail(image: IndexedImageDetail, derivativeVersion = getDeriva
     isAnimated: Boolean(rest.isAnimated),
     isSaved: Boolean(isSaved),
     exif: deserializeImageExifData(exifJson),
+    folderParentName: getParentFolderDisplayName(rest.folderPath),
     folderBreadcrumb: getPathBreadcrumb(rest.folderPath),
     thumbnailUrl: toPublicMediaUrl('/thumbnails', rest.thumbnailUrl, derivativeVersion),
     previewUrl: buildPreviewUrl({
@@ -487,6 +510,7 @@ function mapTrashImage(image: IndexedTrashImage, derivativeVersion = getDerivati
     ...rest,
     isAnimated: Boolean(rest.isAnimated),
     isSaved: Boolean(isSaved),
+    folderParentName: getParentFolderDisplayName(rest.folderPath),
     folderBreadcrumb: getPathBreadcrumb(rest.folderPath),
     thumbnailUrl: toPublicMediaUrl('/thumbnails', rest.thumbnailUrl, derivativeVersion),
     previewUrl: buildPreviewUrl({
@@ -509,6 +533,7 @@ function buildFolderSummary(folder: FolderSummaryRecord) {
       slug: folder.slug,
       name: folder.name,
       description: folder.description,
+      parentFolderName: getParentFolderDisplayName(folder.folder_path),
       folderPath: folder.folder_path,
       breadcrumb: getPathBreadcrumb(folder.folder_path),
       imageCount: folder.image_count,
@@ -535,6 +560,7 @@ function buildFolderSummary(folder: FolderSummaryRecord) {
     slug: folder.slug,
     name: folder.name,
     description: folder.description,
+    parentFolderName: getParentFolderDisplayName(folder.folder_path),
     folderPath: folder.folder_path,
     breadcrumb: getPathBreadcrumb(folder.folder_path),
     imageCount: folder.image_count,
@@ -556,6 +582,7 @@ function mapFeedImageForOwnerFolder(
     folderId: ownerFolder.id,
     folderSlug: ownerFolder.slug,
     folderName: ownerFolder.name,
+    folderParentName: ownerFolder.parentFolderName,
     folderPath: ownerFolder.folderPath,
     folderBreadcrumb: ownerFolder.breadcrumb
   };
@@ -1826,6 +1853,7 @@ export const galleryService = {
     const defaultLocale = getDefaultLocale();
     const defaultReelsFeedMode = getDefaultReelsFeedMode();
     const defaultFolderImageOrder = getDefaultFolderImageOrder();
+    const nestedFolderTitleFormat = getNestedFolderTitleFormat();
     const treatStoriesAsFolders = getTreatStoriesAsFolders();
     const storiesMigration = getStoriesMigrationStatus();
 
@@ -1848,6 +1876,7 @@ export const galleryService = {
         defaultHomeFeedMode,
         defaultReelsFeedMode,
         defaultFolderImageOrder,
+        nestedFolderTitleFormat,
         treatStoriesAsFolders
       },
       storiesMigration
@@ -1888,6 +1917,7 @@ export const galleryService = {
     const defaultLocale = getDefaultLocale();
     const defaultReelsFeedMode = getDefaultReelsFeedMode();
     const defaultFolderImageOrder = getDefaultFolderImageOrder();
+    const nestedFolderTitleFormat = getNestedFolderTitleFormat();
     const treatStoriesAsFolders = getTreatStoriesAsFolders();
     const storiesMigration = getStoriesMigrationStatus();
     const excludedFolders = getExcludedFolderSettings();
@@ -1921,6 +1951,7 @@ export const galleryService = {
         defaultHomeFeedMode,
         defaultReelsFeedMode,
         defaultFolderImageOrder,
+        nestedFolderTitleFormat,
         treatStoriesAsFolders
       },
       storiesMigration,
@@ -1957,6 +1988,17 @@ export const galleryService = {
 
     return {
       defaultOrder: order
+    };
+  },
+
+  setNestedFolderTitleFormat(titleFormat: NestedFolderTitleFormat) {
+    appSettingsRepository.set(
+      NESTED_FOLDER_TITLE_FORMAT_SETTING_KEY,
+      serializeNestedFolderTitleFormatSetting(titleFormat)
+    );
+
+    return {
+      titleFormat
     };
   },
 

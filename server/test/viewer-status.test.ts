@@ -25,6 +25,7 @@ describe.sequential('viewer-safe status payload', () => {
   let HOME_FEED_DEFAULT_MODE_SETTING_KEY: AppSettingKeysModule['HOME_FEED_DEFAULT_MODE_SETTING_KEY'];
   let REELS_FEED_DEFAULT_MODE_SETTING_KEY: AppSettingKeysModule['REELS_FEED_DEFAULT_MODE_SETTING_KEY'];
   let FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY: AppSettingKeysModule['FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY'];
+  let NESTED_FOLDER_TITLE_FORMAT_SETTING_KEY: AppSettingKeysModule['NESTED_FOLDER_TITLE_FORMAT_SETTING_KEY'];
 
   beforeAll(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'insta-viewer-status-'));
@@ -47,7 +48,8 @@ describe.sequential('viewer-safe status payload', () => {
       APP_DEFAULT_LOCALE_SETTING_KEY,
       HOME_FEED_DEFAULT_MODE_SETTING_KEY,
       REELS_FEED_DEFAULT_MODE_SETTING_KEY,
-      FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY
+      FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY,
+      NESTED_FOLDER_TITLE_FORMAT_SETTING_KEY
     } = await import('../src/constants/app-setting-keys.js'));
   });
 
@@ -57,6 +59,7 @@ describe.sequential('viewer-safe status payload', () => {
     appSettingsRepository.remove(HOME_FEED_DEFAULT_MODE_SETTING_KEY);
     appSettingsRepository.remove(REELS_FEED_DEFAULT_MODE_SETTING_KEY);
     appSettingsRepository.remove(FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY);
+    appSettingsRepository.remove(NESTED_FOLDER_TITLE_FORMAT_SETTING_KEY);
     await Promise.all([
       fs.rm(appConfig.galleryRoot, { recursive: true, force: true }),
       fs.rm(appConfig.thumbnailsDir, { recursive: true, force: true }),
@@ -119,6 +122,15 @@ describe.sequential('viewer-safe status payload', () => {
     });
 
     pendingSpy.mockRestore();
+  });
+
+  it('includes the nested folder title format preference in viewer and admin status payloads', () => {
+    expect(galleryService.getStatus().preferences.nestedFolderTitleFormat).toBe('folder');
+
+    galleryService.setNestedFolderTitleFormat('parent-plus-folder');
+
+    expect(galleryService.getStatus().preferences.nestedFolderTitleFormat).toBe('parent-plus-folder');
+    expect(galleryService.getStats().preferences.nestedFolderTitleFormat).toBe('parent-plus-folder');
   });
 
   it('keeps detailed file and folder context in the admin-only scan progress payload', () => {
@@ -192,6 +204,7 @@ describe.sequential('viewer-safe status payload', () => {
       defaultHomeFeedMode: 'random',
       defaultReelsFeedMode: 'random',
       defaultFolderImageOrder: 'newest',
+      nestedFolderTitleFormat: 'folder',
       treatStoriesAsFolders: false
     });
   });
@@ -209,6 +222,7 @@ describe.sequential('viewer-safe status payload', () => {
       defaultHomeFeedMode: 'rediscover',
       defaultReelsFeedMode: 'recommended',
       defaultFolderImageOrder: 'oldest',
+      nestedFolderTitleFormat: 'folder',
       treatStoriesAsFolders: false
     });
   });

@@ -257,14 +257,14 @@
             >
               <Avatar
                 class="h-12 w-12 flex-shrink-0"
-                :name="folder.name"
+                :name="formatDisplayFolderTitle(folder)"
                 :src="folder.avatarUrl"
               />
               <span class="min-w-0 flex-1 text-left">
                 <strong
                   class="block truncate text-[0.96rem] font-semibold text-text"
                 >
-                  {{ folder.name }}
+                  {{ formatDisplayFolderTitle(folder) }}
                 </strong>
                 <span class="block truncate text-[0.84rem] text-muted">
                   {{ describeFolder(folder) }}
@@ -346,6 +346,7 @@ import { useFoldersStore } from '../stores/folders';
 import { useLikesStore } from '../stores/likes';
 import type { FolderSummary } from '../types/api';
 import { searchFolders, rankExploreItems } from '../utils/explore';
+import { formatFolderTitle } from '../utils/folder-titles';
 import { buildLikedCountByFolder } from '../utils/home-recommendations';
 
 type SearchTab = 'media' | 'folders';
@@ -409,6 +410,10 @@ const showSearchLoading = computed(
     exploreStore.searchItems.length === 0 &&
     !exploreStore.searchError
 );
+
+function formatDisplayFolderTitle(folder: FolderSummary) {
+  return formatFolderTitle(folder, appStore.nestedFolderTitleFormat);
+}
 
 watch(
   () => [route.query.q, route.query.tab] as const,

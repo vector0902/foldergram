@@ -72,7 +72,7 @@
           >
             <label class="flex items-center justify-between gap-2 px-3 py-2 cursor-pointer select-none border-b border-border">
               <span class="text-[0.8rem] font-semibold text-text truncate">
-                {{ item.folderName }}
+                {{ formatDisplayFolderTitle(item) }}
               </span>
               <input
                 class="cursor-pointer"
@@ -190,6 +190,7 @@ import { useLikesStore } from '../stores/likes';
 import { useMomentsStore } from '../stores/moments';
 import { useTrashStore } from '../stores/trash';
 import { resolveDisplayCaption } from '../utils/caption';
+import { formatFolderTitle } from '../utils/folder-titles';
 
 const { t, locale } = useI18n();
 const appStore = useAppStore();
@@ -238,6 +239,10 @@ function toggleSelected(id: number) {
 
 function displayCaption(item: { filename: string; caption?: string | null }) {
   return resolveDisplayCaption(item);
+}
+
+function formatDisplayFolderTitle(item: { folderName: string; folderBreadcrumb: string | null; folderPath: string }) {
+  return formatFolderTitle(item, appStore.nestedFolderTitleFormat);
 }
 
 function formatCount(value: number) {
