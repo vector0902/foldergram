@@ -97,6 +97,7 @@ Example shape:
   "role": "anonymous",
   "accessMode": "public",
   "likesMode": "local",
+  "defaultLocale": "zh",
   "capabilities": {
     "canManageLibrary": false,
     "canDeleteMedia": false,
@@ -108,6 +109,12 @@ Example shape:
   }
 }
 ```
+
+Notable field:
+
+| Field | Notes |
+| --- | --- |
+| `defaultLocale` | Saved app-wide default locale used to localize the auth gate and other pre-auth UI when the browser does not already have its own local override. |
 
 ### `GET /api/feed`
 
@@ -696,6 +703,7 @@ Notable fields:
 | `scan` | Viewer-safe live scan progress snapshot. It uses the same shape as `GET /api/scan-progress`, with `currentFolder` and `currentFile` redacted and `lastCompletedScan.error_text` forced to `null`. Scan-report paths never appear here. |
 | `storage` | Availability with a generic unavailable message only. |
 | `libraryIndex` | Rebuild requirement plus ignored root-media count. Gallery-root paths are omitted. |
+| `preferences.defaultLocale` | Saved app-wide default locale when configured. Browsers can still keep their own local override. |
 | `preferences.defaultHomeFeedMode` | Current app-wide default home feed mode. |
 | `preferences.defaultReelsFeedMode` | Current app-wide default reels mode used when `/reels` opens. |
 | `preferences.defaultFolderImageOrder` | Current app-wide default order used for folder grids and folder detail navigation. |
@@ -989,6 +997,33 @@ Success:
 ```json
 {
   "defaultMode": "recent"
+}
+```
+
+### `PUT /api/admin/settings/app-locale`
+
+Sets the saved app-wide default language used by browsers that do not already
+have their own local override.
+
+Body:
+
+```json
+{
+  "defaultLocale": "zh"
+}
+```
+
+Allowed values:
+
+- `en`
+- `es`
+- `zh`
+
+Success:
+
+```json
+{
+  "defaultLocale": "zh"
 }
 ```
 

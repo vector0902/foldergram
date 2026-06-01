@@ -119,7 +119,8 @@ Use `pnpm migrate` to apply pending migrations without starting the app.
 ## Client behavior worth knowing
 
 - theme selection is stored in `localStorage`
-- locale preference is stored in `localStorage`
+- explicit locale selection is stored in `localStorage`
+- the saved app-language default is stored in the database and applies when no local browser override exists
 - video mute preference is stored in `localStorage`
 - the client disables previously registered service workers in development
 - the client registers `/sw.js` in production when the browser supports service workers
@@ -130,7 +131,7 @@ Foldergram's client locale files live in `client/src/locales/`.
 
 - `en.json` is the canonical locale tree for app-owned UI copy
 - `es.json` and `zh.json` are shipped locales and must stay key-aligned with `en.json`
-- `index.ts` resolves stored and browser locales, registers Vue I18n, and syncs `document.documentElement.lang`
+- `index.ts` resolves local overrides, saved app defaults, and browser locales, registers Vue I18n, and syncs `document.documentElement.lang`
 - the client Vitest suite validates locale key parity against `en.json`
 
 ## Docs workflow

@@ -2,21 +2,21 @@
   <section class="w-[min(100%,72rem)] mx-auto grid gap-[1.1rem]">
     <header class="flex items-end justify-between gap-4 max-sm:flex-col max-sm:items-start">
       <div class="flex flex-col items-start gap-[0.25rem]">
-        <span class="eyebrow">Trash</span>
-        <h1 class="m-0 text-[clamp(1.5rem,2.2vw,1.9rem)] tracking-[-0.03em]">Deleted posts</h1>
+        <span class="eyebrow">{{ t('trashPage.eyebrow') }}</span>
+        <h1 class="m-0 text-[clamp(1.5rem,2.2vw,1.9rem)] tracking-[-0.03em]">{{ t('trashPage.title') }}</h1>
         <p class="m-0 text-muted">
-          Posts moved here stay on disk until you permanently delete them.
+          {{ t('trashPage.description') }}
         </p>
       </div>
       <div class="flex items-center gap-3">
-        <span class="text-[0.82rem] text-muted tabular-nums">{{ selectedCount }} selected</span>
+        <span class="text-[0.82rem] text-muted tabular-nums">{{ selectedCountLabel }}</span>
         <button
           class="min-h-[2.35rem] px-4 py-[0.6rem] rounded-[0.75rem] border border-border bg-surface text-text font-semibold disabled:opacity-55 disabled:cursor-not-allowed"
           type="button"
           :disabled="selectedCount === 0 || processing"
           @click="restoreConfirmOpen = true"
         >
-          Restore
+          {{ t('trashPage.restoreButton') }}
         </button>
         <button
           class="min-h-[2.35rem] px-4 py-[0.6rem] rounded-[0.75rem] border border-transparent bg-[#b42318] text-white font-semibold disabled:opacity-55 disabled:cursor-not-allowed"
@@ -24,19 +24,19 @@
           :disabled="selectedCount === 0 || processing"
           @click="permanentConfirmOpen = true"
         >
-          Permanently Delete
+          {{ t('trashPage.deleteButton') }}
         </button>
       </div>
     </header>
 
     <EmptyState
       v-if="appStore.isLibraryUnavailable"
-      title="Library storage unavailable"
-      :description="appStore.libraryUnavailableReason"
+      :title="t('trashPage.libraryUnavailableTitle')"
+      :description="libraryUnavailableDescription"
     />
     <ErrorState
       v-else-if="trashStore.error && trashStore.items.length === 0"
-      title="Could not load trash"
+      :title="t('trashPage.loadErrorTitle')"
       :message="trashStore.error"
     />
     <template v-else>
@@ -47,13 +47,16 @@
         {{ actionError }}
       </p>
 
-      <section v-if="trashStore.loading && !trashStore.initialized && trashStore.items.length === 0" class="card p-8 text-center">
-        <p class="m-0 text-muted">Loading trash...</p>
+      <section
+        v-if="trashStore.loading && !trashStore.initialized && trashStore.items.length === 0"
+        class="card p-8 text-center"
+      >
+        <p class="m-0 text-muted">{{ t('trashPage.loading') }}</p>
       </section>
       <EmptyState
         v-else-if="trashStore.initialized && trashStore.items.length === 0"
-        title="Trash is empty"
-        description="Deleted posts will appear here so you can restore them or remove them permanently."
+        :title="t('trashPage.emptyTitle')"
+        :description="t('trashPage.emptyDescription')"
       />
       <template v-else>
         <section class="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
@@ -83,7 +86,7 @@
               class="relative block w-full aspect-square overflow-hidden border-0 p-0 text-left cursor-pointer bg-surface-alt"
               type="button"
               :aria-pressed="isSelected(item.id)"
-              :aria-label="`${isSelected(item.id) ? 'Deselect' : 'Select'} ${displayCaption(item)}`"
+              :aria-label="itemSelectionAriaLabel(item.id, displayCaption(item))"
               @click="toggleSelected(item.id)"
             >
               <ResilientImage
@@ -125,9 +128,9 @@
 
             <div class="grid gap-[0.35rem] px-3 py-3">
               <p class="m-0 text-[0.84rem] truncate">{{ displayCaption(item) }}</p>
-              <p class="m-0 text-[0.74rem] text-muted">Trashed {{ formatTrashedAt(item.trashedAt) }}</p>
+              <p class="m-0 text-[0.74rem] text-muted">{{ t('trashPage.trashedAt', { date: formatTrashedAt(item.trashedAt) }) }}</p>
               <RouterLink class="text-[0.74rem] font-semibold text-accent-strong" :to="{ name: 'folder', params: { slug: item.folderSlug } }">
-                Open folder
+                {{ t('trashPage.openFolder') }}
               </RouterLink>
             </div>
           </article>
@@ -139,10 +142,11 @@
 
     <ConfirmDialog
       v-if="restoreConfirmOpen"
-      title="Restore selected posts?"
-      :message="`Restore ${selectedCount} selected post${selectedCount === 1 ? '' : 's'} to the app?`"
-      confirm-label="Restore"
-      loading-label="Restoring..."
+      :title="t('trashPage.restoreDialog.title')"
+      :message="restoreDialogMessage"
+      :confirm-label="t('trashPage.restoreDialog.confirm')"
+      :cancel-label="t('common.cancel')"
+      :loading-label="t('trashPage.restoreDialog.loading')"
       :loading="processing"
       @cancel="restoreConfirmOpen = false"
       @confirm="handleRestore"
@@ -150,17 +154,18 @@
 
     <ConfirmDialog
       v-if="permanentConfirmOpen"
-      title="Permanently delete selected posts?"
-      :message="`This will permanently delete ${selectedCount} selected post${selectedCount === 1 ? '' : 's'} and remove original files from disk.`"
-      confirm-label="Permanently Delete"
-      loading-label="Deleting..."
+      :title="t('trashPage.deleteDialog.title')"
+      :message="permanentDeleteDialogMessage"
+      :confirm-label="t('trashPage.deleteDialog.confirm')"
+      :cancel-label="t('common.cancel')"
+      :loading-label="t('trashPage.deleteDialog.loading')"
       :loading="processing"
       @cancel="permanentConfirmOpen = false"
       @confirm="handlePermanentDelete"
     >
       <template #details>
         <p class="m-0 mt-3 px-3 py-[0.8rem] rounded-[0.9rem] border border-[rgba(217,48,37,0.24)] text-[0.84rem] text-[#b42318] bg-[rgba(217,48,37,0.08)]">
-          Original files, thumbnails, and previews will be removed permanently. This action cannot be undone.
+          {{ t('trashPage.deleteDialog.warning') }}
         </p>
       </template>
     </ConfirmDialog>
@@ -169,6 +174,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
 import { deleteImage, restoreImage } from '../api/gallery';
@@ -185,6 +191,7 @@ import { useMomentsStore } from '../stores/moments';
 import { useTrashStore } from '../stores/trash';
 import { resolveDisplayCaption } from '../utils/caption';
 
+const { t, locale } = useI18n();
 const appStore = useAppStore();
 const feedStore = useFeedStore();
 const foldersStore = useFoldersStore();
@@ -198,6 +205,23 @@ const restoreConfirmOpen = ref(false);
 const permanentConfirmOpen = ref(false);
 
 const selectedCount = computed(() => selectedIds.value.length);
+const libraryUnavailableDescription = computed(() => appStore.stats?.storage.reason ?? t('trashPage.libraryUnavailableDescription'));
+const selectedCountLabel = computed(() => {
+  const count = formatCount(selectedCount.value);
+  return selectedCount.value === 1 ? t('trashPage.selectedOne', { count }) : t('trashPage.selectedOther', { count });
+});
+const restoreDialogMessage = computed(() => {
+  const count = formatCount(selectedCount.value);
+  return selectedCount.value === 1
+    ? t('trashPage.restoreDialog.messageOne', { count })
+    : t('trashPage.restoreDialog.messageOther', { count });
+});
+const permanentDeleteDialogMessage = computed(() => {
+  const count = formatCount(selectedCount.value);
+  return selectedCount.value === 1
+    ? t('trashPage.deleteDialog.messageOne', { count })
+    : t('trashPage.deleteDialog.messageOther', { count });
+});
 
 function isSelected(id: number): boolean {
   return selectedIds.value.includes(id);
@@ -216,18 +240,26 @@ function displayCaption(item: { filename: string; caption?: string | null }) {
   return resolveDisplayCaption(item);
 }
 
+function formatCount(value: number) {
+  return new Intl.NumberFormat(locale.value).format(value);
+}
+
 function formatTrashedAt(value: string | null) {
   if (!value) {
-    return 'recently';
+    return t('trashPage.recently');
   }
 
-  return new Date(value).toLocaleString(undefined, {
+  return new Date(value).toLocaleString(locale.value, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit'
   });
+}
+
+function itemSelectionAriaLabel(id: number, label: string) {
+  return isSelected(id) ? t('trashPage.deselectItem', { label }) : t('trashPage.selectItem', { label });
 }
 
 async function refreshVisibleData() {
@@ -242,7 +274,7 @@ async function refreshVisibleData() {
 
 function refreshVisibleDataInBackground() {
   void refreshVisibleData().catch((error) => {
-    actionError.value = error instanceof Error ? error.message : 'Unable to refresh the updated library state.';
+    actionError.value = error instanceof Error ? error.message : t('trashPage.errors.refresh');
   });
 }
 
@@ -279,7 +311,9 @@ async function processSelection(action: 'restore' | 'delete') {
   }
 
   if (failedCount > 0) {
-    actionError.value = `${failedCount} post${failedCount === 1 ? '' : 's'} could not be processed.`;
+    const count = formatCount(failedCount);
+    actionError.value =
+      failedCount === 1 ? t('trashPage.errors.processOne', { count }) : t('trashPage.errors.processOther', { count });
   }
 
   processing.value = false;

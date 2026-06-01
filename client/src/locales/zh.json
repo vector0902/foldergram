@@ -158,12 +158,13 @@
       },
       "card": {
         "title": "常规设置",
-        "description": "适用于 stories 文件夹、排除文件夹、首页、短片和应用文件夹的全局默认项。"
+        "description": "适用于语言、stories 文件夹、排除文件夹、首页、短片和应用文件夹的全局默认项。"
       },
       "language": {
         "label": "应用语言",
         "description": "选择此设备上用于导航、对话框和其他已翻译应用界面的语言。",
-        "helper": "会立即在当前浏览器中生效。缺失翻译时会回退到英文。",
+        "helper": "会立即在当前浏览器中生效。在下方保存更改后，所选语言也会成为整个应用的默认语言。缺失翻译时会回退到英文。",
+        "overrideNotice": "应用默认语言是{savedLabel}。当前浏览器正通过仅限此浏览器的设置临时使用{currentLabel}。保存更改即可将{currentLabel}设为默认语言。",
         "selectLabel": "应用语言",
         "options": {
           "en": "英语",
@@ -248,13 +249,14 @@
         "loading": "正在加载当前应用偏好...",
         "excludedAndOther": "将文件夹排除规则与其他全局更改一起保存。随后运行一次图库扫描，以便 stories 和排除文件夹正确重新索引。",
         "excludedOnly": "这只会保存自定义排除文件夹。随后运行一次图库扫描，以便这些文件夹从索引中消失。",
-        "storiesAndDefaults": "将新的 stories 规则与更新后的浏览默认项一起保存。",
+        "storiesAndDefaults": "将新的 stories 规则与更新后的全局默认项一起保存。",
         "storiesOnly": "这只会保存 stories 文件夹规则。随后运行一次图库扫描，以新行为重新建立索引。",
-        "multipleDefaults": "一起保存这些浏览默认项。首页访问者仍可在主页上切换模式；短片和应用文件夹使用应用默认项。",
+        "multipleDefaults": "一起保存这些全局默认项。语言会立即在当前浏览器中生效；首页访问者仍可在主页上切换模式；短片和应用文件夹使用应用默认项。",
+        "languageOnly": "这会立即更改当前浏览器中的语言。如需让所选语言也成为整个应用的默认语言，请再保存一次。",
         "homeOnly": "这会更新此应用首页打开时显示的首个动态流模式。访问者仍可从主页切换模式。",
         "reelsOnly": "这会更新此应用打开短片时使用的队列样式。访问者无法从短片页面切换模式。",
         "folderOnly": "这会更新应用文件夹网格使用的默认照片顺序。",
-        "idle": "这些是当前适用于首页、短片、应用文件夹、stories 文件夹和排除文件夹的全局默认项。"
+        "idle": "这些是当前适用于语言、首页、短片、应用文件夹、stories 文件夹和排除文件夹的全局默认项。"
       },
       "rescanNotice": {
         "excludedAndStories": "保存这些更改后，请先运行一次图库扫描，再期待 stories 文件夹和排除文件夹更新。",
@@ -267,11 +269,13 @@
         "excludedFoldersSaved": "排除文件夹已保存。请运行一次图库扫描以应用它们。",
         "settingsAndStoriesSaved": "设置已保存。请运行一次图库扫描以应用 stories 文件夹更改。",
         "storiesSaved": "stories 文件夹行为已保存。请运行一次图库扫描以应用它。",
-        "defaultsSaved": "全局浏览默认项已更新。",
+        "defaultsSaved": "全局默认项已更新。",
+        "languageSaved": "应用语言默认值已保存为{label}。",
         "homeSaved": "首页现在会以 {label} 打开。",
         "reelsSaved": "短片现在会以 {label} 打开。",
         "folderOrderSaved": "应用文件夹现在会以 {label} 打开。",
         "parts": {
+          "appLanguage": "应用语言",
           "excludedFolders": "排除文件夹",
           "storiesFolderHandling": "stories 文件夹行为",
           "homeFeedDefault": "首页动态默认项",
@@ -954,6 +958,46 @@
       "loadingSubtree": "正在删除子树...",
       "loadingFolder": "正在删除...",
       "error": "无法删除此应用文件夹。"
+    }
+  },
+  "trashPage": {
+    "eyebrow": "回收站",
+    "title": "已删除的帖子",
+    "description": "移到这里的帖子会保留在磁盘上，直到你将其永久删除。",
+    "selectedOne": "已选 {count} 条帖子",
+    "selectedOther": "已选 {count} 条帖子",
+    "restoreButton": "恢复",
+    "deleteButton": "永久删除",
+    "libraryUnavailableTitle": "图库存储不可用",
+    "libraryUnavailableDescription": "当前配置的图库存储不可用。",
+    "loadErrorTitle": "无法加载回收站",
+    "loading": "正在加载回收站...",
+    "emptyTitle": "回收站为空",
+    "emptyDescription": "已删除的帖子会显示在这里，方便你恢复或永久移除。",
+    "selectItem": "选择 {label}",
+    "deselectItem": "取消选择 {label}",
+    "trashedAt": "{date} 已移入回收站",
+    "recently": "刚刚",
+    "openFolder": "打开文件夹",
+    "restoreDialog": {
+      "title": "恢复所选帖子？",
+      "messageOne": "要将所选的 {count} 条帖子恢复到应用中吗？",
+      "messageOther": "要将所选的 {count} 条帖子恢复到应用中吗？",
+      "confirm": "恢复",
+      "loading": "正在恢复..."
+    },
+    "deleteDialog": {
+      "title": "永久删除所选帖子？",
+      "messageOne": "这将永久删除所选的 {count} 条帖子，并从磁盘移除原始文件。",
+      "messageOther": "这将永久删除所选的 {count} 条帖子，并从磁盘移除原始文件。",
+      "confirm": "永久删除",
+      "loading": "正在删除...",
+      "warning": "原始文件、缩略图和预览图都会被永久删除。此操作无法撤销。"
+    },
+    "errors": {
+      "refresh": "无法刷新更新后的图库状态。",
+      "processOne": "有 {count} 条帖子无法处理。",
+      "processOther": "有 {count} 条帖子无法处理。"
     }
   },
   "explore": {

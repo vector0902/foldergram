@@ -6,7 +6,14 @@ import {
   fetchScanProgress,
   fetchStats as fetchStatus
 } from '../api/gallery';
-import { DEFAULT_LOCALE, i18n, resolvePreferredLocale, syncDocumentLanguage, type SupportedLocale } from '../locales';
+import {
+  DEFAULT_LOCALE,
+  i18n,
+  resolvePreferredLocale,
+  resolveSupportedLocale,
+  syncDocumentLanguage,
+  type SupportedLocale
+} from '../locales';
 import type { AppStatus, FeedMode, FolderImageOrder, ReelsFeedMode, ScanProgress } from '../types/api';
 import { useAuthStore } from './auth';
 
@@ -54,6 +61,26 @@ function parseStoredRecentFolderSlugs(value: string | null): string[] {
   }
 }
 
+function getStoredLocalePreference(): SupportedLocale | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return resolveSupportedLocale(window.localStorage.getItem(LOCALE_STORAGE_KEY));
+}
+
+function getBrowserLocaleCandidates(): string[] {
+  if (typeof navigator === 'undefined') {
+    return [];
+  }
+
+  return [...(Array.isArray(navigator.languages) ? navigator.languages : []), navigator.language];
+}
+
+function resolveSavedDefaultLocale(locale: string | null | undefined): SupportedLocale | null {
+  return resolveSupportedLocale(locale);
+}
+
 export const useAppStore = defineStore('app', {
   state: (): AppState => ({
     stats: null,
@@ -78,6 +105,7 @@ export const useAppStore = defineStore('app', {
     hasCompletedScan: (state) => state.stats?.scan.lastCompletedScan !== null,
     isInitialScan: (state) => state.stats?.scan.isScanning === true && state.stats?.scan.lastCompletedScan === null,
     defaultHomeFeedMode: (state): FeedMode => state.stats?.preferences.defaultHomeFeedMode ?? 'random',
+    savedDefaultLocale: (state): SupportedLocale | null => resolveSupportedLocale(state.stats?.preferences.defaultLocale ?? null),
     defaultReelsFeedMode: (state): ReelsFeedMode => state.stats?.preferences.defaultReelsFeedMode ?? 'random',
     defaultFolderImageOrder: (state): FolderImageOrder => state.stats?.preferences.defaultFolderImageOrder ?? 'newest',
     treatStoriesAsFolders: (state) => state.stats?.preferences.treatStoriesAsFolders === true
@@ -109,16 +137,25 @@ export const useAppStore = defineStore('app', {
     },
 
     initializeLocale() {
-      const browserLocales =
-        typeof navigator === 'undefined'
-          ? []
-          : [...(Array.isArray(navigator.languages) ? navigator.languages : []), navigator.language];
-      const preferredLocale = resolvePreferredLocale(
-        typeof window === 'undefined' ? null : window.localStorage.getItem(LOCALE_STORAGE_KEY),
-        ...browserLocales
-      );
+      const rawStoredLocale = typeof window === 'undefined' ? null : window.localStorage.getItem(LOCALE_STORAGE_KEY);
+      const storedLocale = resolveSupportedLocale(rawStoredLocale);
 
-      this.setLocale(preferredLocale);
+      if (typeof window !== 'undefined') {
+        if (rawStoredLocale && storedLocale && rawStoredLocale !== storedLocale) {
+          window.localStorage.setItem(LOCALE_STORAGE_KEY, storedLocale);
+        }
+
+        if (rawStoredLocale && !storedLocale) {
+          window.localStorage.removeItem(LOCALE_STORAGE_KEY);
+        }
+      }
+
+      if (storedLocale) {
+        this.setLocale(storedLocale, { persist: false });
+        return;
+      }
+
+      this.setLocale(resolvePreferredLocale(...getBrowserLocaleCandidates()), { persist: false });
     },
 
     initializeLastOpenedFolder() {
@@ -139,16 +176,37 @@ export const useAppStore = defineStore('app', {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     },
 
-    setLocale(locale: string | SupportedLocale) {
+    setLocale(locale: string | SupportedLocale, options: { persist?: boolean } = {}) {
       const resolvedLocale = resolvePreferredLocale(locale);
 
       this.locale = resolvedLocale;
       i18n.global.locale.value = resolvedLocale;
       syncDocumentLanguage(resolvedLocale);
 
-      if (typeof window !== 'undefined') {
+      if ((options.persist ?? true) && typeof window !== 'undefined') {
         window.localStorage.setItem(LOCALE_STORAGE_KEY, resolvedLocale);
       }
+    },
+
+    syncLocaleFromSavedDefault(defaultLocale: string | null | undefined) {
+      if (getStoredLocalePreference()) {
+        return;
+      }
+
+      const resolvedLocale = resolveSavedDefaultLocale(defaultLocale);
+      if (!resolvedLocale) {
+        return;
+      }
+
+      this.setLocale(resolvedLocale, { persist: false });
+    },
+
+    syncLocaleFromStats(stats?: AppStatus | null) {
+      this.syncLocaleFromSavedDefault((stats ?? this.stats)?.preferences.defaultLocale ?? null);
+    },
+
+    syncLocaleFromAuthStatus(defaultLocale: string | null | undefined) {
+      this.syncLocaleFromSavedDefault(defaultLocale);
     },
 
     toggleTheme() {
@@ -349,6 +407,7 @@ export const useAppStore = defineStore('app', {
         this.stats = this.shouldUseAdminScanProgress()
           ? await fetchAdminStats()
           : await fetchStatus();
+        this.syncLocaleFromStats(this.stats);
         this.statsPollFailures = 0;
 
         if (options.background && this.error) {

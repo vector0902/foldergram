@@ -158,12 +158,13 @@
       },
       "card": {
         "title": "General Settings",
-        "description": "App-wide defaults for stories folders, excluded folders, Home, Reels, and app folders."
+        "description": "App-wide defaults for language, stories folders, excluded folders, Home, Reels, and app folders."
       },
       "language": {
         "label": "App language",
         "description": "Choose the language used for navigation, dialogs, and other translated app UI on this device.",
-        "helper": "Applies immediately in this browser. Missing translations fall back to English.",
+        "helper": "Applies immediately in this browser. Save changes below to make the selected language the app-wide default. Missing translations fall back to English.",
+        "overrideNotice": "App default is {savedLabel}. This browser is temporarily using {currentLabel} from a browser-only setting. Save changes to make {currentLabel} the default.",
         "selectLabel": "App language",
         "options": {
           "en": "English",
@@ -248,13 +249,14 @@
         "loading": "Loading the current app preferences...",
         "excludedAndOther": "Save the folder exclusion rules with the other app-wide changes. Run a library scan afterward so stories and excluded folders reindex correctly.",
         "excludedOnly": "This saves the custom excluded folders only. Run a library scan afterward so those folders disappear from the index.",
-        "storiesAndDefaults": "Save the new stories rule and the updated browsing defaults together.",
+        "storiesAndDefaults": "Save the new stories rule and the updated app defaults together.",
         "storiesOnly": "This saves the stories folders rule only. Run a library scan afterward to reindex with the new behavior.",
-        "multipleDefaults": "Save these browsing defaults together. Home visitors can still switch modes on the homepage; Reels and app folders use app defaults.",
+        "multipleDefaults": "Save these app defaults together. Language applies immediately in this browser; Home visitors can still switch modes on the homepage; Reels and app folders use app defaults.",
+        "languageOnly": "This changes the language immediately in this browser. Save it too if you want the selected language to become the app-wide default.",
         "homeOnly": "This updates the first feed mode shown on Home for this app. Visitors can still switch modes from the homepage.",
         "reelsOnly": "This updates the queue style used when Reels opens for this app. Visitors cannot switch modes from the reels page.",
         "folderOnly": "This updates the default photo order used by app folder grids.",
-        "idle": "These are the current app-wide defaults for Home, Reels, app folders, stories folders, and excluded folders."
+        "idle": "These are the current app-wide defaults for language, Home, Reels, app folders, stories folders, and excluded folders."
       },
       "rescanNotice": {
         "excludedAndStories": "Save these changes, then run a library scan before expecting stories folders and excluded folders to update.",
@@ -267,11 +269,13 @@
         "excludedFoldersSaved": "Excluded folders were saved. Run a library scan to apply them.",
         "settingsAndStoriesSaved": "Settings were saved. Run a library scan to apply the stories folder change.",
         "storiesSaved": "Stories folder behavior was saved. Run a library scan to apply it.",
-        "defaultsSaved": "App-wide browsing defaults were updated.",
+        "defaultsSaved": "App-wide defaults were updated.",
+        "languageSaved": "App language default saved as {label}.",
         "homeSaved": "The homepage now opens with {label}.",
         "reelsSaved": "Reels now opens with {label}.",
         "folderOrderSaved": "App folders now open with {label}.",
         "parts": {
+          "appLanguage": "app language",
           "excludedFolders": "excluded folders",
           "storiesFolderHandling": "stories folder handling",
           "homeFeedDefault": "Home feed default",
@@ -954,6 +958,46 @@
       "loadingSubtree": "Deleting subtree...",
       "loadingFolder": "Deleting...",
       "error": "Unable to delete this app folder."
+    }
+  },
+  "trashPage": {
+    "eyebrow": "Trash",
+    "title": "Deleted posts",
+    "description": "Posts moved here stay on disk until you permanently delete them.",
+    "selectedOne": "{count} selected post",
+    "selectedOther": "{count} selected posts",
+    "restoreButton": "Restore",
+    "deleteButton": "Permanently Delete",
+    "libraryUnavailableTitle": "Library storage unavailable",
+    "libraryUnavailableDescription": "Configured library storage is unavailable.",
+    "loadErrorTitle": "Could not load trash",
+    "loading": "Loading trash...",
+    "emptyTitle": "Trash is empty",
+    "emptyDescription": "Deleted posts will appear here so you can restore them or remove them permanently.",
+    "selectItem": "Select {label}",
+    "deselectItem": "Deselect {label}",
+    "trashedAt": "Trashed {date}",
+    "recently": "recently",
+    "openFolder": "Open folder",
+    "restoreDialog": {
+      "title": "Restore selected posts?",
+      "messageOne": "Restore {count} selected post to the app?",
+      "messageOther": "Restore {count} selected posts to the app?",
+      "confirm": "Restore",
+      "loading": "Restoring..."
+    },
+    "deleteDialog": {
+      "title": "Permanently delete selected posts?",
+      "messageOne": "This will permanently delete {count} selected post and remove the original file from disk.",
+      "messageOther": "This will permanently delete {count} selected posts and remove original files from disk.",
+      "confirm": "Permanently Delete",
+      "loading": "Deleting...",
+      "warning": "Original files, thumbnails, and previews will be removed permanently. This action cannot be undone."
+    },
+    "errors": {
+      "refresh": "Unable to refresh the updated library state.",
+      "processOne": "{count} post could not be processed.",
+      "processOther": "{count} posts could not be processed."
     }
   },
   "explore": {

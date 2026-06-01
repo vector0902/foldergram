@@ -575,31 +575,43 @@
             </div>
 
             <div class="divide-y divide-border">
-              <div class="grid gap-3 px-6 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                <div class="min-w-0">
-                  <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.language.label') }}</p>
-                  <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.language.description') }}</p>
-                  <p class="m-0 mt-[0.4rem] text-[0.78rem] text-muted">{{ t('settings.general.language.helper') }}</p>
+              <div class="px-6 py-4">
+                <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                  <div class="min-w-0">
+                    <p class="m-0 text-[0.96rem] font-semibold text-text">{{ t('settings.general.language.label') }}</p>
+                    <p class="m-0 mt-[0.25rem] text-[0.84rem] text-muted">{{ t('settings.general.language.description') }}</p>
+                    <p class="m-0 mt-[0.4rem] text-[0.78rem] text-muted">{{ t('settings.general.language.helper') }}</p>
+                  </div>
+
+                  <div class="relative w-full md:w-[18rem] md:justify-self-end">
+                    <label class="sr-only" :for="localeSelectId">{{ t('settings.general.language.selectLabel') }}</label>
+                    <select
+                      :id="localeSelectId"
+                      class="h-[3.2rem] w-full appearance-none rounded-[0.9rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_80%,transparent_20%)] px-3 pr-11 text-[0.9rem] font-semibold text-text outline-none transition-[border-color,box-shadow] duration-180 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border)_78%)] hover:bg-surface-hover focus:border-[color-mix(in_srgb,var(--accent)_35%,var(--border)_65%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
+                      :disabled="savingGeneralSettings || waitingForInitialStatus"
+                      :value="appStore.locale"
+                      @change="handleLocaleChange"
+                    >
+                      <option v-for="locale in supportedLocaleOptions" :key="locale.id" :value="locale.id">
+                        {{ locale.label }}
+                      </option>
+                    </select>
+                    <span
+                      class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
+                      aria-hidden="true"
+                    >
+                      <span class="i-fluent-chevron-down-20-regular block h-5 w-5" />
+                    </span>
+                  </div>
                 </div>
 
-                <div class="relative w-full md:w-[18rem] md:justify-self-end">
-                  <label class="sr-only" :for="localeSelectId">{{ t('settings.general.language.selectLabel') }}</label>
-                  <select
-                    :id="localeSelectId"
-                    class="h-[3.2rem] w-full appearance-none rounded-[0.9rem] border border-border bg-[color-mix(in_srgb,var(--surface-alt)_80%,transparent_20%)] px-3 pr-11 text-[0.9rem] font-semibold text-text outline-none transition-[border-color,box-shadow] duration-180 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border)_78%)] hover:bg-surface-hover focus:border-[color-mix(in_srgb,var(--accent)_35%,var(--border)_65%)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-soft)_76%,transparent_24%)]"
-                    :value="appStore.locale"
-                    @change="handleLocaleChange"
-                  >
-                    <option v-for="locale in supportedLocaleOptions" :key="locale.id" :value="locale.id">
-                      {{ locale.label }}
-                    </option>
-                  </select>
-                  <span
-                    class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
-                    aria-hidden="true"
-                  >
-                    <span class="i-fluent-chevron-down-20-regular block h-5 w-5" />
-                  </span>
+                <div
+                  v-if="showSavedDefaultLocaleNotice"
+                  data-testid="locale-override-notice"
+                  role="status"
+                  class="mt-3 rounded-[0.95rem] border border-[rgba(24,119,242,0.2)] bg-[rgba(24,119,242,0.08)] px-4 py-3 text-[0.82rem] leading-[1.5] text-accent-strong"
+                >
+                  {{ t('settings.general.language.overrideNotice', { savedLabel: savedLocaleOptionLabel, currentLabel: selectedLocaleOptionLabel }) }}
                 </div>
               </div>
 
@@ -1173,6 +1185,7 @@ import {
   triggerLibraryRebuild,
   triggerManualScan,
   triggerThumbnailRebuild,
+  updateAppLocale,
   updateExcludedFolders,
   updateFolderImageOrderDefault,
   updateHomeFeedDefault,
@@ -1225,6 +1238,8 @@ const disablePassword = ref('');
 const homeFeedDefaultMode = ref<FeedMode>('random');
 const reelsFeedDefaultMode = ref<ReelsFeedMode>('random');
 const folderImageOrderDefault = ref<FolderImageOrder>('newest');
+const savedLocaleSelection = ref<SupportedLocale | null>(appStore.savedDefaultLocale);
+const localeSelectionHydrated = ref(false);
 const storiesMode = ref(false);
 const feedDefaultsHydrated = ref(false);
 const storiesModeHydrated = ref(false);
@@ -1364,6 +1379,8 @@ function clearGeneralSettingsFeedback() {
 
 function handleLocaleChange(event: Event) {
   const nextLocale = (event.target as HTMLSelectElement).value as SupportedLocale;
+  clearGeneralSettingsFeedback();
+  closeGeneralSettingsMenu();
   appStore.setLocale(nextLocale);
 }
 
@@ -1457,6 +1474,11 @@ function syncFeedDefaultsFromSaved() {
   feedDefaultsHydrated.value = true;
 }
 
+function syncLocaleSelectionFromSaved() {
+  savedLocaleSelection.value = appStore.savedDefaultLocale;
+  localeSelectionHydrated.value = true;
+}
+
 function syncStoriesModeFromSaved() {
   storiesMode.value = appStore.treatStoriesAsFolders;
   storiesModeHydrated.value = true;
@@ -1547,6 +1569,14 @@ const storiesModeRequiresDecision = computed(() => appStore.stats?.storiesMigrat
 const savedHomeFeedDefaultModeLabel = computed(
   () => homeFeedDefaultOptions.value.find((mode) => mode.id === savedHomeFeedDefaultMode.value)?.label ?? t('settings.general.homeFeed.options.random.label')
 );
+const selectedLocaleOptionLabel = computed(
+  () => supportedLocaleOptions.value.find((option) => option.id === appStore.locale)?.label ?? t('settings.general.language.options.en')
+);
+const savedLocaleOptionLabel = computed(
+  () =>
+    supportedLocaleOptions.value.find((option) => option.id === savedLocaleSelection.value)?.label ??
+    t('settings.general.language.options.en')
+);
 const savedReelsFeedDefaultModeLabel = computed(
   () => reelsFeedDefaultOptions.value.find((mode) => mode.id === savedReelsFeedDefaultMode.value)?.label ?? t('settings.general.reelsFeed.options.random.label')
 );
@@ -1562,6 +1592,9 @@ const selectedReelsFeedDefaultOption = computed(
 const selectedFolderImageOrderOption = computed(
   () => folderImageOrderOptions.value.find((mode) => mode.id === folderImageOrderDefault.value) ?? folderImageOrderOptions.value[0]
 );
+const localeDirty = computed(
+  () => localeSelectionHydrated.value && (savedLocaleSelection.value === null || appStore.locale !== savedLocaleSelection.value)
+);
 const homeFeedDefaultDirty = computed(
   () => feedDefaultsHydrated.value && homeFeedDefaultMode.value !== savedHomeFeedDefaultMode.value
 );
@@ -1570,6 +1603,9 @@ const reelsFeedDefaultDirty = computed(
 );
 const folderImageOrderDirty = computed(
   () => feedDefaultsHydrated.value && folderImageOrderDefault.value !== savedFolderImageOrderDefault.value
+);
+const defaultSettingsDirtyCount = computed(
+  () => [localeDirty.value, homeFeedDefaultDirty.value, reelsFeedDefaultDirty.value, folderImageOrderDirty.value].filter(Boolean).length
 );
 const feedDefaultsDirty = computed(() => homeFeedDefaultDirty.value || reelsFeedDefaultDirty.value || folderImageOrderDirty.value);
 const storiesModeDirty = computed(() => storiesModeHydrated.value && storiesMode.value !== savedStoriesMode.value);
@@ -1586,7 +1622,10 @@ const excludedFoldersDirty = computed(() => {
   }
 });
 const generalSettingsDirty = computed(
-  () => feedDefaultsDirty.value || storiesModeDirty.value || excludedFoldersDirty.value || storiesModeRequiresDecision.value
+  () => localeDirty.value || feedDefaultsDirty.value || storiesModeDirty.value || excludedFoldersDirty.value || storiesModeRequiresDecision.value
+);
+const showSavedDefaultLocaleNotice = computed(
+  () => savedLocaleSelection.value !== null && appStore.locale !== savedLocaleSelection.value
 );
 const showGeneralSettingsRescanNotice = computed(
   () => storiesModeDirty.value || storiesModeRequiresDecision.value || excludedFoldersDirty.value
@@ -1609,7 +1648,7 @@ const generalSettingsActionNote = computed(() => {
     return t('settings.general.actionNote.loading');
   }
 
-  if (excludedFoldersDirty.value && (storiesModeDirty.value || storiesModeRequiresDecision.value || feedDefaultsDirty.value)) {
+  if (excludedFoldersDirty.value && (storiesModeDirty.value || storiesModeRequiresDecision.value || defaultSettingsDirtyCount.value > 0)) {
     return t('settings.general.actionNote.excludedAndOther');
   }
 
@@ -1617,7 +1656,7 @@ const generalSettingsActionNote = computed(() => {
     return t('settings.general.actionNote.excludedOnly');
   }
 
-  if (storiesModeDirty.value && feedDefaultsDirty.value) {
+  if (storiesModeDirty.value && defaultSettingsDirtyCount.value > 0) {
     return t('settings.general.actionNote.storiesAndDefaults');
   }
 
@@ -1625,8 +1664,12 @@ const generalSettingsActionNote = computed(() => {
     return t('settings.general.actionNote.storiesOnly');
   }
 
-  if ([homeFeedDefaultDirty.value, reelsFeedDefaultDirty.value, folderImageOrderDirty.value].filter(Boolean).length > 1) {
+  if (defaultSettingsDirtyCount.value > 1) {
     return t('settings.general.actionNote.multipleDefaults');
+  }
+
+  if (localeDirty.value) {
+    return t('settings.general.actionNote.languageOnly');
   }
 
   if (homeFeedDefaultDirty.value) {
@@ -2379,11 +2422,14 @@ async function saveGeneralSettings() {
     return;
   }
 
+  const shouldSaveLocale = localeDirty.value;
   const shouldSaveExcludedFolders = excludedFoldersDirty.value;
   const shouldSaveStories = storiesModeDirty.value || storiesModeRequiresDecision.value;
   const shouldSaveHome = homeFeedDefaultDirty.value;
   const shouldSaveReels = reelsFeedDefaultDirty.value;
   const shouldSaveFolderOrder = folderImageOrderDirty.value;
+  const shouldSaveAnyDefault = shouldSaveLocale || shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder;
+  const savedDefaultCount = [shouldSaveLocale, shouldSaveHome, shouldSaveReels, shouldSaveFolderOrder].filter(Boolean).length;
   const savedParts: string[] = [];
   let nextExcludedFolders: string[] = [];
 
@@ -2401,6 +2447,17 @@ async function saveGeneralSettings() {
   clearGeneralSettingsFeedback();
 
   try {
+    if (shouldSaveLocale) {
+      const payload = await updateAppLocale(appStore.locale);
+      savedParts.push(t('settings.general.feedback.parts.appLanguage'));
+
+      if (appStore.stats) {
+        appStore.stats.preferences.defaultLocale = payload.defaultLocale;
+      }
+
+      savedLocaleSelection.value = payload.defaultLocale;
+    }
+
     if (shouldSaveExcludedFolders) {
       const payload = await updateExcludedFolders(nextExcludedFolders);
       savedParts.push(t('settings.general.feedback.parts.excludedFolders'));
@@ -2462,18 +2519,23 @@ async function saveGeneralSettings() {
       await loadAdminStats().catch(() => {});
     }
 
-    if ((shouldSaveStories || shouldSaveExcludedFolders) && (shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder)) {
+    if ((shouldSaveStories || shouldSaveExcludedFolders) && shouldSaveAnyDefault) {
       setGeneralSettingsFeedback('success', t('settings.general.feedback.settingsAndFolderRulesSaved'));
     } else if (shouldSaveExcludedFolders && shouldSaveStories) {
       setGeneralSettingsFeedback('success', t('settings.general.feedback.folderRulesAndStoriesSaved'));
     } else if (shouldSaveExcludedFolders) {
       setGeneralSettingsFeedback('success', t('settings.general.feedback.excludedFoldersSaved'));
-    } else if (shouldSaveStories && (shouldSaveHome || shouldSaveReels || shouldSaveFolderOrder)) {
+    } else if (shouldSaveStories && shouldSaveAnyDefault) {
       setGeneralSettingsFeedback('success', t('settings.general.feedback.settingsAndStoriesSaved'));
     } else if (shouldSaveStories) {
       setGeneralSettingsFeedback('success', t('settings.general.feedback.storiesSaved'));
-    } else if ([shouldSaveHome, shouldSaveReels, shouldSaveFolderOrder].filter(Boolean).length > 1) {
+    } else if (savedDefaultCount > 1) {
       setGeneralSettingsFeedback('success', t('settings.general.feedback.defaultsSaved'));
+    } else if (shouldSaveLocale) {
+      setGeneralSettingsFeedback(
+        'success',
+        t('settings.general.feedback.languageSaved', { label: selectedLocaleOptionLabel.value })
+      );
     } else if (shouldSaveHome) {
       setGeneralSettingsFeedback(
         'success',
@@ -2628,6 +2690,7 @@ onMounted(async () => {
   }
 
   if (appStore.stats) {
+    syncLocaleSelectionFromSaved();
     syncFeedDefaultsFromSaved();
     syncStoriesModeFromSaved();
   }
@@ -2648,6 +2711,10 @@ watch(
   ([stats, loadingStats]) => {
     if (!stats || loadingStats) {
       return;
+    }
+
+    if (!localeSelectionHydrated.value || savingGeneralSettings.value || !localeDirty.value) {
+      syncLocaleSelectionFromSaved();
     }
 
     if (!feedDefaultsHydrated.value || savingGeneralSettings.value || !feedDefaultsDirty.value) {

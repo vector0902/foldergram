@@ -3,6 +3,7 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypt
 import type express from 'express';
 
 import {
+  APP_DEFAULT_LOCALE_SETTING_KEY,
   AUTH_PASSWORD_HASH_SETTING_KEY,
   AUTH_PASSWORD_SALT_SETTING_KEY,
   AUTH_SESSION_SECRET_SETTING_KEY,
@@ -17,6 +18,7 @@ export type AuthRole = 'admin' | 'viewer' | 'anonymous';
 export type SessionRole = Exclude<AuthRole, 'anonymous'>;
 export type ViewerAccessMode = 'off' | 'password' | 'public';
 export type LikesMode = 'shared' | 'local';
+type SupportedLocale = 'en' | 'es' | 'zh';
 
 export interface AuthCapabilities {
   canManageLibrary: boolean;
@@ -51,6 +53,7 @@ export interface AuthStatus {
   role: AuthRole;
   accessMode: ViewerAccessMode;
   likesMode: LikesMode;
+  defaultLocale: SupportedLocale | null;
   capabilities: AuthCapabilities;
 }
 
@@ -59,6 +62,19 @@ export const AUTH_PASSWORD_MIN_LENGTH = 8;
 export const AUTH_PASSWORD_MAX_LENGTH = 256;
 const PASSWORD_HASH_LENGTH = 64;
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+const SUPPORTED_LOCALES = ['en', 'es', 'zh'] as const;
+
+function parseSupportedLocale(value: string | null): SupportedLocale | null {
+  if (!value) {
+    return null;
+  }
+
+  return (SUPPORTED_LOCALES as readonly string[]).includes(value) ? (value as SupportedLocale) : null;
+}
+
+function getDefaultLocale(): SupportedLocale | null {
+  return parseSupportedLocale(appSettingsRepository.get(APP_DEFAULT_LOCALE_SETTING_KEY));
+}
 
 function decodeBase64Url(value: string | null): Buffer | null {
   if (!value) {
@@ -135,6 +151,7 @@ function createStatus(role: AuthRole, authenticated: boolean, enabled: boolean, 
     role,
     accessMode,
     likesMode: capabilities.canUseSharedLikes ? 'shared' : 'local',
+    defaultLocale: getDefaultLocale(),
     capabilities
   };
 }

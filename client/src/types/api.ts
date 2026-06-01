@@ -1,3 +1,5 @@
+import type { SupportedLocale } from '../locales';
+
 export type FeedMode = 'recent' | 'rediscover' | 'random';
 export type ReelsFeedMode = 'recommended' | 'recent' | 'random';
 export type FolderImageOrder = 'newest' | 'oldest';
@@ -18,6 +20,10 @@ export type ScanOperation =
 
 export interface HomeFeedDefaultSetting {
   defaultMode: FeedMode;
+}
+
+export interface AppLocaleSetting {
+  defaultLocale: SupportedLocale;
 }
 
 export interface ReelsFeedDefaultSetting {
@@ -412,6 +418,7 @@ export interface AppStatus {
     ignoredRootMediaCount: number;
   };
   preferences: {
+    defaultLocale?: SupportedLocale | null;
     defaultHomeFeedMode: FeedMode;
     defaultReelsFeedMode: ReelsFeedMode;
     defaultFolderImageOrder?: FolderImageOrder;
@@ -461,6 +468,7 @@ export interface AuthStatus {
   role: AuthRole;
   accessMode: ViewerAccessMode;
   likesMode: LikesMode;
+  defaultLocale: SupportedLocale | null;
   capabilities: AuthCapabilities;
 }
 

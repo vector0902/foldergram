@@ -3,6 +3,7 @@ import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 
 import {
+  APP_DEFAULT_LOCALE_SETTING_KEY,
   EXCLUDED_FOLDERS_SETTING_KEY,
   FOLDER_IMAGE_DEFAULT_ORDER_SETTING_KEY,
   HOME_FEED_DEFAULT_MODE_SETTING_KEY,
@@ -57,6 +58,7 @@ import { geodataService, placeResolutionService } from './place-service.js';
 
 type FeedMode = 'recent' | 'rediscover' | 'random';
 type ReelsFeedMode = 'recommended' | 'recent' | 'random';
+type SupportedLocale = 'en' | 'es' | 'zh';
 
 interface FeedCapsuleDefinition {
   id: string;
@@ -139,6 +141,7 @@ const HIGHLIGHT_FEED_OVERLAP_WINDOW = 18;
 const RAIL_COVER_CANDIDATE_LIMIT = 12;
 const FALLBACK_AVATAR_STORY_LIMIT = 10;
 const FALLBACK_AVATAR_STORY_ID = '__story-avatar-fallback__';
+const SUPPORTED_LOCALES = ['en', 'es', 'zh'] as const;
 
 interface PlaceRowFields {
   placeId?: number | null;
@@ -174,6 +177,18 @@ function parseFeedMode(value: string | null): FeedMode {
 
 function getDefaultHomeFeedMode(): FeedMode {
   return parseFeedMode(appSettingsRepository.get(HOME_FEED_DEFAULT_MODE_SETTING_KEY));
+}
+
+function parseSupportedLocale(value: string | null): SupportedLocale | null {
+  if (!value) {
+    return null;
+  }
+
+  return (SUPPORTED_LOCALES as readonly string[]).includes(value) ? (value as SupportedLocale) : null;
+}
+
+function getDefaultLocale(): SupportedLocale | null {
+  return parseSupportedLocale(appSettingsRepository.get(APP_DEFAULT_LOCALE_SETTING_KEY));
 }
 
 function parseReelsFeedMode(value: string | null): ReelsFeedMode {
@@ -1808,6 +1823,7 @@ export const galleryService = {
     const storageState = storageService.getState();
     const rebuildRequired = appSettingsRepository.get(LIBRARY_REBUILD_REQUIRED_SETTING_KEY) === '1';
     const defaultHomeFeedMode = getDefaultHomeFeedMode();
+    const defaultLocale = getDefaultLocale();
     const defaultReelsFeedMode = getDefaultReelsFeedMode();
     const defaultFolderImageOrder = getDefaultFolderImageOrder();
     const treatStoriesAsFolders = getTreatStoriesAsFolders();
@@ -1828,6 +1844,7 @@ export const galleryService = {
         ignoredRootMediaCount: storageState.libraryAvailable ? countSupportedRootMediaFiles(appConfig.galleryRoot) : 0
       },
       preferences: {
+        defaultLocale,
         defaultHomeFeedMode,
         defaultReelsFeedMode,
         defaultFolderImageOrder,
@@ -1868,6 +1885,7 @@ export const galleryService = {
     const lastSuccessfulGalleryRoot = appSettingsRepository.get(LAST_SUCCESSFUL_GALLERY_ROOT_SETTING_KEY);
     const pendingDerivativeMigrationRows = storageState.libraryAvailable ? imageRepository.countPendingDerivativeMigrationRows() : 0;
     const defaultHomeFeedMode = getDefaultHomeFeedMode();
+    const defaultLocale = getDefaultLocale();
     const defaultReelsFeedMode = getDefaultReelsFeedMode();
     const defaultFolderImageOrder = getDefaultFolderImageOrder();
     const treatStoriesAsFolders = getTreatStoriesAsFolders();
@@ -1899,6 +1917,7 @@ export const galleryService = {
         ignoredRootMediaCount: storageState.libraryAvailable ? countSupportedRootMediaFiles(currentGalleryRoot) : 0
       },
       preferences: {
+        defaultLocale,
         defaultHomeFeedMode,
         defaultReelsFeedMode,
         defaultFolderImageOrder,
@@ -1914,6 +1933,14 @@ export const galleryService = {
 
     return {
       defaultMode: mode
+    };
+  },
+
+  setDefaultLocale(defaultLocale: SupportedLocale) {
+    appSettingsRepository.set(APP_DEFAULT_LOCALE_SETTING_KEY, defaultLocale);
+
+    return {
+      defaultLocale
     };
   },
 

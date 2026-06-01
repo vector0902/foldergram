@@ -278,7 +278,7 @@ not read directly by the container.
 - Use `GALLERY_EXCLUDED_FOLDERS` to skip unwanted source folders during discovery and rescans.
 - Rules without a slash match a folder name anywhere in the gallery tree, such as `@eaDir` or `thumbnails`.
 - Rules with a slash match one exact relative folder path beneath `GALLERY_ROOT`, such as `Archive/cache`.
-- The Settings sidebar now separates app-wide preferences into `General Settings`. That section includes the client-side language selector, the stories-folders toggle, Home/Reels defaults, and the excluded-folder editor.
+- The Settings sidebar now separates app-wide preferences into `General Settings`. That section includes the instant language selector plus saved app-language default, the stories-folders toggle, Home/Reels defaults, and the excluded-folder editor.
 - `General Settings` can add or remove custom exclusion rules at runtime. Env-backed rules stay read-only there and still require a restart to change.
 - After changing excluded folders or stories mode in `General Settings`, run a full library scan from `Scan & Library` so previously indexed folders are soft-removed or reclassified correctly.
 

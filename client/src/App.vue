@@ -181,6 +181,16 @@ onUnmounted(() => {
 });
 
 watch(
+  () => authStore.defaultLocale,
+  (defaultLocale) => {
+    appStore.syncLocaleFromAuthStatus(defaultLocale);
+  },
+  {
+    immediate: true
+  }
+);
+
+watch(
   () => appStore.stats?.folders ?? 0,
   async (folderCount) => {
     if (appStore.isLibraryUnavailable || folderCount === 0 || folderCount === foldersStore.items.length) {

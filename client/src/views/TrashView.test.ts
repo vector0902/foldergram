@@ -34,13 +34,35 @@ vi.mock('../components/ConfirmDialog.vue', async () => {
     default: defineComponent({
       name: 'ConfirmDialog',
       props: {
+        title: {
+          type: String,
+          default: ''
+        },
+        message: {
+          type: String,
+          default: ''
+        },
+        confirmLabel: {
+          type: String,
+          default: ''
+        },
+        cancelLabel: {
+          type: String,
+          default: ''
+        },
+        loadingLabel: {
+          type: String,
+          default: ''
+        },
         loading: Boolean
       },
       emits: ['cancel', 'confirm'],
       template: `
         <div data-test="confirm-dialog">
-          <button data-test="confirm-button" type="button" :disabled="loading" @click="$emit('confirm')">Confirm</button>
-          <button data-test="cancel-button" type="button" @click="$emit('cancel')">Cancel</button>
+          <h2 data-test="confirm-title">{{ title }}</h2>
+          <p data-test="confirm-message">{{ message }}</p>
+          <button data-test="confirm-button" type="button" :disabled="loading" @click="$emit('confirm')">{{ loading ? loadingLabel : confirmLabel }}</button>
+          <button data-test="cancel-button" type="button" @click="$emit('cancel')">{{ cancelLabel }}</button>
           <slot />
           <slot name="details" />
         </div>
@@ -52,7 +74,17 @@ vi.mock('../components/ConfirmDialog.vue', async () => {
 vi.mock('../components/EmptyState.vue', async () => ({
   default: defineComponent({
     name: 'EmptyState',
-    template: '<div data-test="empty-state" />'
+    props: {
+      title: {
+        type: String,
+        default: ''
+      },
+      description: {
+        type: String,
+        default: ''
+      }
+    },
+    template: '<div data-test="empty-state"><h2>{{ title }}</h2><p>{{ description }}</p></div>'
   })
 }));
 
@@ -333,5 +365,141 @@ describe('TrashView', () => {
 
     expect(wrapper.text()).toContain('Fog lifting over the ridge');
     expect(wrapper.text()).not.toContain('photo 52');
+  });
+
+  it('localizes the trash page and dialogs after the app language changes', async () => {
+    const appStore = useAppStore();
+    const trashStore = useTrashStore();
+    appStore.setLocale('es');
+
+    appStore.$patch({
+      stats: {
+        folders: 1,
+        indexedImages: 1,
+        indexedVideos: 0,
+        scan: {
+          isScanning: false,
+          lastCompletedScan: null
+        },
+        storage: {
+          available: true,
+          reason: null
+        },
+        libraryIndex: {
+          rebuildRequired: false,
+          reason: null,
+          ignoredRootMediaCount: 0
+        },
+        preferences: {
+          defaultHomeFeedMode: 'random',
+          defaultReelsFeedMode: 'recommended',
+          treatStoriesAsFolders: false
+        },
+        storiesMigration: {
+          hasLegacyStoriesCandidates: false,
+          decisionPending: false
+        }
+      } as never
+    });
+
+    trashStore.$patch({
+      items: [createTrashItem(73)],
+      initialized: true,
+      loading: false,
+      hasMore: false,
+      error: null
+    });
+
+    vi.spyOn(trashStore, 'loadInitial').mockResolvedValue(undefined);
+
+    const wrapper = mount(TrashView, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>'
+          }
+        }
+      }
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Papelera');
+    expect(wrapper.text()).toContain('Publicaciones eliminadas');
+    expect(wrapper.text()).toContain('0 publicaciones seleccionadas');
+    expect(wrapper.text()).toContain('Restaurar');
+    expect(wrapper.text()).toContain('Eliminar permanentemente');
+    expect(wrapper.text()).toContain('En papelera');
+    expect(wrapper.text()).toContain('Abrir carpeta');
+    expect(wrapper.text()).not.toContain('Deleted posts');
+    expect(wrapper.text()).not.toContain('Permanently Delete');
+
+    await wrapper.get('input[type="checkbox"]').setValue(true);
+
+    const restoreButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Restaurar');
+
+    expect(restoreButton).toBeDefined();
+
+    await restoreButton!.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('[data-test="confirm-title"]').text()).toBe('¿Restaurar las publicaciones seleccionadas?');
+    expect(wrapper.get('[data-test="confirm-message"]').text()).toBe('¿Restaurar 1 publicación seleccionada en la app?');
+    expect(wrapper.get('[data-test="cancel-button"]').text()).toBe('Cancelar');
+  });
+
+  it('shows the backend-provided library unavailable reason on trash', async () => {
+    const appStore = useAppStore();
+    const trashStore = useTrashStore();
+
+    appStore.$patch({
+      stats: {
+        folders: 0,
+        indexedImages: 0,
+        indexedVideos: 0,
+        scan: {
+          isScanning: false,
+          lastCompletedScan: null
+        },
+        storage: {
+          available: false,
+          reason: 'Library root /mnt/gallery is unavailable.'
+        },
+        libraryIndex: {
+          rebuildRequired: false,
+          reason: null,
+          ignoredRootMediaCount: 0
+        },
+        preferences: {
+          defaultHomeFeedMode: 'random',
+          defaultReelsFeedMode: 'recommended',
+          treatStoriesAsFolders: false
+        },
+        storiesMigration: {
+          hasLegacyStoriesCandidates: false,
+          decisionPending: false
+        }
+      } as never
+    });
+
+    vi.spyOn(trashStore, 'loadInitial').mockResolvedValue(undefined);
+
+    const wrapper = mount(TrashView, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>'
+          }
+        }
+      }
+    });
+
+    await flushPromises();
+
+    expect(wrapper.get('[data-test="empty-state"]').text()).toContain('Library storage unavailable');
+    expect(wrapper.get('[data-test="empty-state"]').text()).toContain('Library root /mnt/gallery is unavailable.');
+    expect(trashStore.loadInitial).not.toHaveBeenCalled();
   });
 });

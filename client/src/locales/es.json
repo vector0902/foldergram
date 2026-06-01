@@ -158,12 +158,13 @@
       },
       "card": {
         "title": "Ajustes generales",
-        "description": "Valores predeterminados de toda la app para carpetas stories, carpetas excluidas, Inicio, Reels y carpetas de la app."
+        "description": "Valores predeterminados de toda la app para idioma, carpetas stories, carpetas excluidas, Inicio, Reels y carpetas de la app."
       },
       "language": {
         "label": "Idioma de la aplicación",
         "description": "Elige el idioma usado para la navegación, los diálogos y otras partes traducidas de la interfaz en este dispositivo.",
-        "helper": "Se aplica de inmediato en este navegador. Las traducciones que falten usan el texto en inglés.",
+        "helper": "Se aplica de inmediato en este navegador. Guarda los cambios abajo para convertir el idioma seleccionado en el predeterminado de toda la app. Las traducciones que falten usan el texto en inglés.",
+        "overrideNotice": "El valor predeterminado de la app es {savedLabel}. Este navegador está usando temporalmente {currentLabel} desde una configuración solo de este navegador. Guarda los cambios para convertir {currentLabel} en el predeterminado.",
         "selectLabel": "Idioma de la aplicación",
         "options": {
           "en": "Inglés",
@@ -248,13 +249,14 @@
         "loading": "Cargando las preferencias actuales de la app...",
         "excludedAndOther": "Guarda las reglas de exclusión de carpetas junto con los otros cambios de toda la app. Después ejecuta un escaneo de la biblioteca para que stories y carpetas excluidas se reindexen correctamente.",
         "excludedOnly": "Esto solo guarda las carpetas excluidas personalizadas. Después ejecuta un escaneo de la biblioteca para que esas carpetas desaparezcan del índice.",
-        "storiesAndDefaults": "Guarda juntos la nueva regla de stories y los valores de navegación actualizados.",
+        "storiesAndDefaults": "Guarda juntos la nueva regla de stories y los valores globales actualizados.",
         "storiesOnly": "Esto solo guarda la regla de carpetas stories. Después ejecuta un escaneo de la biblioteca para reindexar con el nuevo comportamiento.",
-        "multipleDefaults": "Guarda juntos estos valores de navegación. Los visitantes de Inicio aún pueden cambiar de modo en la página principal; Reels y las carpetas de la app usan los valores predeterminados de la app.",
+        "multipleDefaults": "Guarda juntos estos valores globales. El idioma se aplica de inmediato en este navegador; los visitantes de Inicio aún pueden cambiar de modo en la página principal; Reels y las carpetas de la app usan los valores predeterminados de la app.",
+        "languageOnly": "Esto cambia el idioma de inmediato en este navegador. Guárdalo también si quieres que el idioma seleccionado se convierta en el predeterminado de toda la app.",
         "homeOnly": "Esto actualiza el primer modo de feed que se muestra en Inicio para esta app. Los visitantes aún pueden cambiar de modo desde la página principal.",
         "reelsOnly": "Esto actualiza el estilo de cola usado cuando se abre Reels para esta app. Los visitantes no pueden cambiar de modo desde la página de Reels.",
         "folderOnly": "Esto actualiza el orden de fotos predeterminado usado por las cuadrículas de carpetas de la app.",
-        "idle": "Estos son los valores actuales de toda la app para Inicio, Reels, carpetas de la app, carpetas stories y carpetas excluidas."
+        "idle": "Estos son los valores actuales de toda la app para idioma, Inicio, Reels, carpetas de la app, carpetas stories y carpetas excluidas."
       },
       "rescanNotice": {
         "excludedAndStories": "Guarda estos cambios y luego ejecuta un escaneo de la biblioteca antes de esperar que se actualicen las carpetas stories y las carpetas excluidas.",
@@ -267,11 +269,13 @@
         "excludedFoldersSaved": "Se guardaron las carpetas excluidas. Ejecuta un escaneo de la biblioteca para aplicarlas.",
         "settingsAndStoriesSaved": "Los ajustes se guardaron. Ejecuta un escaneo de la biblioteca para aplicar el cambio de carpetas stories.",
         "storiesSaved": "Se guardó el comportamiento de las carpetas stories. Ejecuta un escaneo de la biblioteca para aplicarlo.",
-        "defaultsSaved": "Se actualizaron los valores de navegación de toda la app.",
+        "defaultsSaved": "Se actualizaron los valores predeterminados de toda la app.",
+        "languageSaved": "El idioma predeterminado de la app se guardó como {label}.",
         "homeSaved": "La página de Inicio ahora se abre con {label}.",
         "reelsSaved": "Reels ahora se abre con {label}.",
         "folderOrderSaved": "Las carpetas de la app ahora se abren con {label}.",
         "parts": {
+          "appLanguage": "idioma de la app",
           "excludedFolders": "carpetas excluidas",
           "storiesFolderHandling": "comportamiento de las carpetas stories",
           "homeFeedDefault": "predeterminado del feed de Inicio",
@@ -954,6 +958,46 @@
       "loadingSubtree": "Eliminando subárbol...",
       "loadingFolder": "Eliminando...",
       "error": "No se pudo eliminar esta carpeta de la app."
+    }
+  },
+  "trashPage": {
+    "eyebrow": "Papelera",
+    "title": "Publicaciones eliminadas",
+    "description": "Las publicaciones movidas aquí permanecen en el disco hasta que las elimines de forma permanente.",
+    "selectedOne": "{count} publicación seleccionada",
+    "selectedOther": "{count} publicaciones seleccionadas",
+    "restoreButton": "Restaurar",
+    "deleteButton": "Eliminar permanentemente",
+    "libraryUnavailableTitle": "Almacenamiento de la biblioteca no disponible",
+    "libraryUnavailableDescription": "El almacenamiento configurado de la biblioteca no está disponible.",
+    "loadErrorTitle": "No se pudo cargar la papelera",
+    "loading": "Cargando papelera...",
+    "emptyTitle": "La papelera está vacía",
+    "emptyDescription": "Las publicaciones eliminadas aparecerán aquí para que puedas restaurarlas o quitarlas permanentemente.",
+    "selectItem": "Seleccionar {label}",
+    "deselectItem": "Deseleccionar {label}",
+    "trashedAt": "En papelera {date}",
+    "recently": "recientemente",
+    "openFolder": "Abrir carpeta",
+    "restoreDialog": {
+      "title": "¿Restaurar las publicaciones seleccionadas?",
+      "messageOne": "¿Restaurar {count} publicación seleccionada en la app?",
+      "messageOther": "¿Restaurar {count} publicaciones seleccionadas en la app?",
+      "confirm": "Restaurar",
+      "loading": "Restaurando..."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar permanentemente las publicaciones seleccionadas?",
+      "messageOne": "Esto eliminará permanentemente {count} publicación seleccionada y quitará el archivo original del disco.",
+      "messageOther": "Esto eliminará permanentemente {count} publicaciones seleccionadas y quitará los archivos originales del disco.",
+      "confirm": "Eliminar permanentemente",
+      "loading": "Eliminando...",
+      "warning": "Los archivos originales, las miniaturas y las vistas previas se eliminarán permanentemente. Esta acción no se puede deshacer."
+    },
+    "errors": {
+      "refresh": "No se pudo refrescar el estado actualizado de la biblioteca.",
+      "processOne": "No se pudo procesar {count} publicación.",
+      "processOther": "No se pudieron procesar {count} publicaciones."
     }
   },
   "explore": {
