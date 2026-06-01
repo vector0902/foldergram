@@ -15,6 +15,7 @@ interface FeedState {
   error: string | null;
   initialized: boolean;
   randomSeed: number | null;
+  reloadRequested: boolean;
 }
 
 function createRandomSeed(): number {
@@ -37,7 +38,8 @@ export const useFeedStore = defineStore('feed', {
     loading: false,
     error: null,
     initialized: false,
-    randomSeed: null
+    randomSeed: null,
+    reloadRequested: false
   }),
   actions: {
     initializeMode(mode: FeedMode = 'random') {
@@ -87,15 +89,19 @@ export const useFeedStore = defineStore('feed', {
       this.loading = false;
       this.error = null;
       this.initialized = false;
+      this.reloadRequested = false;
     },
 
     async loadInitial(force = false) {
-      if (this.loading) {
-        return;
-      }
-
       const queueRequiresSeed = this.mode === 'random';
       const queueMatchesMode = this.loadedMode === this.mode && (!queueRequiresSeed || this.randomSeed !== null);
+
+      if (this.loading) {
+        if (force || !queueMatchesMode) {
+          this.reloadRequested = true;
+        }
+        return;
+      }
 
       if (this.initialized && !force && queueMatchesMode) {
         return;
@@ -106,6 +112,7 @@ export const useFeedStore = defineStore('feed', {
       this.page = 1;
       this.hasMore = true;
       this.initialized = false;
+      this.reloadRequested = false;
       await this.loadMore();
     },
 
@@ -116,12 +123,23 @@ export const useFeedStore = defineStore('feed', {
 
       this.loading = true;
       this.error = null;
+      const requestMode = this.mode;
+      const requestPage = this.page;
+      const requestSeed = requestMode === 'random' ? this.ensureRandomSeed() : undefined;
 
       try {
-        const seed = this.mode === 'random' ? this.ensureRandomSeed() : undefined;
-        const payload = await fetchFeed(this.page, this.limit, this.mode, seed);
+        const payload = await fetchFeed(requestPage, this.limit, requestMode, requestSeed);
+
+        const modeChanged = this.mode !== requestMode;
+        const seedChanged = requestMode === 'random' && this.randomSeed !== requestSeed;
+        const pageChanged = this.page !== requestPage;
+
+        if (modeChanged || seedChanged || pageChanged) {
+          return;
+        }
+
         this.items.push(...payload.items);
-        this.loadedMode = payload.mode ?? this.mode;
+        this.loadedMode = payload.mode ?? requestMode;
         this.page += 1;
         this.hasMore = payload.hasMore;
         this.initialized = true;
@@ -129,6 +147,11 @@ export const useFeedStore = defineStore('feed', {
         this.error = error instanceof Error ? error.message : 'Unable to load feed';
       } finally {
         this.loading = false;
+
+        if (this.reloadRequested) {
+          this.reloadRequested = false;
+          await this.loadInitial(true);
+        }
       }
     }
   }
