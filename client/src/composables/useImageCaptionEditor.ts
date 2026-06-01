@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 
 import { updateImageCaption as updateImageCaptionRequest } from '../api/gallery';
+import { i18n } from '../locales';
 import { useCollectionsStore } from '../stores/collections';
 import { useExploreStore } from '../stores/explore';
 import { useFeedStore } from '../stores/feed';
@@ -58,7 +59,7 @@ export function useImageCaptionEditor() {
       applyCaption(updatedImage.id, updatedImage.caption ?? null);
       return updatedImage;
     } catch (saveError) {
-      error.value = saveError instanceof Error ? saveError.message : 'Unable to update caption';
+      error.value = saveError instanceof Error ? saveError.message : i18n.global.t('post.captionModal.errors.update');
       throw saveError;
     } finally {
       saving.value = false;

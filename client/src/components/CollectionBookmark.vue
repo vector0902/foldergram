@@ -40,7 +40,7 @@
         :data-placement="popoverPlacement"
         :style="popoverStyle"
         role="dialog"
-        aria-label="Collections"
+        :aria-label="t('collections.bookmark.dialogLabel')"
         @click.stop
         @focusout="handleFocusOut"
         @keydown.esc.stop.prevent="closePopover"
@@ -48,12 +48,12 @@
         @pointerleave="handlePointerLeave"
       >
         <div class="collection-bookmark__header">
-          <strong>Collections</strong>
+          <strong>{{ t('collections.bookmark.title') }}</strong>
           <button
             class="collection-bookmark__create-button"
             type="button"
-            aria-label="Create collection"
-            title="Create collection"
+            :aria-label="t('collections.bookmark.createCollection')"
+            :title="t('collections.bookmark.createCollection')"
             @click="startCreating"
           >
             <span class="i-fluent-add-16-filled" aria-hidden="true" />
@@ -67,7 +67,7 @@
             class="collection-bookmark__input"
             type="text"
             maxlength="80"
-            placeholder="Collection name"
+            :placeholder="t('collections.bookmark.namePlaceholder')"
             @keydown.esc.stop.prevent="cancelCreating"
           />
           <button class="collection-bookmark__submit" type="submit" :disabled="creatingCollection">
@@ -79,7 +79,7 @@
         <p v-else-if="collectionsStore.error" class="collection-bookmark__error">{{ collectionsStore.error }}</p>
 
         <div class="collection-bookmark__rows">
-          <p v-if="customMemberships.length === 0" class="collection-bookmark__empty">No collections yet</p>
+          <p v-if="customMemberships.length === 0" class="collection-bookmark__empty">{{ t('collections.bookmark.empty') }}</p>
           <button
             v-for="collection in customMemberships"
             :key="collection.slug"
@@ -111,6 +111,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { useAuthStore } from '../stores/auth';
 import { useCollectionsStore } from '../stores/collections';
@@ -122,6 +123,7 @@ const props = defineProps<{
   placement: 'feed' | 'viewer';
 }>();
 
+const { t } = useI18n();
 const authStore = useAuthStore();
 const collectionsStore = useCollectionsStore();
 const rootElement = ref<HTMLElement | null>(null);
@@ -148,7 +150,9 @@ const popoverArrowEdgePaddingPx = 20;
 
 const canUseCollections = computed(() => authStore.canUseSharedCollections || authStore.canUseLocalCollections);
 const isSaved = computed(() => collectionsStore.isSaved(props.item.id));
-const buttonLabel = computed(() => (isSaved.value ? 'Remove saved post' : 'Save post'));
+const buttonLabel = computed(() =>
+  isSaved.value ? t('collections.bookmark.removeSavedPost') : t('collections.bookmark.savePost')
+);
 const memberships = computed(() => collectionsStore.membershipByImageId[props.item.id]?.items ?? collectionsStore.items.map((collection) => ({
   ...collection,
   containsImage: collection.isDefault && isSaved.value
@@ -208,7 +212,7 @@ async function openPopover() {
   await nextTick();
   updatePopoverPosition();
   await collectionsStore.fetchMembership(props.item.id).catch((error) => {
-    localError.value = error instanceof Error ? error.message : 'Unable to load collections';
+    localError.value = error instanceof Error ? error.message : t('collections.bookmark.errors.loadCollections');
   });
   await nextTick();
   updatePopoverPosition();
@@ -374,7 +378,7 @@ function cancelCreating() {
 async function submitCreate() {
   const name = collectionName.value.trim();
   if (!name) {
-    localError.value = 'Collection name is required.';
+    localError.value = t('collections.detail.edit.required');
     return;
   }
 
@@ -386,7 +390,7 @@ async function submitCreate() {
     collectionName.value = '';
     closePopover();
   } catch (error) {
-    localError.value = error instanceof Error ? error.message : 'Unable to create collection';
+    localError.value = error instanceof Error ? error.message : t('collections.detail.edit.createError');
     await nextTick();
     updatePopoverPosition();
   } finally {
@@ -403,12 +407,12 @@ async function toggleCollection(slug: string) {
       closePopover();
     }
   } catch (error) {
-    localError.value = error instanceof Error ? error.message : 'Unable to update collection';
+    localError.value = error instanceof Error ? error.message : t('collections.detail.edit.updateError');
   }
 }
 
 function displayCollectionName(collection: CollectionSummary) {
-  return collection.isDefault ? 'All Posts' : collection.name;
+  return collection.isDefault ? t('collections.shared.defaultName') : collection.name;
 }
 
 watch(popoverOpen, (isOpen) => {

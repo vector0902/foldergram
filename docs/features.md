@@ -236,14 +236,19 @@ Its left sidebar is split into:
 | Section | What it contains |
 | --- | --- |
 | `Scan & Library` | Phase-aware live scan state, manual scan, thumbnail-only rebuild, and library-index rebuild actions. Admins also see the full report path when a scan finishes with skipped media errors. |
-| `General Settings` | Home and Reels default feed modes, the default App Folder photo order, stories-folders mode, excluded-folder rules, migration notices, and save-and-rescan prompts for those app-wide changes. |
+| `General Settings` | App-language selection with instant local switching plus saved app-wide defaults, Home and Reels default feed modes, the default App Folder photo order, stories-folders mode, excluded-folder rules, migration notices, and save-and-rescan prompts for those app-wide changes. |
 | `Places` | Offline GeoNames preparation status plus place-assignment rebuild actions for GPS-tagged photos. |
 | `Security & Access` | Admin password, viewer password, public mode, sign-out, and related auth controls. |
 | `System Status` | Storage and index state plus last completed scan details, including whether the last run completed with errors. |
 
-In `General Settings`, env-backed excluded-folder rules are shown read-only and
-custom rules are saved at runtime. Changing stories mode or excluded folders
-still requires a follow-up scan from `Scan & Library`.
+In `General Settings`, the language selector applies immediately in the current
+browser. That browser-local override is stored locally, and clicking `Save
+changes` also stores the selected language as the app-wide default for browsers
+without their own override. That saved default also reaches the login gate and
+other pre-auth translated UI on devices that are using the app-wide language.
+Env-backed excluded-folder rules are shown read-only and custom rules are saved
+at runtime. Changing stories mode or excluded folders still requires a follow-up
+scan from `Scan & Library`.
 
 On mobile, Settings uses a dedicated sticky top icon bar instead of the desktop
 sidebar.
@@ -281,17 +286,23 @@ Current non-admin behavior:
 | Regenerate Thumbnails | Clears generated thumbnails and video poster images, then rebuilds them from indexed media only. |
 | Rebuild Library Index | Clears indexed folders, posts, likes, folder scan state, and scan history, then rescans the active gallery root and reuses matching cached derivatives when possible. In lazy derivative mode it does not pre-generate missing thumbnails or previews. |
 
-## Theme and local UI preferences
+## Theme, language, and local UI preferences
 
 The client also persists a few local browser preferences:
 
+- selected language override
 - light or dark theme
 - whether videos start muted
 - last opened folder
 - recently opened folders
 - recent explore searches
 
-These are stored in `localStorage` and are not synced anywhere else.
+These are stored in `localStorage`.
+
+The selected language also has one extra layer:
+
+- changing the language updates the current browser immediately
+- saving `General Settings` stores that language in the app database as the default for browsers without a local override
 
 ## What is intentionally missing
 

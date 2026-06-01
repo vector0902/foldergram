@@ -6,6 +6,8 @@ import type express from 'express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type AuthServiceModule = typeof import('../src/services/auth-service.js');
+type RepositoriesModule = typeof import('../src/db/repositories.js');
+type AppSettingKeysModule = typeof import('../src/constants/app-setting-keys.js');
 
 function createRequest(method: string, routePath: string): express.Request {
   return {
@@ -21,6 +23,8 @@ function createRequest(method: string, routePath: string): express.Request {
 describe.sequential('auth service roles', () => {
   let tempRoot = '';
   let authService: AuthServiceModule['authService'];
+  let appSettingsRepository: RepositoriesModule['appSettingsRepository'];
+  let APP_DEFAULT_LOCALE_SETTING_KEY: AppSettingKeysModule['APP_DEFAULT_LOCALE_SETTING_KEY'];
 
   beforeAll(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'insta-auth-service-'));
@@ -39,6 +43,8 @@ describe.sequential('auth service roles', () => {
 
     vi.resetModules();
     ({ authService } = await import('../src/services/auth-service.js'));
+    ({ appSettingsRepository } = await import('../src/db/repositories.js'));
+    ({ APP_DEFAULT_LOCALE_SETTING_KEY } = await import('../src/constants/app-setting-keys.js'));
   });
 
   afterAll(async () => {
@@ -90,6 +96,19 @@ describe.sequential('auth service roles', () => {
         canUseSharedLikes: false,
         canUseLocalFavorites: true
       }
+    });
+  });
+
+  it('includes the saved app default locale in public auth status', () => {
+    appSettingsRepository.set(APP_DEFAULT_LOCALE_SETTING_KEY, 'zh');
+    authService.setAdminPassword('admin-pass-123');
+
+    expect(authService.getStatus(createRequest('GET', '/auth/status'))).toMatchObject({
+      enabled: true,
+      authenticated: false,
+      role: 'anonymous',
+      accessMode: 'off',
+      defaultLocale: 'zh'
     });
   });
 });

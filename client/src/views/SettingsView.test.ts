@@ -18,7 +18,8 @@ const scrollIntoViewSpy = vi.fn();
 function createAppStatus(
   defaultHomeFeedMode: AppStatus['preferences']['defaultHomeFeedMode'] = 'rediscover',
   defaultReelsFeedMode: AppStatus['preferences']['defaultReelsFeedMode'] = 'random',
-  defaultFolderImageOrder: NonNullable<AppStatus['preferences']['defaultFolderImageOrder']> = 'newest'
+  defaultFolderImageOrder: NonNullable<AppStatus['preferences']['defaultFolderImageOrder']> = 'newest',
+  defaultLocale: AppStatus['preferences']['defaultLocale'] = 'en'
 ): AppStatus {
   return {
     folders: 3,
@@ -55,6 +56,7 @@ function createAppStatus(
       ignoredRootMediaCount: 0
     },
     preferences: {
+      defaultLocale,
       defaultHomeFeedMode,
       defaultReelsFeedMode,
       defaultFolderImageOrder,
@@ -125,7 +127,9 @@ function mountSettingsView() {
 async function openGeneralSettingsSidebarTab(wrapper: ReturnType<typeof mountSettingsView>) {
   const generalSettingsButton = wrapper
     .findAll('button')
-    .find((button) => button.text().includes('General Settings'));
+    .find((button) =>
+      ['General Settings', 'Ajustes generales', '通用设置'].some((label) => button.text().includes(label))
+    );
 
   expect(generalSettingsButton).toBeDefined();
 
@@ -215,6 +219,98 @@ describe('SettingsView', () => {
 
     expect(saveButton).toBeDefined();
     expect(saveButton!.attributes('disabled')).toBeDefined();
+  });
+
+  it('switches the client locale from the General Settings language selector', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus()
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    const languageSelect = wrapper.get('select');
+    expect((languageSelect.element as HTMLSelectElement).value).toBe('en');
+
+    await languageSelect.setValue('es');
+    await flushPromises();
+
+    expect(appStore.locale).toBe('es');
+    expect(window.localStorage.getItem('foldergram-locale')).toBe('es');
+    expect(wrapper.text()).toContain('Idioma de la aplicación');
+    expect(wrapper.text()).toContain('Controles de la biblioteca');
+  });
+
+  it('saves the selected app language as the app-wide default from General Settings', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus()
+    });
+
+    vi.spyOn(appStore, 'fetchStats').mockResolvedValue();
+    const updateAppLocaleSpy = vi.spyOn(galleryApi, 'updateAppLocale').mockResolvedValue({
+      defaultLocale: 'zh'
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    await wrapper.get('select').setValue('zh');
+    await flushPromises();
+
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => ['Save changes', 'Guardar cambios', '保存更改'].includes(button.text()));
+
+    expect(saveButton).toBeDefined();
+
+    await saveButton!.trigger('click');
+    await flushPromises();
+
+    expect(updateAppLocaleSpy).toHaveBeenCalledWith('zh');
+    expect(appStore.stats?.preferences.defaultLocale).toBe('zh');
+    expect(wrapper.text()).toContain('应用语言默认值已保存为中文。');
+  });
+
+  it('lets admins save an existing browser-local language as the app default without changing the selector again', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus('rediscover', 'random', 'newest', 'zh')
+    });
+    appStore.setLocale('es');
+
+    vi.spyOn(appStore, 'fetchStats').mockResolvedValue();
+    const updateAppLocaleSpy = vi.spyOn(galleryApi, 'updateAppLocale').mockResolvedValue({
+      defaultLocale: 'es'
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    const localeOverrideNotice = wrapper.get('[data-testid="locale-override-notice"]');
+    expect(localeOverrideNotice.attributes('role')).toBe('status');
+    expect(localeOverrideNotice.attributes('class')).toContain('bg-[rgba(24,119,242,0.08)]');
+    expect(localeOverrideNotice.text()).toContain('El valor predeterminado de la app es Chino.');
+    expect(localeOverrideNotice.text()).toContain('Este navegador está usando temporalmente Español');
+    expect(localeOverrideNotice.text()).toContain('configuración solo de este navegador');
+
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => ['Save changes', 'Guardar cambios', '保存更改'].includes(button.text()));
+
+    expect(saveButton).toBeDefined();
+    expect(saveButton!.attributes('disabled')).toBeUndefined();
+
+    await saveButton!.trigger('click');
+    await flushPromises();
+
+    expect(updateAppLocaleSpy).toHaveBeenCalledWith('es');
+    expect(appStore.stats?.preferences.defaultLocale).toBe('es');
+    expect(wrapper.text()).toContain('El idioma predeterminado de la app se guardó como Español.');
   });
 
   it('shows the pending legacy derivative migration warning next to the scan action', async () => {
@@ -416,6 +512,43 @@ describe('SettingsView', () => {
 
     expect(updateExcludedFoldersSpy).toHaveBeenCalledWith(['Archive/cache', 'thumbnails']);
     expect(wrapper.text()).toContain('Excluded folders were saved. Run a library scan to apply them.');
+  });
+
+  it('keeps partial-save feedback localized after the language is switched', async () => {
+    const appStore = useAppStore();
+    appStore.$patch({
+      stats: createAppStatus('rediscover', 'random', 'newest', 'es')
+    });
+    appStore.setLocale('es');
+
+    vi.spyOn(appStore, 'fetchStats').mockRejectedValue(new Error('Network down'));
+    vi.spyOn(galleryApi, 'updateExcludedFolders').mockResolvedValue({
+      envExcludedFolders: ['@eaDir'],
+      customExcludedFolders: ['Archive/cache'],
+      effectiveExcludedFolders: ['@eaDir', 'Archive/cache'],
+      requiresScan: true
+    });
+
+    const wrapper = mountSettingsView();
+    await flushPromises();
+    await openGeneralSettingsSidebarTab(wrapper);
+
+    await wrapper.get('textarea').setValue('Archive/cache');
+    await flushPromises();
+
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Guardar'));
+
+    expect(saveButton).toBeDefined();
+
+    await saveButton!.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'Se guardaron algunos ajustes (carpetas excluidas), pero la actualización no terminó: Network down'
+    );
+    expect(wrapper.text()).not.toContain('excluded folders');
   });
 
   it('dismisses the stories migration notice and scrolls to save when choosing Use Stories Feature', async () => {

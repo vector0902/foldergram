@@ -43,8 +43,8 @@
       <button
         class="inline-flex items-center justify-center w-8 h-8 p-0 border-0 text-muted bg-transparent cursor-pointer"
         type="button"
-        aria-label="More options"
-        title="More options"
+        :aria-label="t('post.feedCard.moreOptions')"
+        :title="t('post.feedCard.moreOptions')"
         @click="menuOpen = true"
       >
         <svg class="w-[1.15rem] h-[1.15rem]" viewBox="0 0 24 24" role="presentation">
@@ -237,8 +237,8 @@
           <RouterLink
             class="inline-flex items-center justify-center w-8 h-8 border-0 bg-transparent cursor-pointer color-inherit transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px"
             :to="{ name: 'folder', params: { slug: item.folderSlug } }"
-            aria-label="Open folder"
-            title="Open folder"
+            :aria-label="t('post.viewer.openFolder')"
+            :title="t('post.viewer.openFolder')"
           >
             <span class="i-fluent-folder-16-regular w-[1.30rem] h-[1.30rem]" aria-hidden="true" />
           </RouterLink>
@@ -249,8 +249,8 @@
             class="inline-flex items-center justify-center w-8 h-8 border-0 bg-transparent cursor-pointer color-inherit transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px"
             :href="downloadOriginalMediaUrl"
             download
-            aria-label="Download original file"
-            title="Download original file"
+            :aria-label="t('post.viewer.downloadOriginalFile')"
+            :title="t('post.viewer.downloadOriginalFile')"
           >
             <svg class="w-[1.45rem] h-[1.45rem]" viewBox="0 0 24 24" role="presentation">
               <path
@@ -268,8 +268,8 @@
             :href="originalMediaUrl"
             target="_blank"
             rel="noreferrer"
-            aria-label="Open original file"
-            title="Open original file"
+            :aria-label="t('post.viewer.openOriginalFile')"
+            :title="t('post.viewer.openOriginalFile')"
           >
             <svg class="w-[1.45rem] h-[1.45rem]" viewBox="0 0 24 24" role="presentation">
               <path
@@ -307,7 +307,7 @@
           @click="openCaptionEditor"
         >
           <span class="i-fluent-edit-16-regular w-[1.15rem] h-[1.15rem] shrink-0" aria-hidden="true" />
-          <span>Edit caption</span>
+          <span>{{ t('post.viewer.editCaption') }}</span>
         </button>
         <button
           class="flex items-center gap-[0.8rem] w-full px-4 py-[0.95rem] border-0 border-b border-border text-text bg-transparent cursor-pointer text-left"
@@ -324,7 +324,7 @@
               stroke-width="1.8"
             />
           </svg>
-          <span>Open original</span>
+          <span>{{ t('post.viewer.openOriginalFile') }}</span>
         </button>
         <button
           v-if="authStore.canDeleteMedia"
@@ -342,7 +342,7 @@
             />
             <path d="M12 2h8v2h-8z" fill="currentColor" />
           </svg>
-          <span>{{ deleting ? 'Deleting...' : 'Delete post' }}</span>
+          <span>{{ t('post.viewer.deletePost') }}</span>
         </button>
         <button
           class="flex items-center gap-[0.8rem] w-full px-4 py-[0.95rem] border-0 text-text bg-transparent cursor-pointer text-left"
@@ -359,7 +359,7 @@
               stroke-width="1.8"
             />
           </svg>
-          <span>Cancel</span>
+          <span>{{ t('common.cancel') }}</span>
         </button>
       </div>
     </div>
@@ -378,7 +378,7 @@
 
     <ConfirmDialog
       v-if="confirmDeleteOpen"
-      title="Delete this post?"
+      :title="t('post.feedCard.delete.title')"
       :message="deleteDialogMessage"
       :confirm-label="deleteDialogConfirmLabel"
       :loading="deleting"
@@ -394,15 +394,15 @@
             :disabled="deleting"
           />
           <span class="grid gap-[0.18rem]">
-            <span class="text-[0.92rem] font-semibold text-text">Also permanently delete original file from disk</span>
-            <span class="text-[0.84rem] text-muted">Keep this unchecked to move the post to Trash while keeping the source file on disk.</span>
+            <span class="text-[0.92rem] font-semibold text-text">{{ t('post.feedCard.delete.deleteOriginalLabel') }}</span>
+            <span class="text-[0.84rem] text-muted">{{ t('post.feedCard.delete.deleteOriginalDescription') }}</span>
           </span>
         </label>
         <p
           v-if="deleteOriginalFromDisk"
           class="m-0 mt-3 px-3 py-[0.8rem] rounded-[0.9rem] border border-[rgba(217,48,37,0.24)] text-[0.84rem] text-[#b42318] bg-[rgba(217,48,37,0.08)]"
         >
-          This will permanently delete the original file, thumbnail, and preview from disk. This action cannot be undone.
+          {{ t('post.feedCard.delete.deleteOriginalWarning') }}
         </p>
         <p
           v-if="deleteError"
@@ -419,6 +419,7 @@
 import 'vidstack/bundle';
 
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink, useRoute } from 'vue-router';
 import type { PlayerSrc } from 'vidstack';
 import type { MediaPlayerElement } from 'vidstack/elements';
@@ -479,6 +480,7 @@ const likesStore = useLikesStore();
 const foldersStore = useFoldersStore();
 const momentsStore = useMomentsStore();
 const route = useRoute();
+const { t, locale } = useI18n();
 const menuOpen = ref(false);
 const deleting = ref(false);
 const confirmDeleteOpen = ref(false);
@@ -515,13 +517,15 @@ const imageRoute = computed(() => ({
 const isHomeContext = computed(() => props.context === 'home');
 const showHomeStoryAvatar = computed(() => isHomeContext.value && props.hasAvatarStory);
 const shouldOpenPostInModal = computed(() => props.context !== 'home');
-const folderStoriesLabel = computed(() => `Open ${props.item.folderName} stories`);
-const folderAvatarLabel = computed(() => `Open ${props.item.folderName}`);
+const folderStoriesLabel = computed(() => t('post.feedCard.openStories', { name: props.item.folderName }));
+const folderAvatarLabel = computed(() => t('post.feedCard.openFolderAvatar', { name: props.item.folderName }));
 const likeActionLabel = computed(() => likesStore.toggleAriaLabel(likesStore.isLiked(props.item.id)));
-const openMediaLabel = computed(() => (props.item.mediaType === 'video' ? 'Open reel' : 'Open post'));
+const openMediaLabel = computed(() =>
+  props.item.mediaType === 'video' ? t('post.feedCard.openReel') : t('post.feedCard.openPost')
+);
 const caption = computed(() => resolveDisplayCaption(props.item));
 const formattedDate = computed(() =>
-  new Date(props.item.takenAt ?? props.item.sortTimestamp).toLocaleDateString(undefined, {
+  new Date(props.item.takenAt ?? props.item.sortTimestamp).toLocaleDateString(locale.value, {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
@@ -548,10 +552,12 @@ const showHomeVideoSurfaceControls = computed(() => props.isActiveVideo || isHom
 const showHomeVideoPausedIndicator = computed(() => showHomeVideoSurfaceControls.value && isHomeVideoPaused.value);
 const deleteDialogMessage = computed(() =>
   deleteOriginalFromDisk.value
-    ? 'This will permanently delete the post from the app and remove original media from disk.'
-    : 'This will delete the post from the app and move it to Trash. The original file will stay on disk unless you choose permanent deletion.'
+    ? t('post.feedCard.delete.messagePermanent')
+    : t('post.feedCard.delete.messageTrash')
 );
-const deleteDialogConfirmLabel = computed(() => (deleteOriginalFromDisk.value ? 'Permanently Delete' : 'Delete'));
+const deleteDialogConfirmLabel = computed(() =>
+  deleteOriginalFromDisk.value ? t('post.feedCard.delete.confirmPermanent') : t('post.feedCard.delete.confirm')
+);
 
 function isPrimaryPlainClick(event: MouseEvent) {
   return !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;

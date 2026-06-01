@@ -1,4 +1,5 @@
 import type {
+  AppLocaleSetting,
   AppStatus,
   AppStats,
   AuthMutationResult,
@@ -436,6 +437,14 @@ export function updateHomeFeedDefault(defaultMode: FeedMode) {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ defaultMode })
+  });
+}
+
+export function updateAppLocale(defaultLocale: AppLocaleSetting['defaultLocale']) {
+  return requestJson<AppLocaleSetting>('/api/admin/settings/app-locale', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ defaultLocale })
   });
 }
 

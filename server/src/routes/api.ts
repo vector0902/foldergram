@@ -68,6 +68,9 @@ const mediaSearchQuerySchema = paginationQuerySchema.extend({
 const homeFeedDefaultBodySchema = z.object({
   defaultMode: z.enum(['recent', 'rediscover', 'random'])
 });
+const appLocaleBodySchema = z.object({
+  defaultLocale: z.enum(['en', 'es', 'zh'])
+});
 const reelsFeedDefaultBodySchema = z.object({
   defaultMode: z.enum(['recommended', 'recent', 'random'])
 });
@@ -169,6 +172,7 @@ export const authRequestBodySchemas = {
 
 export const settingsRequestBodySchemas = {
   homeFeedDefault: homeFeedDefaultBodySchema,
+  appLocale: appLocaleBodySchema,
   reelsFeedDefault: reelsFeedDefaultBodySchema,
   folderImageOrderDefault: folderImageOrderDefaultBodySchema,
   storiesMode: storiesModeBodySchema,
@@ -378,6 +382,15 @@ router.get('/scan-progress', (_request, response) => {
 router.get('/admin/scan-progress', requireCapability('canAccessSettings', 'Admin access is required.'), (_request, response) => {
   response.json(galleryService.getAdminScanProgress());
 });
+
+router.put(
+  '/admin/settings/app-locale',
+  requireCapability('canAccessSettings', 'Admin access is required.'),
+  (request, response) => {
+    const body = appLocaleBodySchema.parse(request.body);
+    response.json(galleryService.setDefaultLocale(body.defaultLocale));
+  }
+);
 
 router.put(
   '/admin/settings/home-feed-default',

@@ -21,6 +21,7 @@ interface AuthState {
   role: AuthRole;
   accessMode: ViewerAccessMode;
   likesMode: LikesMode;
+  defaultLocale: AuthStatus['defaultLocale'];
   capabilities: AuthCapabilities;
   error: string | null;
 }
@@ -61,13 +62,18 @@ function createCapabilities(role: AuthRole): AuthCapabilities {
   };
 }
 
-function createAnonymousStatus(enabled: boolean, accessMode: ViewerAccessMode): AuthStatus {
+function createAnonymousStatus(
+  enabled: boolean,
+  accessMode: ViewerAccessMode,
+  defaultLocale: AuthStatus['defaultLocale']
+): AuthStatus {
   return {
     enabled,
     authenticated: false,
     role: 'anonymous',
     accessMode,
     likesMode: 'local',
+    defaultLocale,
     capabilities: createCapabilities('anonymous')
   };
 }
@@ -91,6 +97,7 @@ export const useAuthStore = defineStore('auth', {
     role: 'admin',
     accessMode: 'off',
     likesMode: 'shared',
+    defaultLocale: null,
     capabilities: createCapabilities('admin'),
     error: null
   }),
@@ -119,6 +126,7 @@ export const useAuthStore = defineStore('auth', {
       this.role = status.role;
       this.accessMode = status.accessMode;
       this.likesMode = status.likesMode;
+      this.defaultLocale = status.defaultLocale;
       this.capabilities = status.capabilities;
       this.ready = true;
     },
@@ -147,7 +155,7 @@ export const useAuthStore = defineStore('auth', {
 
       this.ready = true;
       this.loading = false;
-      this.applyStatus(createAnonymousStatus(this.enabled, this.accessMode));
+      this.applyStatus(createAnonymousStatus(this.enabled, this.accessMode, this.defaultLocale));
       this.unlockDialogOpen = false;
       this.error = this.accessMode === 'public' ? null : message;
     },

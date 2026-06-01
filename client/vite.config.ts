@@ -58,7 +58,10 @@ export default defineConfig(async ({ command, mode }) => {
   return {
     envDir: repositoryRoot,
     define: {
-      __APP_VERSION__: JSON.stringify(appPackage.version)
+      __APP_VERSION__: JSON.stringify(appPackage.version),
+      __VUE_I18N_FULL_INSTALL__: JSON.stringify(true),
+      __VUE_I18N_LEGACY_API__: JSON.stringify(false),
+      __INTLIFY_PROD_DEVTOOLS__: JSON.stringify(false)
     },
     plugins: [
       UnoCSS(),
@@ -73,6 +76,11 @@ export default defineConfig(async ({ command, mode }) => {
         }
       })
     ],
+    resolve: {
+      alias: {
+        'vue-i18n': 'vue-i18n/dist/vue-i18n.esm-bundler.js'
+      }
+    },
     server: {
       host: devHost,
       port: resolvedDevClientPort,

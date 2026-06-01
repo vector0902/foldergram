@@ -97,6 +97,7 @@ Example shape:
   "role": "anonymous",
   "accessMode": "public",
   "likesMode": "local",
+  "defaultLocale": "zh",
   "capabilities": {
     "canManageLibrary": false,
     "canDeleteMedia": false,
@@ -108,6 +109,12 @@ Example shape:
   }
 }
 ```
+
+Notable field:
+
+| Field | Notes |
+| --- | --- |
+| `defaultLocale` | Saved app-wide default locale used to localize the auth gate and other pre-auth UI when the browser does not already have its own local override. |
 
 ### `GET /api/feed`
 
@@ -206,6 +213,27 @@ Response shape:
 }
 ```
 
+Each capsule item includes:
+
+- `id`
+- `title`
+- `subtitle`
+- `dateContext`
+- `imageCount`
+- `coverImage`
+
+Date-driven Moment capsules also include `momentDate`, which carries the
+server-selected calendar data the client uses for localization without
+rebuilding the date windows locally.
+
+`momentDate` can be:
+
+- `{"type":"on-this-day","date":{"year":2026,"month":5,"day":31}}`
+- `{"type":"this-week-previous-years","startDate":{"year":2026,"month":5,"day":24},"endDate":{"year":2026,"month":6,"day":7}}`
+- `{"type":"from-last-year","referenceDate":{"year":2025,"month":5,"day":31},"startDate":{"year":2025,"month":4,"day":16},"endDate":{"year":2025,"month":7,"day":15}}`
+
+Highlight capsules omit `momentDate`.
+
 ### `GET /api/feed/moments/:id`
 
 Path parameters:
@@ -223,6 +251,10 @@ Query parameters:
 
 Returns `404` with `{"message":"Feed capsule not found"}` when the ID does not
 exist in the currently selected set.
+
+The `moment` object in the response uses the same capsule shape as
+`GET /api/feed/moments`, including `momentDate` when the active rail is
+date-driven Moments.
 
 ### `GET /api/folders`
 
@@ -405,8 +437,9 @@ Notes:
 
 - `items` contains the avatar story first when one exists, followed by highlight capsules.
 - `highlights` contains only highlight capsules.
-- each capsule item includes `id`, `title`, `subtitle`, `dateContext`, `imageCount`, `coverImage`, and `presentation`
+- each capsule item includes `id`, `title`, `subtitle`, `dateContext`, `imageCount`, `coverImage`, `presentation`, and `latestActivityTimestamp`
 - `presentation` is `avatar` or `highlight`
+- `latestActivityTimestamp` is the latest effective media timestamp for that story capsule, exposed so clients can localize story activity labels without parsing the English fallback copy
 - `avatarStoryId` can be a synthetic fallback id when the folder has highlight media but no direct avatar-story files
 
 Errors:
@@ -442,6 +475,7 @@ Response shape:
     "title": "AnimalPlanet",
     "subtitle": "AnimalPlanet story set",
     "dateContext": "Today",
+    "latestActivityTimestamp": 1774713600000,
     "imageCount": 8,
     "presentation": "avatar",
     "coverImage": {}
@@ -457,6 +491,7 @@ Response shape:
 Notes:
 
 - the paginated `items` array contains normal feed-item payloads
+- the `story` object uses the same capsule shape as `GET /api/folders/:slug/stories`, including `latestActivityTimestamp`
 - if the requested avatar story is a fallback capsule, the server returns recent highlight media for that synthetic capsule
 
 Errors:
@@ -668,6 +703,7 @@ Notable fields:
 | `scan` | Viewer-safe live scan progress snapshot. It uses the same shape as `GET /api/scan-progress`, with `currentFolder` and `currentFile` redacted and `lastCompletedScan.error_text` forced to `null`. Scan-report paths never appear here. |
 | `storage` | Availability with a generic unavailable message only. |
 | `libraryIndex` | Rebuild requirement plus ignored root-media count. Gallery-root paths are omitted. |
+| `preferences.defaultLocale` | Saved app-wide default locale when configured. Browsers can still keep their own local override. |
 | `preferences.defaultHomeFeedMode` | Current app-wide default home feed mode. |
 | `preferences.defaultReelsFeedMode` | Current app-wide default reels mode used when `/reels` opens. |
 | `preferences.defaultFolderImageOrder` | Current app-wide default order used for folder grids and folder detail navigation. |
@@ -961,6 +997,33 @@ Success:
 ```json
 {
   "defaultMode": "recent"
+}
+```
+
+### `PUT /api/admin/settings/app-locale`
+
+Sets the saved app-wide default language used by browsers that do not already
+have their own local override.
+
+Body:
+
+```json
+{
+  "defaultLocale": "zh"
+}
+```
+
+Allowed values:
+
+- `en`
+- `es`
+- `zh`
+
+Success:
+
+```json
+{
+  "defaultLocale": "zh"
 }
 ```
 

@@ -5,9 +5,9 @@
     style="background: radial-gradient(circle at top, rgba(0,149,246,0.1), transparent 34%), linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #ffffff 10%) 0%, var(--bg) 100%);"
   >
     <div class="card w-full max-w-[24rem] p-8 text-center">
-      <p class="m-0 text-[0.78rem] font-bold uppercase tracking-[0.08em] text-accent-strong">Access Protection</p>
-      <h1 class="mt-3 mb-2 text-[1.45rem] font-semibold tracking-[-0.04em]">Checking access</h1>
-      <p class="m-0 text-muted">Loading the current password protection status.</p>
+      <p class="m-0 text-[0.78rem] font-bold uppercase tracking-[0.08em] text-accent-strong">{{ t('app.authLoading.eyebrow') }}</p>
+      <h1 class="mt-3 mb-2 text-[1.45rem] font-semibold tracking-[-0.04em]">{{ t('app.authLoading.title') }}</h1>
+      <p class="m-0 text-muted">{{ t('app.authLoading.description') }}</p>
     </div>
   </section>
   <AuthGate v-else-if="authStore.requiresLogin" />
@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterView, useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router';
 
 import AppShell from './components/AppShell.vue';
@@ -41,6 +42,7 @@ import { useReelsStore } from './stores/reels';
 import { useTrashStore } from './stores/trash';
 import { useViewerStore } from './stores/viewer';
 
+const { t } = useI18n();
 const appStore = useAppStore();
 const authStore = useAuthStore();
 const collectionsStore = useCollectionsStore();
@@ -177,6 +179,16 @@ onUnmounted(() => {
   unlockModalScroll();
   appStore.stopStatsPolling();
 });
+
+watch(
+  () => authStore.defaultLocale,
+  (defaultLocale) => {
+    appStore.syncLocaleFromAuthStatus(defaultLocale);
+  },
+  {
+    immediate: true
+  }
+);
 
 watch(
   () => appStore.stats?.folders ?? 0,

@@ -5,7 +5,7 @@
     <RouterLink
       class="sidebar__brand relative inline-flex items-center justify-center w-12 h-12 p-[0.3rem] rounded-[1rem] color-inherit transition-[background-color,transform,opacity] duration-180 hover:bg-surface-hover hover:-translate-y-px"
       to="/"
-      aria-label="Foldergram home"
+      :aria-label="t('nav.foldergramHome')"
     >
       <span
         class="pointer-events-none absolute top-[0.16rem] left-1/2 -translate-x-1/2 text-[0.42rem] leading-none tracking-[0.08em] text-muted"
@@ -40,7 +40,7 @@
                 opacity 0.18s ease,
                 max-width 0.22s ease;
             "
-            >Home</span
+            >{{ t('nav.home') }}</span
           >
         </a>
       </RouterLink>
@@ -72,7 +72,7 @@
                 opacity 0.18s ease,
                 max-width 0.22s ease;
             "
-            >Reels</span
+            >{{ t('nav.reels') }}</span
           >
         </a>
       </RouterLink>
@@ -104,7 +104,7 @@
                 opacity 0.18s ease,
                 max-width 0.22s ease;
             "
-            >Search</span
+            >{{ t('nav.search') }}</span
           >
         </a>
       </RouterLink>
@@ -136,7 +136,7 @@
                 opacity 0.18s ease,
                 max-width 0.22s ease;
             "
-            >Library</span
+            >{{ t('nav.library') }}</span
           >
         </a>
       </RouterLink>
@@ -169,7 +169,7 @@
                 opacity 0.18s ease,
                 max-width 0.22s ease;
             "
-            >Places</span
+            >{{ t('nav.places') }}</span
           >
         </a>
       </RouterLink>
@@ -244,7 +244,7 @@
                 opacity 0.18s ease,
                 max-width 0.22s ease;
             "
-            >Collections</span
+            >{{ t('nav.collections') }}</span
           >
         </a>
       </RouterLink>
@@ -256,7 +256,7 @@
             opacity 0.18s ease,
             max-width 0.22s ease;
         "
-        >Folders Spotlight</span
+        >{{ t('nav.foldersSpotlight') }}</span
       >
       <div
         class="flex min-h-0 flex-col gap-[0.2rem] max-h-[22.5rem] overflow-y-auto [scrollbar-width:none]"
@@ -294,7 +294,7 @@
             >
               <strong class="truncate text-[0.82rem]">{{ folder.name }}</strong>
               <small class="truncate text-[0.68rem] text-muted">{{
-                folder.breadcrumb ?? `${folder.imageCount} posts`
+                folder.breadcrumb ?? t('nav.folderPosts', { count: folder.imageCount })
               }}</small>
             </span>
           </a>
@@ -321,7 +321,7 @@
             @click="closeMoreMenu"
           >
             <span class="i-fluent-delete-16-regular w-[1.18rem] h-[1.18rem] shrink-0" aria-hidden="true" />
-            <span>Trash</span>
+            <span>{{ t('nav.trash') }}</span>
           </RouterLink>
 
           <RouterLink v-if="authStore.canAccessSettings" custom :to="{ name: 'settings' }" v-slot="{ href, navigate, isActive }">
@@ -329,13 +329,13 @@
               :href="href"
               class="flex items-center gap-[0.95rem] px-[1.2rem] py-[1rem] text-[0.98rem] text-text transition-colors duration-150 hover:bg-surface-hover"
               @click="handleSettingsNavigate($event, navigate)"
-            >
-              <span
-                class="w-[1.18rem] h-[1.18rem] shrink-0"
-                :class="isActive ? 'i-fluent-settings-20-filled' : 'i-fluent-settings-20-regular'"
-                aria-hidden="true"
-              />
-              <span>Settings</span>
+              >
+                <span
+                  class="w-[1.18rem] h-[1.18rem] shrink-0"
+                  :class="isActive ? 'i-fluent-settings-20-filled' : 'i-fluent-settings-20-regular'"
+                  aria-hidden="true"
+                />
+              <span>{{ t('nav.settings') }}</span>
             </a>
           </RouterLink>
 
@@ -350,7 +350,7 @@
               class="i-fluent-key-16-regular w-[1.18rem] h-[1.18rem] shrink-0"
               aria-hidden="true"
             />
-            <span>Unlock admin</span>
+            <span>{{ t('nav.unlockAdmin') }}</span>
           </button>
 
           <button
@@ -369,7 +369,7 @@
               class="i-fluent-weather-sunny-20-regular w-[1.18rem] h-[1.18rem] shrink-0"
               aria-hidden="true"
             />
-            <span>Switch appearance</span>
+            <span>{{ t('nav.switchAppearance') }}</span>
           </button>
 
           <button
@@ -407,7 +407,7 @@
                 opacity 0.18s ease,
                 max-width 0.22s ease;
             "
-            >More</span
+            >{{ t('nav.more') }}</span
           >
         </button>
       </div>
@@ -417,6 +417,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, onUnmounted, ref, watch } from "vue"
+  import { useI18n } from "vue-i18n"
   import { RouterLink, useRoute } from "vue-router"
 
   import { useAppStore } from "../stores/app"
@@ -429,6 +430,7 @@
   import Avatar from "./Avatar.vue"
   import BrandMark from "./BrandMark.vue"
 
+  const { t } = useI18n()
   const appVersion = __APP_VERSION__
   const appStore = useAppStore()
   const authStore = useAuthStore()
@@ -449,7 +451,7 @@
     ),
   )
   const appearanceLabel = computed(() =>
-    appStore.theme === "light" ? "Switch to dark mode" : "Switch to light mode",
+    appStore.theme === "light" ? t("nav.switchToDarkMode") : t("nav.switchToLightMode"),
   )
   const showPlacesNav = computed(() =>
     placesStore.items.length > 0 && placesStore.listError === null,
@@ -461,7 +463,7 @@
     route.name === "collections" || route.name === "collection",
   )
   const signOutLabel = computed(() =>
-    authStore.accessMode === "public" ? "Return to public view" : "Sign out",
+    authStore.accessMode === "public" ? t("nav.returnToPublicView") : t("nav.signOut"),
   )
   const sidebarActiveClass =
     "router-link-active bg-[color-mix(in_srgb,var(--surface)_92%,transparent_8%)] font-bold"

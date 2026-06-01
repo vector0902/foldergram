@@ -99,6 +99,24 @@ describe.sequential('auth route validation', () => {
     });
   });
 
+  it('accepts zh as a valid app locale default', () => {
+    expect(
+      settingsRequestBodySchemas.appLocale.parse({
+        defaultLocale: 'zh'
+      })
+    ).toEqual({
+      defaultLocale: 'zh'
+    });
+  });
+
+  it('rejects invalid app locale defaults', () => {
+    expect(() =>
+      settingsRequestBodySchemas.appLocale.parse({
+        defaultLocale: 'fr'
+      })
+    ).toThrowError();
+  });
+
   it('rejects invalid reels-feed default modes', () => {
     expect(() =>
       settingsRequestBodySchemas.reelsFeedDefault.parse({

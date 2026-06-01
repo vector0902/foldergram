@@ -6,11 +6,11 @@
       :description="appStore.libraryUnavailableReason"
     />
     <section v-else-if="appStore.isRebuilding && likesStore.items.length === 0" class="card p-8 text-center">
-      <p class="m-0 text-muted">Rebuilding the library index. {{ likesStore.collectionLabel }} will return after the refreshed library finishes loading.</p>
+      <p class="m-0 text-muted">{{ t('likes.view.rebuilding', { label: likesStore.collectionLabel }) }}</p>
     </section>
     <ErrorState v-else-if="likesStore.error" :title="likesStore.errorTitle" :message="likesStore.error" />
     <template v-else>
-      <div class="flex justify-center py-[0.95rem] mb-[0.45rem] border-t border-border" :aria-label="`${likesStore.collectionLabel} sections`">
+      <div class="flex justify-center py-[0.95rem] mb-[0.45rem] border-t border-border" :aria-label="t('likes.view.sectionsAria', { label: likesStore.collectionLabel })">
         <span class="relative pt-[0.1rem] text-text text-[0.78rem] font-bold tracking-[0.11em] uppercase">
           <span class="absolute left-0 right-0 top-[-1.05rem] h-px bg-text" aria-hidden="true"></span>
           {{ likesStore.collectionSectionLabel }}
@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import EmptyState from '../components/EmptyState.vue';
 import ErrorState from '../components/ErrorState.vue';
@@ -40,6 +41,7 @@ import { useLikesStore } from '../stores/likes';
 
 const appStore = useAppStore();
 const likesStore = useLikesStore();
+const { t } = useI18n();
 
 onMounted(async () => {
   if (appStore.isLibraryUnavailable) {

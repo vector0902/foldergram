@@ -1,3 +1,5 @@
+import type { SupportedLocale } from '../locales';
+
 export type FeedMode = 'recent' | 'rediscover' | 'random';
 export type ReelsFeedMode = 'recommended' | 'recent' | 'random';
 export type FolderImageOrder = 'newest' | 'oldest';
@@ -18,6 +20,10 @@ export type ScanOperation =
 
 export interface HomeFeedDefaultSetting {
   defaultMode: FeedMode;
+}
+
+export interface AppLocaleSetting {
+  defaultLocale: SupportedLocale;
 }
 
 export interface ReelsFeedDefaultSetting {
@@ -140,9 +146,35 @@ export interface RailCapsule {
   imageCount: number;
   coverImage: FeedItem;
   presentation?: StoryCapsulePresentation;
+  latestActivityTimestamp?: number | null;
 }
 
-export type MomentCapsule = RailCapsule;
+export interface CalendarDateParts {
+  year: number;
+  month: number;
+  day: number;
+}
+
+export type MomentDateMetadata =
+  | {
+      type: 'on-this-day';
+      date: CalendarDateParts;
+    }
+  | {
+      type: 'this-week-previous-years';
+      startDate: CalendarDateParts;
+      endDate: CalendarDateParts;
+    }
+  | {
+      type: 'from-last-year';
+      referenceDate: CalendarDateParts;
+      startDate: CalendarDateParts;
+      endDate: CalendarDateParts;
+    };
+
+export interface MomentCapsule extends RailCapsule {
+  momentDate?: MomentDateMetadata;
+}
 
 export interface MomentsPayload {
   railKind: FeedRailKind;
@@ -157,7 +189,7 @@ export interface MomentFeedPayload extends PaginatedFeed {
   railTitle: string;
   railDescription: string;
   railSingularLabel: string;
-  moment: RailCapsule;
+  moment: MomentCapsule;
 }
 
 export interface FolderStoriesPayload {
@@ -386,6 +418,7 @@ export interface AppStatus {
     ignoredRootMediaCount: number;
   };
   preferences: {
+    defaultLocale?: SupportedLocale | null;
     defaultHomeFeedMode: FeedMode;
     defaultReelsFeedMode: ReelsFeedMode;
     defaultFolderImageOrder?: FolderImageOrder;
@@ -435,6 +468,7 @@ export interface AuthStatus {
   role: AuthRole;
   accessMode: ViewerAccessMode;
   likesMode: LikesMode;
+  defaultLocale: SupportedLocale | null;
   capabilities: AuthCapabilities;
 }
 

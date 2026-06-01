@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { reactive } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { DEFAULT_LOCALE, i18n } from '../locales';
 import type { FeedItem, RailCapsule, RailViewerStoreContract } from '../types/api';
 import { useAppStore } from '../stores/app';
 import StoriesModal from './StoriesModal.vue';
@@ -47,14 +48,15 @@ function createVideoItem(id: number): FeedItem {
   };
 }
 
-function createCapsule(id: string, title: string, item: FeedItem): RailCapsule {
+function createCapsule(id: string, title: string, item: FeedItem, latestActivityTimestamp?: number | null): RailCapsule {
   return {
     id,
     title,
     subtitle: 'Recent story set',
     dateContext: 'Latest Mar 28, 2026',
     imageCount: 1,
-    coverImage: item
+    coverImage: item,
+    ...(latestActivityTimestamp !== undefined ? { latestActivityTimestamp } : {})
   };
 }
 
@@ -136,6 +138,7 @@ describe('StoriesModal', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     setActivePinia(createPinia());
+    i18n.global.locale.value = DEFAULT_LOCALE;
     const appStore = useAppStore();
     appStore.$patch({
       videoMuted: true,
@@ -471,5 +474,52 @@ describe('StoriesModal', () => {
     expect(loadCapsule).toHaveBeenCalledTimes(2);
     expect(loadCapsule).toHaveBeenLastCalledWith(capsule.id);
     expect(wrapper.text()).not.toContain('Unable to load this story capsule');
+  });
+
+  it('localizes story meta and footer dates with the active app locale', async () => {
+    i18n.global.locale.value = 'zh';
+
+    const imageItem = createImageItem(801);
+    const latestActivityTimestamp = new Date('2026-03-28T12:00:00.000Z').getTime();
+    const capsule = createCapsule('capsule-localized-meta', 'Tigers', imageItem, latestActivityTimestamp);
+    const store = createStore([capsule], {
+      [capsule.id]: [imageItem]
+    });
+
+    const wrapper = mount(StoriesModal, {
+      props: {
+        items: [capsule],
+        initialId: capsule.id,
+        railSingularLabel: 'Story',
+        store
+      },
+      global: {
+        stubs: {
+          Avatar: {
+            template: '<div data-test="avatar" />'
+          },
+          ResilientImage: {
+            template: '<img data-test="resilient-image" />'
+          }
+        }
+      }
+    });
+
+    await flushPromises();
+
+    const expectedStoryDate = new Intl.DateTimeFormat('zh', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(new Date(latestActivityTimestamp));
+    const expectedFooterDate = new Intl.DateTimeFormat('zh', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(new Date(imageItem.takenAt ?? imageItem.sortTimestamp));
+
+    expect(wrapper.text()).toContain(`1 项 · 最新 ${expectedStoryDate}`);
+    expect(wrapper.text()).toContain(expectedFooterDate);
+    expect(wrapper.text()).not.toContain('1 items · Latest');
   });
 });

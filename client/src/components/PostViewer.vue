@@ -9,7 +9,7 @@
       v-if="isModal"
       class="viewer__modal-close"
       type="button"
-      aria-label="Close post"
+      :aria-label="t('post.viewer.close')"
       @click="$emit('close')"
     >
       <svg
@@ -42,7 +42,7 @@
         params: { id: String(previousNavigationImageId) },
         query: route.query,
       }"
-      aria-label="Previous post"
+      :aria-label="t('post.viewer.previous')"
     >
       <svg class="w-4 h-4" viewBox="0 0 24 24" role="presentation">
         <path
@@ -70,7 +70,7 @@
         params: { id: String(nextNavigationImageId) },
         query: route.query,
       }"
-      aria-label="Next post"
+      :aria-label="t('post.viewer.next')"
     >
       <svg class="w-4 h-4" viewBox="0 0 24 24" role="presentation">
         <path
@@ -91,7 +91,7 @@
       type="button"
       :aria-expanded="isSidebarExpanded"
       :aria-label="
-        isSidebarExpanded ? 'Hide post details' : 'Show post details'
+        isSidebarExpanded ? t('post.viewer.hideDetails') : t('post.viewer.showDetails')
       "
       @click="toggleSidebar"
     >
@@ -136,7 +136,7 @@
           <div
             class="viewer__media-shell viewer__media-shell--video viewer__media-shell--video-interactive"
             :style="mediaShellStyle"
-            aria-label="Toggle playback"
+            :aria-label="t('post.viewer.togglePlayback')"
             role="button"
             tabindex="0"
             @click="handleVideoSurfaceClick"
@@ -169,7 +169,7 @@
                   <div class="viewer__player-controls-group">
                     <media-play-button
                       class="viewer__player-control"
-                      aria-label="Toggle playback"
+                      :aria-label="t('post.viewer.togglePlayback')"
                     >
                       <span
                         class="viewer__player-control-icon viewer__player-play-icon viewer__player-play-icon--play i-fluent-play-16-filled"
@@ -186,7 +186,7 @@
                   <div class="viewer__player-controls-group">
                     <media-mute-button
                       class="viewer__player-control"
-                      aria-label="Toggle sound"
+                      :aria-label="t('post.viewer.toggleSound')"
                     >
                       <span
                         class="viewer__player-control-icon viewer__player-mute-icon viewer__player-mute-icon--on i-fluent-speaker-2-16-regular"
@@ -204,11 +204,11 @@
                       type="button"
                       :aria-label="
                         isPlayingHd
-                          ? 'Switch to preview quality'
-                          : 'Switch to HD original'
+                          ? t('post.viewer.switchToPreviewQuality')
+                          : t('post.viewer.switchToHdOriginal')
                       "
                       :aria-pressed="isPlayingHd"
-                      :title="isPlayingHd ? 'Preview quality' : 'HD original'"
+                      :title="isPlayingHd ? t('post.viewer.previewQuality') : t('post.viewer.hdOriginal')"
                       @click.stop="toggleHdSource"
                     >
                       <span
@@ -223,7 +223,7 @@
                     </button>
                     <media-fullscreen-button
                       class="viewer__player-control"
-                      aria-label="Toggle fullscreen"
+                      :aria-label="t('post.viewer.toggleFullscreen')"
                       target="media"
                     >
                       <span
@@ -270,7 +270,7 @@
         v-if="isModalSidebarOverlayVisible"
         class="viewer__drawer-backdrop"
         type="button"
-        aria-label="Hide post details"
+        :aria-label="t('post.viewer.hideDetails')"
         @click="handleSidebarBackdropClick"
       />
 
@@ -308,7 +308,7 @@
           <RouterLink
             class="viewer__sidebar-folder-link flex items-center gap-[0.85rem] min-w-0"
             :to="{ name: 'folder', params: { slug: image.folderSlug } }"
-            aria-label="Open folder"
+            :aria-label="t('post.viewer.openFolder')"
           >
             <Avatar
               class="h-[2.65rem] w-[2.65rem]"
@@ -320,11 +320,7 @@
                 {{ image.folderName }}
               </h2>
               <p class="viewer__sidebar-breadcrumb m-0 text-muted truncate">
-                {{
-                  folder?.breadcrumb ??
-                  image.folderBreadcrumb ??
-                  "Top-level source folder"
-                }}
+                {{ folderBreadcrumbLabel }}
               </p>
             </div>
           </RouterLink>
@@ -344,15 +340,15 @@
               v-if="authStore.canManageLibrary"
               class="inline-flex items-center justify-center mt-[0.05rem] w-6 h-6 p-0 border-0 rounded-full bg-transparent text-muted cursor-pointer transition-colors hover:text-text"
               type="button"
-              aria-label="Edit caption"
-              title="Edit caption"
+              :aria-label="t('post.viewer.editCaption')"
+              :title="t('post.viewer.editCaption')"
               @click="openCaptionEditor"
             >
               <span class="i-fluent-edit-16-regular w-4 h-4" aria-hidden="true" />
             </button>
           </div>
           <p class="viewer__sidebar-path mt-3 text-muted">
-            <span class="viewer__sidebar-path-label">Folder Path</span>
+            <span class="viewer__sidebar-path-label">{{ t('post.viewer.folderPath') }}</span>
             <span class="viewer__sidebar-path-value">{{ image.relativePath }}</span>
           </p>
         </div>
@@ -361,7 +357,7 @@
         <dl class="viewer__sidebar-stats m-0 px-5 pt-[0.9rem]">
           <div class="viewer__sidebar-stat">
             <dt class="viewer__sidebar-stat-label">
-              Dimensions
+              {{ t('post.viewer.stats.dimensions') }}
             </dt>
             <dd class="viewer__sidebar-stat-value m-0 text-[0.96rem] font-semibold">
               {{ image.width }} × {{ image.height }}
@@ -369,14 +365,10 @@
           </div>
           <div class="viewer__sidebar-stat">
             <dt class="viewer__sidebar-stat-label">
-              Type
+              {{ t('post.viewer.stats.type') }}
             </dt>
             <dd class="viewer__sidebar-stat-value m-0 text-[0.96rem] font-semibold">
-              {{
-                image.mediaType === "video"
-                  ? `Video (${image.mimeType})`
-                  : image.mimeType
-              }}
+              {{ mediaTypeLabel }}
             </dd>
           </div>
           <div
@@ -384,7 +376,7 @@
             class="viewer__sidebar-stat"
           >
             <dt class="viewer__sidebar-stat-label">
-              Duration
+              {{ t('post.viewer.stats.duration') }}
             </dt>
             <dd class="viewer__sidebar-stat-value m-0 text-[0.96rem] font-semibold">
               {{ formattedDuration }}
@@ -392,7 +384,7 @@
           </div>
           <div class="viewer__sidebar-stat">
             <dt class="viewer__sidebar-stat-label">
-              Size
+              {{ t('post.viewer.stats.size') }}
             </dt>
             <dd class="viewer__sidebar-stat-value m-0 text-[0.96rem] font-semibold">{{ fileSize }}</dd>
           </div>
@@ -401,7 +393,7 @@
             class="viewer__sidebar-stat"
           >
             <dt class="viewer__sidebar-stat-label">
-              Place
+              {{ t('post.viewer.stats.place') }}
             </dt>
             <dd class="viewer__sidebar-stat-value m-0 text-[0.96rem] font-semibold">
               <RouterLink
@@ -472,8 +464,8 @@
               v-if="authStore.canManageLibrary"
               class="viewer__sidebar-action inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer text-text transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px disabled:opacity-45 disabled:cursor-wait disabled:transform-none"
               type="button"
-              aria-label="Set as folder cover"
-              title="Set as folder cover"
+              :aria-label="t('post.viewer.setAsCover')"
+              :title="t('post.viewer.setAsCover')"
               :disabled="settingCover || isCurrentCover"
               @click="handleSetCover"
             >
@@ -484,8 +476,8 @@
               class="viewer__sidebar-action inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer text-text transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px"
               :href="downloadOriginalMediaUrl"
               download
-              aria-label="Download original file"
-              title="Download original file"
+              :aria-label="t('post.viewer.downloadOriginalFile')"
+              :title="t('post.viewer.downloadOriginalFile')"
             >
               <svg
                 class="w-[1.55rem] h-[1.55rem]"
@@ -508,8 +500,8 @@
               :href="originalMediaUrl"
               target="_blank"
               rel="noreferrer"
-              aria-label="Open original file"
-              title="Open original file"
+              :aria-label="t('post.viewer.openOriginalFile')"
+              :title="t('post.viewer.openOriginalFile')"
             >
               <svg
                 class="w-[1.55rem] h-[1.55rem]"
@@ -547,7 +539,7 @@
               v-if="authStore.canDeleteMedia"
               class="viewer__sidebar-action inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer text-[#d93025] transition-[opacity,transform] duration-180 hover:opacity-72 hover:-translate-y-px disabled:opacity-45 disabled:cursor-wait disabled:transform-none"
               type="button"
-              aria-label="Delete post"
+              :aria-label="t('post.viewer.deletePost')"
               :disabled="deleting"
               @click="$emit('delete')"
             >
@@ -588,6 +580,7 @@
   import "vidstack/bundle"
 
   import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
+  import { useI18n } from "vue-i18n"
   import { RouterLink, useRoute, useRouter } from "vue-router"
   import type { PlayerSrc } from "vidstack"
   import type { MediaPlayerElement } from "vidstack/elements"
@@ -626,6 +619,7 @@
   const foldersStore = useFoldersStore()
   const route = useRoute()
   const router = useRouter()
+  const { locale, t } = useI18n()
   const playerElement = ref<MediaPlayerElement | null>(null)
   const cardWrapperElement = ref<HTMLElement | null>(null)
   const sidebarElement = ref<HTMLElement | null>(null)
@@ -754,11 +748,23 @@
 
   const folderAvatar = computed(() => props.folder?.avatarUrl ?? null)
   const caption = computed(() => (props.image ? resolveDisplayCaption(props.image) : ""))
+  const folderBreadcrumbLabel = computed(() =>
+    props.folder?.breadcrumb ?? props.image?.folderBreadcrumb ?? t('folder.shared.topLevelSourceFolder'),
+  )
+  const mediaTypeLabel = computed(() => {
+    if (!props.image) {
+      return ""
+    }
+
+    return props.image.mediaType === "video"
+      ? t('post.viewer.videoType', { mimeType: props.image.mimeType })
+      : props.image.mimeType
+  })
   const formattedDate = computed(() =>
     props.image
       ? new Date(
           props.image.takenAt ?? props.image.sortTimestamp,
-        ).toLocaleDateString(undefined, {
+        ).toLocaleDateString(locale.value, {
           month: "short",
           day: "numeric",
           year: "numeric",
@@ -797,49 +803,49 @@
 
     if (location) {
       details.push({
-        label: "Location",
+        label: t('post.viewer.metadata.location'),
         value: location,
       })
     }
 
     if (camera) {
       details.push({
-        label: "Camera",
+        label: t('post.viewer.metadata.camera'),
         value: camera,
       })
     }
 
     if (exif.lensModel) {
       details.push({
-        label: "Lens",
+        label: t('post.viewer.metadata.lens'),
         value: exif.lensModel,
       })
     }
 
     if (aperture) {
       details.push({
-        label: "Aperture",
+        label: t('post.viewer.metadata.aperture'),
         value: aperture,
       })
     }
 
     if (shutter) {
       details.push({
-        label: "Shutter",
+        label: t('post.viewer.metadata.shutter'),
         value: shutter,
       })
     }
 
     if (iso) {
       details.push({
-        label: "ISO",
+        label: t('post.viewer.metadata.iso'),
         value: iso,
       })
     }
 
     if (focalLength) {
       details.push({
-        label: "Focal length",
+        label: t('post.viewer.metadata.focalLength'),
         value: focalLength,
       })
     }

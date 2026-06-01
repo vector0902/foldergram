@@ -2,15 +2,19 @@
   <section class="w-[min(100%,58rem)] mx-auto">
     <EmptyState
       v-if="appStore.isLibraryUnavailable"
-      title="Library storage unavailable"
+      :title="t('collections.detail.libraryUnavailableTitle')"
       :description="appStore.libraryUnavailableReason"
     />
-    <ErrorState v-else-if="collectionsStore.collectionError" title="Could not load collection" :message="collectionsStore.collectionError" />
+    <ErrorState
+      v-else-if="collectionsStore.collectionError"
+      :title="t('collections.detail.loadErrorTitle')"
+      :message="collectionsStore.collectionError"
+    />
     <template v-else>
       <header class="collection-page__header" :aria-label="collectionTitle">
         <RouterLink class="collection-page__back-link" :to="{ name: 'collections' }">
           <span class="i-fluent-chevron-left-20-regular collection-page__back-icon" aria-hidden="true" />
-          <span>Collections</span>
+          <span>{{ t('collections.detail.back') }}</span>
         </RouterLink>
         <div class="collection-page__title-row">
           <h1 class="collection-page__title">{{ collectionTitle }}</h1>
@@ -18,8 +22,8 @@
             v-if="canManageCurrentCollection"
             class="collection-page__menu-button"
             type="button"
-            aria-label="Collection options"
-            title="Collection options"
+            :aria-label="t('collections.detail.options')"
+            :title="t('collections.detail.options')"
             @click="menuOpen = true"
           >
             <span class="i-fluent-more-horizontal-24-filled" aria-hidden="true" />
@@ -29,11 +33,11 @@
 
       <EmptyState
         v-if="!collectionsStore.loadingCollection && collectionsStore.currentImages.length === 0"
-        :title="`${collectionTitle} is empty`"
+        :title="t('collections.detail.emptyTitle', { name: collectionTitle })"
         :description="emptyDescription"
       />
       <div v-else-if="collectionsStore.loadingCollection && collectionsStore.currentImages.length === 0" class="card p-8 text-center">
-        <p class="text-muted">Loading collection...</p>
+        <p class="text-muted">{{ t('collections.detail.loading') }}</p>
       </div>
       <FolderGrid v-else :items="collectionsStore.currentImages" variant="posts" columns="three" />
       <InfiniteLoader
@@ -45,15 +49,20 @@
     </template>
 
     <div v-if="menuOpen" class="collection-action-backdrop" @click.self="menuOpen = false">
-      <div class="collection-action-sheet" role="dialog" aria-modal="true" aria-label="Collection actions">
+      <div
+        class="collection-action-sheet"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('collections.detail.actionsLabel')"
+      >
         <button class="collection-action-sheet__item collection-action-sheet__item--danger" type="button" @click="openDeleteDialog">
-          Delete collection
+          {{ t('collections.detail.menu.delete') }}
         </button>
         <button class="collection-action-sheet__item" type="button" @click="openEditDialog">
-          Edit Collection
+          {{ t('collections.detail.menu.edit') }}
         </button>
         <button class="collection-action-sheet__item" type="button" @click="menuOpen = false">
-          Cancel
+          {{ t('collections.detail.menu.cancel') }}
         </button>
       </div>
     </div>
@@ -61,12 +70,12 @@
     <div v-if="editDialogOpen" class="collection-action-backdrop" @click.self="closeEditDialog">
       <section class="collection-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-collection-title">
         <header class="collection-edit-dialog__header">
-          <h2 id="edit-collection-title">Edit collection</h2>
+          <h2 id="edit-collection-title">{{ t('collections.detail.edit.title') }}</h2>
           <button
             class="collection-edit-dialog__close"
             type="button"
-            aria-label="Close"
-            title="Close"
+            :aria-label="t('common.close')"
+            :title="t('common.close')"
             :disabled="editingCollection"
             @click="closeEditDialog"
           >
@@ -84,7 +93,7 @@
           />
           <p v-if="actionError" class="collection-management-error">{{ actionError }}</p>
           <button class="collection-edit-dialog__done" type="submit" :disabled="editingCollection">
-            {{ editingCollection ? 'Saving...' : 'Done' }}
+            {{ editingCollection ? t('collections.detail.edit.saving') : t('collections.detail.edit.done') }}
           </button>
         </form>
       </section>
@@ -93,8 +102,8 @@
     <div v-if="deleteDialogOpen" class="collection-action-backdrop" @click.self="closeDeleteDialog">
       <section class="collection-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-collection-title">
         <div class="collection-delete-dialog__copy">
-          <h2 id="delete-collection-title">Delete collection?</h2>
-          <p>When you delete this collection, the photos and videos will still be saved.</p>
+          <h2 id="delete-collection-title">{{ t('collections.detail.delete.title') }}</h2>
+          <p>{{ t('collections.detail.delete.message') }}</p>
         </div>
         <p v-if="actionError" class="collection-management-error collection-management-error--dialog">{{ actionError }}</p>
         <button
@@ -103,7 +112,7 @@
           :disabled="deletingCollection"
           @click="confirmDelete"
         >
-          {{ deletingCollection ? 'Deleting...' : 'Delete' }}
+          {{ deletingCollection ? t('collections.detail.delete.deleting') : t('collections.detail.delete.confirm') }}
         </button>
         <button
           class="collection-delete-dialog__action"
@@ -111,7 +120,7 @@
           :disabled="deletingCollection"
           @click="closeDeleteDialog"
         >
-          Cancel
+          {{ t('collections.detail.delete.cancel') }}
         </button>
       </section>
     </div>
@@ -120,6 +129,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { RouterLink, useRouter } from 'vue-router';
 
 import EmptyState from '../components/EmptyState.vue';
@@ -136,6 +146,7 @@ const props = defineProps<{
 const appStore = useAppStore();
 const collectionsStore = useCollectionsStore();
 const router = useRouter();
+const { t } = useI18n();
 const menuOpen = ref(false);
 const editDialogOpen = ref(false);
 const deleteDialogOpen = ref(false);
@@ -146,15 +157,17 @@ const editingCollection = ref(false);
 const deletingCollection = ref(false);
 const collectionTitle = computed(() => {
   if (!collectionsStore.currentCollection) {
-    return 'Collection';
+    return t('collections.detail.fallbackTitle');
   }
 
-  return collectionsStore.currentCollection.isDefault ? 'All Posts' : collectionsStore.currentCollection.name;
+  return collectionsStore.currentCollection.isDefault
+    ? t('collections.shared.defaultName')
+    : collectionsStore.currentCollection.name;
 });
 const emptyDescription = computed(() =>
   collectionsStore.currentCollection?.isDefault
-    ? 'Use the bookmark action under any post to save it here.'
-    : 'Bookmarked posts assigned to this collection will appear here.'
+    ? t('collections.detail.emptyDescriptionDefault')
+    : t('collections.detail.emptyDescriptionCustom')
 );
 const canManageCurrentCollection = computed(() => collectionsStore.currentCollection?.isDefault === false);
 
@@ -203,7 +216,7 @@ function closeDeleteDialog() {
 async function submitRename() {
   const name = editName.value.trim();
   if (!name) {
-    actionError.value = 'Collection name is required.';
+    actionError.value = t('collections.detail.edit.required');
     return;
   }
 
@@ -214,7 +227,7 @@ async function submitRename() {
     await collectionsStore.updateCollectionName(props.slug, name);
     editDialogOpen.value = false;
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to update collection';
+    actionError.value = error instanceof Error ? error.message : t('collections.detail.edit.updateError');
   } finally {
     editingCollection.value = false;
   }
@@ -229,7 +242,7 @@ async function confirmDelete() {
     deleteDialogOpen.value = false;
     await router.push({ name: 'collections' });
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to delete collection';
+    actionError.value = error instanceof Error ? error.message : t('collections.detail.delete.error');
   } finally {
     deletingCollection.value = false;
   }
