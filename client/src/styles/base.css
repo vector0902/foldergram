@@ -703,13 +703,8 @@ img[data-loaded="true"] {
   display: block;
   width: 100%;
   height: 100%;
-  aspect-ratio: inherit;
   color: #fff;
   background: #000;
-}
-
-.viewer__player[data-view-type="video"] {
-  aspect-ratio: inherit;
 }
 
 .viewer__player media-provider,
@@ -1032,10 +1027,6 @@ img[data-loaded="true"] {
   height: 100%;
   color: #fff;
   background: #000;
-}
-
-.feed-card__player[data-view-type="video"] {
-  aspect-ratio: inherit;
 }
 
 .feed-card__player media-provider,
