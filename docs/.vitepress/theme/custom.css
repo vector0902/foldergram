@@ -87,7 +87,7 @@ html {
 }
 
 .VPNavBarTitle .title::after {
-  content: 'v1.2.1';
+  content: var(--foldergram-docs-version);
   display: inline-block;
   margin-left: 0.38rem;
   font-size: 0.48em;
@@ -102,6 +102,64 @@ html {
   width: 28px !important;
   height: 28px !important;
   margin-right: 8px !important;
+}
+
+.featured-on {
+  margin: 2.5rem auto 0;
+  padding: 1.25rem 1rem 0;
+  max-width: 720px;
+  text-align: center;
+}
+
+.featured-on-title {
+  margin: 0 0 0.85rem;
+  color: var(--vp-c-text-2);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.featured-on-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1rem;
+}
+
+.featured-on-badges a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.featured-on-badges a:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.featured-on-badges img {
+  display: block;
+  max-width: min(250px, 100%);
+  height: auto;
+}
+
+.featured-on-badge-dark {
+  display: none !important;
+}
+
+.dark .featured-on-badge-light {
+  display: none !important;
+}
+
+.dark .featured-on-badge-dark {
+  display: block !important;
 }
 
 .cs-feature {
@@ -187,5 +245,15 @@ html {
 
   .cs-feature {
     padding: 1.25rem;
+  }
+
+  .featured-on {
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    padding-inline: 0;
+  }
+
+  .featured-on-badges {
+    gap: 0.6rem;
   }
 }

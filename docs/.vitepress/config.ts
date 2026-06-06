@@ -1,4 +1,10 @@
+import { readFileSync } from 'node:fs';
+
 import { defineConfig } from 'vitepress';
+
+const appPackage = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')
+) as { version: string };
 
 const guideItems = [
   { text: 'Quick Start', link: '/quick-start' },
@@ -29,7 +35,8 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['link', { rel: 'apple-touch-icon', href: '/logo.svg' }],
-    ['meta', { name: 'theme-color', content: '#6366f1' }]
+    ['meta', { name: 'theme-color', content: '#6366f1' }],
+    ['style', {}, `:root { --foldergram-docs-version: ${JSON.stringify(`v${appPackage.version}`)}; }`]
   ],
   themeConfig: {
     logo: '/logo.svg',

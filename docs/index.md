@@ -125,3 +125,17 @@ features:
 </div>
 
 </div>
+
+<section class="featured-on" aria-labelledby="featured-on-title">
+  <p id="featured-on-title" class="featured-on-title">Featured on</p>
+  <div class="featured-on-badges">
+    <a href="https://fazier.com/launches/foldergram.github.io" target="_blank" rel="noopener noreferrer">
+      <img class="featured-on-badge featured-on-badge-light" src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched&amp;theme=neutral" width="120" height="36" alt="Fazier launch badge">
+      <img class="featured-on-badge featured-on-badge-dark" src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched&amp;theme=dark" width="120" height="36" alt="Fazier launch badge">
+    </a>
+    <a href="https://www.producthunt.com/products/foldergram?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-foldergram" target="_blank" rel="noopener noreferrer">
+      <img class="featured-on-badge featured-on-badge-light" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1164910&amp;theme=neutral&amp;t=1780741309228" width="250" height="54" alt="Foldergram - Turn your local folders into dynamic, private feeds | Product Hunt">
+      <img class="featured-on-badge featured-on-badge-dark" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1164910&amp;theme=dark&amp;t=1780741080943" width="250" height="54" alt="Foldergram - Turn your local folders into dynamic, private feeds | Product Hunt">
+    </a>
+  </div>
+</section>
