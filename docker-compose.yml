@@ -6,6 +6,7 @@ services:
     environment:
       IMAGE_DETAIL_SOURCE: preview
       DERIVATIVE_MODE: eager
+      #DERIVATIVE_MODE: lazy
       # Optional: skip specific source folders by name or by exact relative path.
       # GALLERY_EXCLUDED_FOLDERS: "@eaDir,thumbnails,Archive/cache"
       # Optional: enable read-only public demo behavior.
@@ -19,6 +20,7 @@ services:
       # - ./data/previews:/app/data/previews
 
       - ./data:/app/data
-      - ../vid/:/app/data/gallery/vid
+      #- ../vid/:/app/data/gallery/vid
       - ../../fileb/:/app/data/gallery/fileb
+      - ../files/:/app/data/gallery/files
 
