@@ -23,4 +23,5 @@ services:
       #- ../vid/:/app/data/gallery/vid
       - ../../fileb/:/app/data/gallery/fileb
       - ../files/:/app/data/gallery/files
+      - ../dec/:/app/data/gallery/dec
 
