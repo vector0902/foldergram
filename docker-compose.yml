@@ -20,3 +20,5 @@ services:
 
       - ./data:/app/data
       - ../vid/:/app/data/gallery/vid
+      - ../../fileb/:/app/data/gallery/fileb
+
