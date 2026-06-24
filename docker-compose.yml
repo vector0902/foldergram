@@ -13,8 +13,10 @@ services:
       # Optional when the browser-visible origin differs from the upstream Node host.
       # CSRF_TRUSTED_ORIGINS: https://foldergram.example.com
     volumes:
-      - ./data/gallery:/app/data/gallery
-      - ./data/db:/app/data/db
-      - ./data/thumbnails:/app/data/thumbnails
-      - ./data/previews:/app/data/previews
-    restart: unless-stopped
+      # - ./data/gallery:/app/data/gallery
+      # - ./data/db:/app/data/db
+      # - ./data/thumbnails:/app/data/thumbnails
+      # - ./data/previews:/app/data/previews
+
+      - ./data:/app/data
+      - ../vid/:/app/data/gallery/vid
