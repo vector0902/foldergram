@@ -1,7 +1,9 @@
 services:
   foldergram:
-    build: .
+    # build: .
     # image: ghcr.io/foldergram/foldergram:latest
+    image: docker.cnb.cool/fjyaxax/docker/foldergram
+
     ports:
       - "4141:4141"
     environment:
