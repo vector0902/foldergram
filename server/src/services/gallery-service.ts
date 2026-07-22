@@ -266,11 +266,18 @@ function buildPreviewUrl(
     id: number;
     mediaType: MediaType;
     previewUrl: string;
+    playbackStrategy?: PlaybackStrategy | null;
   },
   useOriginalForImages = false,
   version?: string | null
 ): string {
   if (useOriginalForImages && image.mediaType === 'image') {
+    return buildOriginalUrl(image.id);
+  }
+
+  // Videos the browser can play directly are served from the original file
+  // instead of a re-encoded preview, avoiding duplicate storage and scan time.
+  if (image.mediaType === 'video' && image.playbackStrategy === 'original') {
     return buildOriginalUrl(image.id);
   }
 
@@ -476,7 +483,8 @@ function mapFeedImage(image: IndexedFeedImage, derivativeVersion = getDerivative
     previewUrl: buildPreviewUrl({
       id: rest.id,
       mediaType: rest.mediaType,
-      previewUrl: rest.previewUrl
+      previewUrl: rest.previewUrl,
+      playbackStrategy
     }, false, derivativeVersion),
     place: mapPlaceSummaryFromRow({ placeId, placeSlug, placeName, placeKind, placeIsApproximate })
   };
@@ -496,7 +504,8 @@ function mapImageDetail(image: IndexedImageDetail, derivativeVersion = getDeriva
     previewUrl: buildPreviewUrl({
       id: rest.id,
       mediaType: rest.mediaType,
-      previewUrl: rest.previewUrl
+      previewUrl: rest.previewUrl,
+      playbackStrategy
     }, useOriginalForImages, derivativeVersion),
     originalUrl: buildOriginalUrl(rest.id),
     playbackStrategy,
@@ -516,7 +525,8 @@ function mapTrashImage(image: IndexedTrashImage, derivativeVersion = getDerivati
     previewUrl: buildPreviewUrl({
       id: rest.id,
       mediaType: rest.mediaType,
-      previewUrl: rest.previewUrl
+      previewUrl: rest.previewUrl,
+      playbackStrategy
     }, false, derivativeVersion),
     place: mapPlaceSummaryFromRow({ placeId, placeSlug, placeName, placeKind, placeIsApproximate })
   };

@@ -1,6 +1,7 @@
 services:
   foldergram:
-    image: ghcr.io/foldergram/foldergram:latest
+    build: .
+    # image: ghcr.io/foldergram/foldergram:latest
     ports:
       - "4141:4141"
     environment:

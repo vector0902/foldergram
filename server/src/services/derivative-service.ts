@@ -636,10 +636,16 @@ async function generateVideoDerivatives(
   sourcePath: string,
   thumbnailAbsolutePath: string,
   previewAbsolutePath: string,
-  force: boolean
+  force: boolean,
+  playbackStrategy: PlaybackStrategy
 ): Promise<Pick<DerivativeResult, 'generatedThumbnail' | 'generatedPreview'>> {
   const shouldWriteThumbnail = force || !(await fileExists(thumbnailAbsolutePath));
-  const shouldWritePreview = force || !(await fileExists(previewAbsolutePath));
+  // Videos that can be played directly by the browser (original strategy) are
+  // served as-is. Skip the expensive ffmpeg re-encode to a 720p preview so we
+  // neither waste scan time nor duplicate storage. The thumbnail is still
+  // extracted because the gallery grid needs it.
+  const shouldWritePreview =
+    playbackStrategy !== 'original' && (force || !(await fileExists(previewAbsolutePath)));
 
   if (shouldWriteThumbnail) {
     await writeVideoThumbnail(sourcePath, thumbnailAbsolutePath);
@@ -709,7 +715,12 @@ export async function generatePreviewDerivative(
 
   if (shouldWritePreview) {
     if (mediaType === 'video') {
-      await writeVideoPreview(sourcePath, previewAbsolutePath);
+      // Skip re-encoding videos that the browser can play directly. The client
+      // serves the original file instead of this preview.
+      const videoMetadata = await readVideoMetadata(sourcePath);
+      if (videoMetadata.playbackStrategy !== 'original') {
+        await writeVideoPreview(sourcePath, previewAbsolutePath);
+      }
     } else if (isAvif) {
       const avifSource = await inspectAvifSource(sourcePath, {
         requireAnimatedVideoStreamIndex: true
@@ -752,7 +763,13 @@ export async function generateDerivatives(
 
   if (mediaType === 'video') {
     metadata = await readVideoMetadata(sourcePath);
-    generated = await generateVideoDerivatives(sourcePath, thumbnailAbsolutePath, previewAbsolutePath, force);
+    generated = await generateVideoDerivatives(
+      sourcePath,
+      thumbnailAbsolutePath,
+      previewAbsolutePath,
+      force,
+      metadata.playbackStrategy
+    );
   } else if (isAvif) {
     const avifSource = await inspectAvifSource(sourcePath, {
       requireAnimatedVideoStreamIndex: true
